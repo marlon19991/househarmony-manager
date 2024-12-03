@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
+import GeneralCleaningSection from "@/components/GeneralCleaning/GeneralCleaningSection";
 
 const Index = () => {
   const [tasks, setTasks] = useState([
@@ -90,20 +91,13 @@ const Index = () => {
   const progressPercentage = (completedTasks / totalTasks) * 100;
 
   return (
-    <div className="container max-w-md mx-auto p-4 animate-fade-in">
+    <div className="container max-w-4xl mx-auto p-4 space-y-6 animate-fade-in">
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold">Panel de Control</h1>
         <Users className="w-6 h-6 text-gray-500" />
       </div>
 
-      <Card className="p-4 mb-6">
-        <h2 className="text-lg font-semibold mb-3">Progreso de Tareas</h2>
-        <Progress value={progressPercentage} className="mb-2" />
-        <div className="flex justify-between text-sm text-gray-500">
-          <span>{tasks.length - completedTasks} pendientes</span>
-          <span>{completedTasks} completadas</span>
-        </div>
-      </Card>
+      <GeneralCleaningSection />
 
       <div className="space-y-6">
         <section>
