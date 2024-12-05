@@ -20,7 +20,7 @@ const useProfiles = create<ProfileStore>()(
       profiles: [],
       addProfile: (profile) =>
         set((state) => ({
-          profiles: [...state.profiles, { ...profile, id: state.profiles.length + 1 }],
+          profiles: [...state.profiles, { ...profile, id: Date.now() }],
         })),
       updateProfile: (updatedProfile) =>
         set((state) => ({

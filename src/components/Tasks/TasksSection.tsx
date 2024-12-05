@@ -5,18 +5,27 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { User } from "lucide-react";
+import { User, Pencil, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import useProfiles from "@/hooks/useProfiles";
 
+interface Task {
+  id: number;
+  title: string;
+  assignee: string;
+  dueDate: string;
+  status: "pending" | "completed";
+}
+
 export const TasksSection = () => {
   const { profiles } = useProfiles();
-  const [tasks, setTasks] = useState([
+  const [tasks, setTasks] = useState<Task[]>([
     { id: 1, title: "Limpiar cocina", assignee: "Juan", dueDate: "Hoy", status: "pending" },
     { id: 2, title: "Sacar la basura", assignee: "Sara", dueDate: "Hoy", status: "completed" },
     { id: 3, title: "Aspirar sala", assignee: "Miguel", dueDate: "Mañana", status: "pending" },
   ]);
   const [newTask, setNewTask] = useState({ title: "", assignee: "" });
+  const [editingTask, setEditingTask] = useState<number | null>(null);
 
   const handleAddTask = (e: React.FormEvent) => {
     e.preventDefault();
@@ -26,16 +35,33 @@ export const TasksSection = () => {
     }
 
     const task = {
-      id: tasks.length + 1,
+      id: Date.now(),
       title: newTask.title,
       assignee: newTask.assignee,
       dueDate: "Hoy",
-      status: "pending"
+      status: "pending" as const
     };
 
-    setTasks([...tasks, task]);
+    if (editingTask) {
+      setTasks(tasks.map(t => t.id === editingTask ? { ...task, id: editingTask } : t));
+      setEditingTask(null);
+      toast.success("Tarea actualizada exitosamente");
+    } else {
+      setTasks([...tasks, task]);
+      toast.success("Tarea agregada exitosamente");
+    }
+    
     setNewTask({ title: "", assignee: "" });
-    toast.success("Tarea agregada exitosamente");
+  };
+
+  const handleEditTask = (task: Task) => {
+    setEditingTask(task.id);
+    setNewTask({ title: task.title, assignee: task.assignee });
+  };
+
+  const handleDeleteTask = (taskId: number) => {
+    setTasks(tasks.filter(task => task.id !== taskId));
+    toast.success("Tarea eliminada exitosamente");
   };
 
   const toggleTaskStatus = (taskId: number) => {
@@ -54,7 +80,7 @@ export const TasksSection = () => {
       <h2 className="text-2xl font-bold">Tareas de Hoy</h2>
       <form onSubmit={handleAddTask} className="space-y-4">
         <div>
-          <Label htmlFor="taskTitle">Nueva Tarea</Label>
+          <Label htmlFor="taskTitle">{editingTask ? "Editar Tarea" : "Nueva Tarea"}</Label>
           <Input
             id="taskTitle"
             value={newTask.title}
@@ -83,7 +109,23 @@ export const TasksSection = () => {
             </SelectContent>
           </Select>
         </div>
-        <Button type="submit" className="w-full">Agregar Tarea</Button>
+        <div className="flex gap-2">
+          <Button type="submit" className="flex-1">
+            {editingTask ? "Actualizar Tarea" : "Agregar Tarea"}
+          </Button>
+          {editingTask && (
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => {
+                setEditingTask(null);
+                setNewTask({ title: "", assignee: "" });
+              }}
+            >
+              Cancelar
+            </Button>
+          )}
+        </div>
       </form>
       <div className="space-y-3">
         {tasks.map((task) => (
@@ -93,13 +135,30 @@ export const TasksSection = () => {
                 <h3 className="font-medium">{task.title}</h3>
                 <p className="text-sm text-gray-500">Asignado a {task.assignee}</p>
               </div>
-              <Button
-                variant="ghost"
-                onClick={() => toggleTaskStatus(task.id)}
-                className={task.status === "completed" ? "text-green-500" : "text-amber-500"}
-              >
-                {task.status === "completed" ? "Completada" : "Pendiente"}
-              </Button>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="ghost"
+                  onClick={() => toggleTaskStatus(task.id)}
+                  className={task.status === "completed" ? "text-green-500" : "text-amber-500"}
+                >
+                  {task.status === "completed" ? "Completada" : "Pendiente"}
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => handleEditTask(task)}
+                >
+                  <Pencil className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="text-red-500"
+                  onClick={() => handleDeleteTask(task.id)}
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </div>
             </div>
           </Card>
         ))}
