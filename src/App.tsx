@@ -6,6 +6,9 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Layout from "./components/Layout";
 import Index from "./pages/Index";
 import Profiles from "./pages/Profiles";
+import GeneralCleaning from "./pages/GeneralCleaning";
+import Tasks from "./pages/Tasks";
+import Bills from "./pages/Bills";
 
 const queryClient = new QueryClient();
 
@@ -19,6 +22,9 @@ const App = () => (
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/profiles" element={<Profiles />} />
+            <Route path="/general-cleaning" element={<GeneralCleaning />} />
+            <Route path="/tasks" element={<Tasks />} />
+            <Route path="/bills" element={<Bills />} />
           </Routes>
         </Layout>
       </BrowserRouter>
