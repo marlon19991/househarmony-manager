@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
+import { persist, createJSONStorage } from 'zustand/middleware';
 
 interface Profile {
   id: number;
@@ -35,6 +35,8 @@ const useProfiles = create<ProfileStore>()(
     }),
     {
       name: 'profiles-storage',
+      storage: createJSONStorage(() => localStorage),
+      version: 1,
     }
   )
 );

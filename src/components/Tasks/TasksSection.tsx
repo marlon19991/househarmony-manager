@@ -5,7 +5,7 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { User, Pencil, Trash2 } from "lucide-react";
+import { User, Pencil, Trash2, Check, X } from "lucide-react";
 import { toast } from "sonner";
 import useProfiles from "@/hooks/useProfiles";
 
@@ -15,6 +15,7 @@ interface Task {
   assignee: string;
   dueDate: string;
   status: "pending" | "completed";
+  isEditing?: boolean;
 }
 
 export const TasksSection = () => {
@@ -25,7 +26,6 @@ export const TasksSection = () => {
     { id: 3, title: "Aspirar sala", assignee: "Miguel", dueDate: "Mañana", status: "pending" },
   ]);
   const [newTask, setNewTask] = useState({ title: "", assignee: "" });
-  const [editingTask, setEditingTask] = useState<number | null>(null);
 
   const handleAddTask = (e: React.FormEvent) => {
     e.preventDefault();
@@ -42,21 +42,35 @@ export const TasksSection = () => {
       status: "pending" as const
     };
 
-    if (editingTask) {
-      setTasks(tasks.map(t => t.id === editingTask ? { ...task, id: editingTask } : t));
-      setEditingTask(null);
-      toast.success("Tarea actualizada exitosamente");
-    } else {
-      setTasks([...tasks, task]);
-      toast.success("Tarea agregada exitosamente");
-    }
-    
+    setTasks([...tasks, task]);
     setNewTask({ title: "", assignee: "" });
+    toast.success("Tarea agregada exitosamente");
   };
 
-  const handleEditTask = (task: Task) => {
-    setEditingTask(task.id);
-    setNewTask({ title: task.title, assignee: task.assignee });
+  const startEditing = (taskId: number) => {
+    setTasks(tasks.map(task => 
+      task.id === taskId ? { ...task, isEditing: true } : task
+    ));
+  };
+
+  const cancelEditing = (taskId: number) => {
+    setTasks(tasks.map(task => 
+      task.id === taskId ? { ...task, isEditing: false } : task
+    ));
+  };
+
+  const saveTask = (taskId: number, newTitle: string, newAssignee: string) => {
+    if (!newTitle || !newAssignee) {
+      toast.error("Por favor completa todos los campos");
+      return;
+    }
+
+    setTasks(tasks.map(task => 
+      task.id === taskId 
+        ? { ...task, title: newTitle, assignee: newAssignee, isEditing: false }
+        : task
+    ));
+    toast.success("Tarea actualizada exitosamente");
   };
 
   const handleDeleteTask = (taskId: number) => {
@@ -80,7 +94,7 @@ export const TasksSection = () => {
       <h2 className="text-2xl font-bold">Tareas de Hoy</h2>
       <form onSubmit={handleAddTask} className="space-y-4">
         <div>
-          <Label htmlFor="taskTitle">{editingTask ? "Editar Tarea" : "Nueva Tarea"}</Label>
+          <Label htmlFor="taskTitle">Nueva Tarea</Label>
           <Input
             id="taskTitle"
             value={newTask.title}
@@ -109,55 +123,102 @@ export const TasksSection = () => {
             </SelectContent>
           </Select>
         </div>
-        <div className="flex gap-2">
-          <Button type="submit" className="flex-1">
-            {editingTask ? "Actualizar Tarea" : "Agregar Tarea"}
-          </Button>
-          {editingTask && (
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => {
-                setEditingTask(null);
-                setNewTask({ title: "", assignee: "" });
-              }}
-            >
-              Cancelar
-            </Button>
-          )}
-        </div>
+        <Button type="submit" className="w-full">
+          Agregar Tarea
+        </Button>
       </form>
       <div className="space-y-3">
         {tasks.map((task) => (
           <Card key={task.id} className="p-4">
             <div className="flex items-center justify-between">
-              <div>
-                <h3 className="font-medium">{task.title}</h3>
-                <p className="text-sm text-gray-500">Asignado a {task.assignee}</p>
-              </div>
+              {task.isEditing ? (
+                <div className="flex-1 mr-4">
+                  <Input
+                    defaultValue={task.title}
+                    className="mb-2"
+                    onChange={(e) => {
+                      const newTitle = e.target.value;
+                      setTasks(tasks.map(t => 
+                        t.id === task.id ? { ...t, title: newTitle } : t
+                      ));
+                    }}
+                  />
+                  <Select
+                    defaultValue={task.assignee}
+                    onValueChange={(value) => {
+                      setTasks(tasks.map(t => 
+                        t.id === task.id ? { ...t, assignee: value } : t
+                      ));
+                    }}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Seleccionar responsable" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {profiles.map((profile) => (
+                        <SelectItem key={profile.id} value={profile.name}>
+                          <div className="flex items-center gap-2">
+                            <Avatar className="h-6 w-6">
+                              <AvatarImage src={profile.icon} alt={profile.name} />
+                              <AvatarFallback><User className="h-4 w-4" /></AvatarFallback>
+                            </Avatar>
+                            {profile.name}
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              ) : (
+                <div>
+                  <h3 className="font-medium">{task.title}</h3>
+                  <p className="text-sm text-gray-500">Asignado a {task.assignee}</p>
+                </div>
+              )}
               <div className="flex items-center gap-2">
-                <Button
-                  variant="ghost"
-                  onClick={() => toggleTaskStatus(task.id)}
-                  className={task.status === "completed" ? "text-green-500" : "text-amber-500"}
-                >
-                  {task.status === "completed" ? "Completada" : "Pendiente"}
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => handleEditTask(task)}
-                >
-                  <Pencil className="h-4 w-4" />
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="text-red-500"
-                  onClick={() => handleDeleteTask(task.id)}
-                >
-                  <Trash2 className="h-4 w-4" />
-                </Button>
+                {task.isEditing ? (
+                  <>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => saveTask(task.id, task.title, task.assignee)}
+                    >
+                      <Check className="h-4 w-4 text-green-500" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => cancelEditing(task.id)}
+                    >
+                      <X className="h-4 w-4 text-red-500" />
+                    </Button>
+                  </>
+                ) : (
+                  <>
+                    <Button
+                      variant="ghost"
+                      onClick={() => toggleTaskStatus(task.id)}
+                      className={task.status === "completed" ? "text-green-500" : "text-amber-500"}
+                    >
+                      {task.status === "completed" ? "Completada" : "Pendiente"}
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => startEditing(task.id)}
+                    >
+                      <Pencil className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="text-red-500"
+                      onClick={() => handleDeleteTask(task.id)}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </>
+                )}
               </div>
             </div>
           </Card>
