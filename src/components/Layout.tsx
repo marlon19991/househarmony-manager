@@ -1,4 +1,4 @@
-import { Bell, Home, DollarSign, CheckSquare, Users } from "lucide-react";
+import { Bell, Home, DollarSign, CheckSquare, Users, Brush } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 
 const Layout = ({ children }: { children: React.ReactNode }) => {
@@ -7,6 +7,7 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
   const navItems = [
     { icon: Home, label: "Home", path: "/" },
     { icon: CheckSquare, label: "Tasks", path: "/tasks" },
+    { icon: Brush, label: "Aseo General", path: "/general-cleaning" },
     { icon: DollarSign, label: "Bills", path: "/bills" },
     { icon: Users, label: "Perfiles", path: "/profiles" },
     { icon: Bell, label: "Notifications", path: "/notifications" },

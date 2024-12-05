@@ -14,6 +14,7 @@ export const BillsSection = () => {
     { id: 3, title: "Agua", amount: 60, dueDate: "1 Abril", status: "pending" },
   ]);
   const [newBill, setNewBill] = useState({ title: "", amount: "" });
+  const [editingBill, setEditingBill] = useState<number | null>(null);
 
   const handleAddBill = (e: React.FormEvent) => {
     e.preventDefault();
@@ -35,6 +36,33 @@ export const BillsSection = () => {
     toast.success("Factura agregada exitosamente");
   };
 
+  const handleEditBill = (billId: number) => {
+    const bill = bills.find(b => b.id === billId);
+    if (bill) {
+      setEditingBill(billId);
+      setNewBill({ title: bill.title, amount: bill.amount.toString() });
+    }
+  };
+
+  const handleUpdateBill = () => {
+    if (!editingBill) return;
+
+    setBills(bills.map(bill => {
+      if (bill.id === editingBill) {
+        return {
+          ...bill,
+          title: newBill.title,
+          amount: parseFloat(newBill.amount)
+        };
+      }
+      return bill;
+    }));
+
+    setEditingBill(null);
+    setNewBill({ title: "", amount: "" });
+    toast.success("Factura actualizada exitosamente");
+  };
+
   const toggleBillStatus = (billId: number) => {
     setBills(bills.map(bill => {
       if (bill.id === billId) {
@@ -49,9 +77,11 @@ export const BillsSection = () => {
   return (
     <div className="space-y-6">
       <h2 className="text-2xl font-bold">Facturas</h2>
-      <form onSubmit={handleAddBill} className="space-y-4">
+      <form onSubmit={editingBill ? handleUpdateBill : handleAddBill} className="space-y-4">
         <div>
-          <Label htmlFor="billTitle">Nueva Factura</Label>
+          <Label htmlFor="billTitle">
+            {editingBill ? "Editar Factura" : "Nueva Factura"}
+          </Label>
           <Input
             id="billTitle"
             value={newBill.title}
@@ -69,7 +99,22 @@ export const BillsSection = () => {
             placeholder="Monto de la factura"
           />
         </div>
-        <Button type="submit" className="w-full">Agregar Factura</Button>
+        <Button type="submit" className="w-full">
+          {editingBill ? "Actualizar Factura" : "Agregar Factura"}
+        </Button>
+        {editingBill && (
+          <Button
+            type="button"
+            variant="outline"
+            className="w-full"
+            onClick={() => {
+              setEditingBill(null);
+              setNewBill({ title: "", amount: "" });
+            }}
+          >
+            Cancelar Edición
+          </Button>
+        )}
       </form>
       <div className="space-y-3">
         {bills.map((bill) => (
@@ -80,17 +125,28 @@ export const BillsSection = () => {
                 <p className="text-sm text-gray-500">Vence {bill.dueDate}</p>
               </div>
               <div className="text-right">
-                <Button
-                  variant="ghost"
-                  onClick={() => toggleBillStatus(bill.id)}
-                  className={bill.status === "paid" ? "text-green-500" : "text-amber-500"}
-                >
-                  <p className="font-medium">${bill.amount}</p>
-                  <p className="text-xs">
-                    {bill.status === "paid" ? "Pagado" : "Pendiente"}
-                  </p>
-                </Button>
-                <p className="text-xs text-gray-500">${(bill.amount / profiles.length).toFixed(2)} por persona</p>
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="ghost"
+                    onClick={() => toggleBillStatus(bill.id)}
+                    className={bill.status === "paid" ? "text-green-500" : "text-amber-500"}
+                  >
+                    <p className="font-medium">${bill.amount}</p>
+                    <p className="text-xs">
+                      {bill.status === "paid" ? "Pagado" : "Pendiente"}
+                    </p>
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => handleEditBill(bill.id)}
+                  >
+                    Editar
+                  </Button>
+                </div>
+                <p className="text-xs text-gray-500">
+                  ${(bill.amount / profiles.length).toFixed(2)} por persona ({profiles.length} personas)
+                </p>
               </div>
             </div>
           </Card>
