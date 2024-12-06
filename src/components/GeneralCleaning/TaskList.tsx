@@ -60,7 +60,7 @@ const TaskList = ({ currentAssignee, onTaskComplete, onAssigneeChange }: TaskLis
     }
 
     const task = {
-      id: tasks.length + 1,
+      id: Date.now(),
       description: newTask.description,
       completed: false,
       comment: newTask.comment
@@ -79,6 +79,11 @@ const TaskList = ({ currentAssignee, onTaskComplete, onAssigneeChange }: TaskLis
     ));
     setEditingTask(null);
     toast.success("Tarea actualizada exitosamente");
+  };
+
+  const handleDeleteTask = (taskId: number) => {
+    setTasks(tasks.filter(task => task.id !== taskId));
+    toast.success("Tarea eliminada exitosamente");
   };
 
   return (
@@ -171,13 +176,23 @@ const TaskList = ({ currentAssignee, onTaskComplete, onAssigneeChange }: TaskLis
                     )}
                   </div>
                 </div>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setEditingTask(task.id)}
-                >
-                  Editar
-                </Button>
+                <div className="flex gap-2">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setEditingTask(task.id)}
+                  >
+                    Editar
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => handleDeleteTask(task.id)}
+                    className="text-red-500"
+                  >
+                    Eliminar
+                  </Button>
+                </div>
               </div>
             )}
           </Card>

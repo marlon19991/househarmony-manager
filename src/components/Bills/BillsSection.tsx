@@ -3,13 +3,23 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 import useProfiles from "@/hooks/useProfiles";
+import { BillItem } from "./BillItem";
+
+interface Bill {
+  id: number;
+  title: string;
+  amount: number;
+  dueDate: string;
+  status: "pending" | "paid";
+  splitBetween: number;
+  selectedProfiles: number[];
+}
 
 export const BillsSection = () => {
   const { profiles } = useProfiles();
-  const [bills, setBills] = useState([
+  const [bills, setBills] = useState<Bill[]>([
     { 
       id: 1, 
       title: "Electricidad", 
@@ -39,7 +49,6 @@ export const BillsSection = () => {
     },
   ]);
   const [newBill, setNewBill] = useState({ title: "", amount: "", splitBetween: "1" });
-  const [editingBill, setEditingBill] = useState<number | null>(null);
 
   const handleAddBill = (e: React.FormEvent) => {
     e.preventDefault();
@@ -49,11 +58,11 @@ export const BillsSection = () => {
     }
 
     const bill = {
-      id: bills.length + 1,
+      id: Date.now(),
       title: newBill.title,
       amount: parseFloat(newBill.amount),
       dueDate: "Próximo mes",
-      status: "pending",
+      status: "pending" as const,
       splitBetween: parseInt(newBill.splitBetween),
       selectedProfiles: profiles.map(p => p.id)
     };
@@ -63,37 +72,14 @@ export const BillsSection = () => {
     toast.success("Factura agregada exitosamente");
   };
 
-  const handleEditBill = (billId: number) => {
-    const bill = bills.find(b => b.id === billId);
-    if (bill) {
-      setEditingBill(billId);
-      setNewBill({ 
-        title: bill.title, 
-        amount: bill.amount.toString(),
-        splitBetween: bill.splitBetween.toString()
-      });
-    }
+  const handleUpdateBill = (updatedBill: Bill) => {
+    setBills(bills.map(bill => 
+      bill.id === updatedBill.id ? updatedBill : bill
+    ));
   };
 
-  const handleUpdateBill = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!editingBill) return;
-
-    setBills(bills.map(bill => {
-      if (bill.id === editingBill) {
-        return {
-          ...bill,
-          title: newBill.title,
-          amount: parseFloat(newBill.amount),
-          splitBetween: parseInt(newBill.splitBetween)
-        };
-      }
-      return bill;
-    }));
-
-    setEditingBill(null);
-    setNewBill({ title: "", amount: "", splitBetween: "1" });
-    toast.success("Factura actualizada exitosamente");
+  const handleDeleteBill = (billId: number) => {
+    setBills(bills.filter(bill => bill.id !== billId));
   };
 
   const toggleBillStatus = (billId: number) => {
@@ -110,11 +96,9 @@ export const BillsSection = () => {
   return (
     <div className="space-y-6">
       <h2 className="text-2xl font-bold">Facturas</h2>
-      <form onSubmit={editingBill ? handleUpdateBill : handleAddBill} className="space-y-4">
+      <form onSubmit={handleAddBill} className="space-y-4">
         <div>
-          <Label htmlFor="billTitle">
-            {editingBill ? "Editar Factura" : "Nueva Factura"}
-          </Label>
+          <Label htmlFor="billTitle">Nueva Factura</Label>
           <Input
             id="billTitle"
             value={newBill.title}
@@ -144,56 +128,18 @@ export const BillsSection = () => {
           />
         </div>
         <Button type="submit" className="w-full">
-          {editingBill ? "Actualizar Factura" : "Agregar Factura"}
+          Agregar Factura
         </Button>
-        {editingBill && (
-          <Button
-            type="button"
-            variant="outline"
-            className="w-full"
-            onClick={() => {
-              setEditingBill(null);
-              setNewBill({ title: "", amount: "", splitBetween: "1" });
-            }}
-          >
-            Cancelar Edición
-          </Button>
-        )}
       </form>
       <div className="space-y-3">
         {bills.map((bill) => (
-          <Card key={bill.id} className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <h3 className="font-medium">{bill.title}</h3>
-                <p className="text-sm text-gray-500">Vence {bill.dueDate}</p>
-              </div>
-              <div className="text-right">
-                <div className="flex items-center gap-2">
-                  <Button
-                    variant="ghost"
-                    onClick={() => toggleBillStatus(bill.id)}
-                    className={bill.status === "paid" ? "text-green-500" : "text-amber-500"}
-                  >
-                    <p className="font-medium">${bill.amount}</p>
-                    <p className="text-xs">
-                      {bill.status === "paid" ? "Pagado" : "Pendiente"}
-                    </p>
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => handleEditBill(bill.id)}
-                  >
-                    Editar
-                  </Button>
-                </div>
-                <p className="text-xs text-gray-500">
-                  ${(bill.amount / bill.splitBetween).toFixed(2)} por persona ({bill.splitBetween} personas)
-                </p>
-              </div>
-            </div>
-          </Card>
+          <BillItem
+            key={bill.id}
+            bill={bill}
+            onUpdate={handleUpdateBill}
+            onDelete={handleDeleteBill}
+            onToggleStatus={toggleBillStatus}
+          />
         ))}
       </div>
     </div>
