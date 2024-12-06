@@ -3,17 +3,42 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 import useProfiles from "@/hooks/useProfiles";
 
 export const BillsSection = () => {
   const { profiles } = useProfiles();
   const [bills, setBills] = useState([
-    { id: 1, title: "Electricidad", amount: 120, dueDate: "25 Marzo", status: "pending" },
-    { id: 2, title: "Internet", amount: 80, dueDate: "28 Marzo", status: "paid" },
-    { id: 3, title: "Agua", amount: 60, dueDate: "1 Abril", status: "pending" },
+    { 
+      id: 1, 
+      title: "Electricidad", 
+      amount: 120, 
+      dueDate: "25 Marzo", 
+      status: "pending",
+      splitBetween: profiles.length || 1,
+      selectedProfiles: profiles.map(p => p.id)
+    },
+    { 
+      id: 2, 
+      title: "Internet", 
+      amount: 80, 
+      dueDate: "28 Marzo", 
+      status: "paid",
+      splitBetween: profiles.length || 1,
+      selectedProfiles: profiles.map(p => p.id)
+    },
+    { 
+      id: 3, 
+      title: "Agua", 
+      amount: 60, 
+      dueDate: "1 Abril", 
+      status: "pending",
+      splitBetween: profiles.length || 1,
+      selectedProfiles: profiles.map(p => p.id)
+    },
   ]);
-  const [newBill, setNewBill] = useState({ title: "", amount: "" });
+  const [newBill, setNewBill] = useState({ title: "", amount: "", splitBetween: "1" });
   const [editingBill, setEditingBill] = useState<number | null>(null);
 
   const handleAddBill = (e: React.FormEvent) => {
@@ -28,11 +53,13 @@ export const BillsSection = () => {
       title: newBill.title,
       amount: parseFloat(newBill.amount),
       dueDate: "Próximo mes",
-      status: "pending"
+      status: "pending",
+      splitBetween: parseInt(newBill.splitBetween),
+      selectedProfiles: profiles.map(p => p.id)
     };
 
     setBills([...bills, bill]);
-    setNewBill({ title: "", amount: "" });
+    setNewBill({ title: "", amount: "", splitBetween: "1" });
     toast.success("Factura agregada exitosamente");
   };
 
@@ -40,11 +67,16 @@ export const BillsSection = () => {
     const bill = bills.find(b => b.id === billId);
     if (bill) {
       setEditingBill(billId);
-      setNewBill({ title: bill.title, amount: bill.amount.toString() });
+      setNewBill({ 
+        title: bill.title, 
+        amount: bill.amount.toString(),
+        splitBetween: bill.splitBetween.toString()
+      });
     }
   };
 
-  const handleUpdateBill = () => {
+  const handleUpdateBill = (e: React.FormEvent) => {
+    e.preventDefault();
     if (!editingBill) return;
 
     setBills(bills.map(bill => {
@@ -52,14 +84,15 @@ export const BillsSection = () => {
         return {
           ...bill,
           title: newBill.title,
-          amount: parseFloat(newBill.amount)
+          amount: parseFloat(newBill.amount),
+          splitBetween: parseInt(newBill.splitBetween)
         };
       }
       return bill;
     }));
 
     setEditingBill(null);
-    setNewBill({ title: "", amount: "" });
+    setNewBill({ title: "", amount: "", splitBetween: "1" });
     toast.success("Factura actualizada exitosamente");
   };
 
@@ -99,6 +132,17 @@ export const BillsSection = () => {
             placeholder="Monto de la factura"
           />
         </div>
+        <div>
+          <Label htmlFor="splitBetween">Dividir entre</Label>
+          <Input
+            id="splitBetween"
+            type="number"
+            min="1"
+            value={newBill.splitBetween}
+            onChange={(e) => setNewBill({ ...newBill, splitBetween: e.target.value })}
+            placeholder="Número de personas"
+          />
+        </div>
         <Button type="submit" className="w-full">
           {editingBill ? "Actualizar Factura" : "Agregar Factura"}
         </Button>
@@ -109,7 +153,7 @@ export const BillsSection = () => {
             className="w-full"
             onClick={() => {
               setEditingBill(null);
-              setNewBill({ title: "", amount: "" });
+              setNewBill({ title: "", amount: "", splitBetween: "1" });
             }}
           >
             Cancelar Edición
@@ -145,7 +189,7 @@ export const BillsSection = () => {
                   </Button>
                 </div>
                 <p className="text-xs text-gray-500">
-                  ${(bill.amount / profiles.length).toFixed(2)} por persona ({profiles.length} personas)
+                  ${(bill.amount / bill.splitBetween).toFixed(2)} por persona ({bill.splitBetween} personas)
                 </p>
               </div>
             </div>
