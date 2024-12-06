@@ -1,10 +1,12 @@
+/**
+ * Componente principal que gestiona la lista de tareas de limpieza.
+ * Coordina la adición, edición, eliminación y actualización de tareas,
+ * así como el cálculo del progreso general.
+ */
 import { useState } from "react";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
+import TaskForm from "./TaskForm";
+import TaskItem from "./TaskItem";
 
 interface Task {
   id: number;
@@ -54,11 +56,6 @@ const TaskList = ({ currentAssignee, onTaskComplete, onAssigneeChange }: TaskLis
 
   const handleAddTask = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newTask.description) {
-      toast.error("Por favor ingresa una descripción para la tarea");
-      return;
-    }
-
     const task = {
       id: Date.now(),
       description: newTask.description,
@@ -72,6 +69,11 @@ const TaskList = ({ currentAssignee, onTaskComplete, onAssigneeChange }: TaskLis
   };
 
   const handleUpdateTask = (taskId: number, newDescription: string, newComment: string) => {
+    if (!newDescription) {
+      toast.error("La descripción de la tarea no puede estar vacía");
+      return;
+    }
+    
     setTasks(tasks.map(task => 
       task.id === taskId 
         ? { ...task, description: newDescription, comment: newComment }
@@ -92,110 +94,25 @@ const TaskList = ({ currentAssignee, onTaskComplete, onAssigneeChange }: TaskLis
         Responsable actual: {currentAssignee}
       </div>
 
-      <form onSubmit={handleAddTask} className="space-y-4 mb-6">
-        <div>
-          <Label htmlFor="taskDescription">Nueva Tarea</Label>
-          <Input
-            id="taskDescription"
-            value={newTask.description}
-            onChange={(e) => setNewTask({ ...newTask, description: e.target.value })}
-            placeholder="Descripción de la tarea"
-          />
-        </div>
-        <div>
-          <Label htmlFor="taskComment">Comentario (opcional)</Label>
-          <Input
-            id="taskComment"
-            value={newTask.comment}
-            onChange={(e) => setNewTask({ ...newTask, comment: e.target.value })}
-            placeholder="Agregar un comentario"
-          />
-        </div>
-        <Button type="submit" className="w-full">
-          Agregar Tarea
-        </Button>
-      </form>
+      <TaskForm
+        newTask={newTask}
+        setNewTask={setNewTask}
+        onAddTask={handleAddTask}
+      />
 
       <div className="grid gap-3">
         {tasks.map((task) => (
-          <Card key={task.id} className="p-4">
-            {editingTask === task.id ? (
-              <div className="space-y-2">
-                <Input
-                  value={task.description}
-                  onChange={(e) => {
-                    const newDescription = e.target.value;
-                    setTasks(tasks.map(t => 
-                      t.id === task.id ? { ...t, description: newDescription } : t
-                    ));
-                  }}
-                />
-                <Input
-                  value={task.comment || ""}
-                  onChange={(e) => {
-                    const newComment = e.target.value;
-                    setTasks(tasks.map(t => 
-                      t.id === task.id ? { ...t, comment: newComment } : t
-                    ));
-                  }}
-                  placeholder="Agregar un comentario"
-                />
-                <div className="flex gap-2">
-                  <Button 
-                    onClick={() => handleUpdateTask(task.id, task.description, task.comment || "")}
-                    size="sm"
-                  >
-                    Guardar
-                  </Button>
-                  <Button 
-                    variant="outline" 
-                    size="sm"
-                    onClick={() => setEditingTask(null)}
-                  >
-                    Cancelar
-                  </Button>
-                </div>
-              </div>
-            ) : (
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-3">
-                  <Checkbox
-                    checked={task.completed}
-                    onCheckedChange={() => handleTaskToggle(task.id)}
-                    id={`task-${task.id}`}
-                  />
-                  <div>
-                    <label
-                      htmlFor={`task-${task.id}`}
-                      className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                    >
-                      {task.description}
-                    </label>
-                    {task.comment && (
-                      <p className="text-xs text-gray-500 mt-1">{task.comment}</p>
-                    )}
-                  </div>
-                </div>
-                <div className="flex gap-2">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setEditingTask(task.id)}
-                  >
-                    Editar
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => handleDeleteTask(task.id)}
-                    className="text-red-500"
-                  >
-                    Eliminar
-                  </Button>
-                </div>
-              </div>
-            )}
-          </Card>
+          <TaskItem
+            key={task.id}
+            task={task}
+            editingTask={editingTask}
+            onTaskToggle={handleTaskToggle}
+            onUpdateTask={handleUpdateTask}
+            onDeleteTask={handleDeleteTask}
+            setEditingTask={setEditingTask}
+            setTasks={setTasks}
+            tasks={tasks}
+          />
         ))}
       </div>
     </div>
