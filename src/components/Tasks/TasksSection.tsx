@@ -1,13 +1,7 @@
 import { useState } from "react";
-import { Card } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Button } from "@/components/ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { User, Pencil, Trash2, Check, X } from "lucide-react";
 import { toast } from "sonner";
-import useProfiles from "@/hooks/useProfiles";
+import { TaskForm } from "./TaskForm";
+import { TaskItem } from "./TaskItem";
 
 interface Task {
   id: number;
@@ -19,7 +13,6 @@ interface Task {
 }
 
 export const TasksSection = () => {
-  const { profiles } = useProfiles();
   const [tasks, setTasks] = useState<Task[]>([
     { id: 1, title: "Limpiar cocina", assignee: "Juan", dueDate: "Hoy", status: "pending" },
     { id: 2, title: "Sacar la basura", assignee: "Sara", dueDate: "Hoy", status: "completed" },
@@ -92,136 +85,22 @@ export const TasksSection = () => {
   return (
     <div className="space-y-6">
       <h2 className="text-2xl font-bold">Tareas de Hoy</h2>
-      <form onSubmit={handleAddTask} className="space-y-4">
-        <div>
-          <Label htmlFor="taskTitle">Nueva Tarea</Label>
-          <Input
-            id="taskTitle"
-            value={newTask.title}
-            onChange={(e) => setNewTask({ ...newTask, title: e.target.value })}
-            placeholder="Título de la tarea"
-          />
-        </div>
-        <div>
-          <Label htmlFor="taskAssignee">Asignar a</Label>
-          <Select onValueChange={(value) => setNewTask({ ...newTask, assignee: value })} value={newTask.assignee}>
-            <SelectTrigger>
-              <SelectValue placeholder="Seleccionar responsable" />
-            </SelectTrigger>
-            <SelectContent>
-              {profiles.map((profile) => (
-                <SelectItem key={profile.id} value={profile.name}>
-                  <div className="flex items-center gap-2">
-                    <Avatar className="h-6 w-6">
-                      <AvatarImage src={profile.icon} alt={profile.name} />
-                      <AvatarFallback><User className="h-4 w-4" /></AvatarFallback>
-                    </Avatar>
-                    {profile.name}
-                  </div>
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-        <Button type="submit" className="w-full">
-          Agregar Tarea
-        </Button>
-      </form>
+      <TaskForm
+        newTask={newTask}
+        setNewTask={setNewTask}
+        onSubmit={handleAddTask}
+      />
       <div className="space-y-3">
         {tasks.map((task) => (
-          <Card key={task.id} className="p-4">
-            <div className="flex items-center justify-between">
-              {task.isEditing ? (
-                <div className="flex-1 mr-4">
-                  <Input
-                    defaultValue={task.title}
-                    className="mb-2"
-                    onChange={(e) => {
-                      const newTitle = e.target.value;
-                      setTasks(tasks.map(t => 
-                        t.id === task.id ? { ...t, title: newTitle } : t
-                      ));
-                    }}
-                  />
-                  <Select
-                    defaultValue={task.assignee}
-                    onValueChange={(value) => {
-                      setTasks(tasks.map(t => 
-                        t.id === task.id ? { ...t, assignee: value } : t
-                      ));
-                    }}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Seleccionar responsable" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {profiles.map((profile) => (
-                        <SelectItem key={profile.id} value={profile.name}>
-                          <div className="flex items-center gap-2">
-                            <Avatar className="h-6 w-6">
-                              <AvatarImage src={profile.icon} alt={profile.name} />
-                              <AvatarFallback><User className="h-4 w-4" /></AvatarFallback>
-                            </Avatar>
-                            {profile.name}
-                          </div>
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              ) : (
-                <div>
-                  <h3 className="font-medium">{task.title}</h3>
-                  <p className="text-sm text-gray-500">Asignado a {task.assignee}</p>
-                </div>
-              )}
-              <div className="flex items-center gap-2">
-                {task.isEditing ? (
-                  <>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => saveTask(task.id, task.title, task.assignee)}
-                    >
-                      <Check className="h-4 w-4 text-green-500" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => cancelEditing(task.id)}
-                    >
-                      <X className="h-4 w-4 text-red-500" />
-                    </Button>
-                  </>
-                ) : (
-                  <>
-                    <Button
-                      variant="ghost"
-                      onClick={() => toggleTaskStatus(task.id)}
-                      className={task.status === "completed" ? "text-green-500" : "text-amber-500"}
-                    >
-                      {task.status === "completed" ? "Completada" : "Pendiente"}
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => startEditing(task.id)}
-                    >
-                      <Pencil className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="text-red-500"
-                      onClick={() => handleDeleteTask(task.id)}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </>
-                )}
-              </div>
-            </div>
-          </Card>
+          <TaskItem
+            key={task.id}
+            task={task}
+            onSave={saveTask}
+            onDelete={handleDeleteTask}
+            onToggleStatus={toggleTaskStatus}
+            onStartEditing={startEditing}
+            onCancelEditing={cancelEditing}
+          />
         ))}
       </div>
     </div>
