@@ -8,37 +8,31 @@ export const GroupSelector = () => {
   const { selectedGroup } = useGroupStore();
 
   return (
-    <Card className="p-4 mb-6">
-      <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Users className="w-5 h-5 text-primary" />
-            <h2 className="text-lg font-semibold">Grupo Actual</h2>
-          </div>
-          <Link to="/settings">
-            <Button variant="outline" size="sm">
-              Administrar Grupos
-            </Button>
-          </Link>
-        </div>
-        
+    <Card className="p-3 mb-4 bg-gradient-to-br from-background to-muted border-none">
+      <div className="flex items-center justify-between">
         {selectedGroup ? (
-          <div className="text-sm text-muted-foreground">
-            <p className="font-medium text-foreground">{selectedGroup.name}</p>
-            <p className="mt-1">{selectedGroup.description}</p>
-            <p className="mt-2">
-              {selectedGroup.members.length} miembro
-              {selectedGroup.members.length !== 1 ? "s" : ""}
-            </p>
+          <div className="flex items-center gap-3">
+            <Users className="w-4 h-4 text-primary" />
+            <div>
+              <p className="font-medium text-sm">{selectedGroup.name}</p>
+              <p className="text-xs text-muted-foreground">
+                {selectedGroup.members.length} miembro
+                {selectedGroup.members.length !== 1 ? "s" : ""}
+              </p>
+            </div>
           </div>
         ) : (
-          <div className="text-sm text-muted-foreground">
-            <p>No hay ningún grupo seleccionado.</p>
-            <Link to="/settings" className="text-primary hover:underline">
-              Haz clic aquí para crear o seleccionar un grupo
-            </Link>
+          <div className="flex items-center gap-3">
+            <Users className="w-4 h-4 text-muted-foreground" />
+            <p className="text-sm text-muted-foreground">Sin grupo seleccionado</p>
           </div>
         )}
+        
+        <Link to="/settings">
+          <Button variant="ghost" size="sm" className="text-xs">
+            Administrar
+          </Button>
+        </Link>
       </div>
     </Card>
   );
