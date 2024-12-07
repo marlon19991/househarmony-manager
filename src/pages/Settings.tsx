@@ -25,7 +25,7 @@ const Settings = () => {
             </TabsTrigger>
           </TabsList>
           
-          <TabsContent value="theme" className="mt-0">
+          <TabsContent value="theme" className="mt-6">
             <ThemeSelector />
           </TabsContent>
           
