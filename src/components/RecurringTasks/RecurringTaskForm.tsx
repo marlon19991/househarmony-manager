@@ -10,6 +10,7 @@ import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { Calendar as CalendarIcon, Clock } from "lucide-react";
 import useProfiles from "@/hooks/useProfiles";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 
 interface RecurringTaskFormProps {
   onSubmit: (task: any) => void;
@@ -24,6 +25,9 @@ export const RecurringTaskForm = ({ onSubmit, initialTask, onCancel }: Recurring
   const [time, setTime] = useState(initialTask?.time || "");
   const [assignee, setAssignee] = useState(initialTask?.assignee || "all");
   const [icon, setIcon] = useState(initialTask?.icon || "calendar");
+  const [recurrenceType, setRecurrenceType] = useState(initialTask?.recurrenceType || "specific");
+  const [weekday, setWeekday] = useState(initialTask?.weekday || "monday");
+  const [workdays, setWorkdays] = useState(initialTask?.workdays || false);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -33,6 +37,9 @@ export const RecurringTaskForm = ({ onSubmit, initialTask, onCancel }: Recurring
       time,
       assignee,
       icon,
+      recurrenceType,
+      weekday,
+      workdays,
     });
   };
 
@@ -41,6 +48,16 @@ export const RecurringTaskForm = ({ onSubmit, initialTask, onCancel }: Recurring
     { value: "trash", label: "Basura" },
     { value: "recycle", label: "Reciclaje" },
     { value: "broom", label: "Limpieza" },
+  ];
+
+  const weekdays = [
+    { value: "monday", label: "Lunes" },
+    { value: "tuesday", label: "Martes" },
+    { value: "wednesday", label: "Miércoles" },
+    { value: "thursday", label: "Jueves" },
+    { value: "friday", label: "Viernes" },
+    { value: "saturday", label: "Sábado" },
+    { value: "sunday", label: "Domingo" },
   ];
 
   return (
@@ -56,31 +73,69 @@ export const RecurringTaskForm = ({ onSubmit, initialTask, onCancel }: Recurring
         />
       </div>
 
-      <div>
-        <Label>Día de la semana</Label>
-        <Popover>
-          <PopoverTrigger asChild>
-            <Button
-              variant="outline"
-              className={cn(
-                "w-full justify-start text-left font-normal",
-                !selectedDay && "text-muted-foreground"
-              )}
-            >
-              <CalendarIcon className="mr-2 h-4 w-4" />
-              {selectedDay ? format(selectedDay, "EEEE", { locale: es }) : "Seleccionar día"}
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent className="w-auto p-0">
-            <Calendar
-              mode="single"
-              selected={selectedDay}
-              onSelect={setSelectedDay}
-              required
-            />
-          </PopoverContent>
-        </Popover>
+      <div className="space-y-3">
+        <Label>Tipo de recurrencia</Label>
+        <RadioGroup value={recurrenceType} onValueChange={setRecurrenceType}>
+          <div className="flex items-center space-x-2">
+            <RadioGroupItem value="specific" id="specific" />
+            <Label htmlFor="specific">Día específico</Label>
+          </div>
+          <div className="flex items-center space-x-2">
+            <RadioGroupItem value="weekly" id="weekly" />
+            <Label htmlFor="weekly">Cada semana</Label>
+          </div>
+          <div className="flex items-center space-x-2">
+            <RadioGroupItem value="workdays" id="workdays" />
+            <Label htmlFor="workdays">Lunes a viernes</Label>
+          </div>
+        </RadioGroup>
       </div>
+
+      {recurrenceType === "specific" && (
+        <div>
+          <Label>Día de la semana</Label>
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button
+                variant="outline"
+                className={cn(
+                  "w-full justify-start text-left font-normal",
+                  !selectedDay && "text-muted-foreground"
+                )}
+              >
+                <CalendarIcon className="mr-2 h-4 w-4" />
+                {selectedDay ? format(selectedDay, "EEEE", { locale: es }) : "Seleccionar día"}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0">
+              <Calendar
+                mode="single"
+                selected={selectedDay}
+                onSelect={setSelectedDay}
+                required
+              />
+            </PopoverContent>
+          </Popover>
+        </div>
+      )}
+
+      {recurrenceType === "weekly" && (
+        <div>
+          <Label>Día de la semana</Label>
+          <Select value={weekday} onValueChange={setWeekday}>
+            <SelectTrigger>
+              <SelectValue placeholder="Seleccionar día" />
+            </SelectTrigger>
+            <SelectContent>
+              {weekdays.map((day) => (
+                <SelectItem key={day.value} value={day.value}>
+                  {day.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      )}
 
       <div>
         <Label htmlFor="time">Hora (opcional)</Label>

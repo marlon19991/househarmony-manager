@@ -31,6 +31,28 @@ export const RecurringTaskItem = ({ task, onDelete, onUpdate }: RecurringTaskIte
     setIsEditing(false);
   };
 
+  const getRecurrenceText = () => {
+    switch (task.recurrenceType) {
+      case "specific":
+        return format(new Date(task.day), "EEEE", { locale: es });
+      case "weekly":
+        const weekdays = {
+          monday: "Lunes",
+          tuesday: "Martes",
+          wednesday: "Miércoles",
+          thursday: "Jueves",
+          friday: "Viernes",
+          saturday: "Sábado",
+          sunday: "Domingo",
+        };
+        return `Cada ${weekdays[task.weekday as keyof typeof weekdays]}`;
+      case "workdays":
+        return "Lunes a viernes";
+      default:
+        return "";
+    }
+  };
+
   if (isEditing) {
     return (
       <Card className="p-4">
@@ -51,7 +73,7 @@ export const RecurringTaskItem = ({ task, onDelete, onUpdate }: RecurringTaskIte
           <div>
             <h3 className="font-medium">{task.title}</h3>
             <p className="text-sm text-muted-foreground">
-              {format(new Date(task.day), "EEEE", { locale: es })}
+              {getRecurrenceText()}
               {task.time && (
                 <span className="flex items-center ml-2">
                   <Clock className="h-3 w-3 mr-1" />
