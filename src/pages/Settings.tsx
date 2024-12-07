@@ -2,7 +2,7 @@ import { Settings as SettingsIcon, Palette, Users } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ThemeSelector } from "@/components/Settings/ThemeSelector";
-import ProfilesSection from "@/components/Settings/ProfilesSection";
+import { ProfilesSection } from "@/components/Settings/ProfilesSection";
 
 const Settings = () => {
   return (
