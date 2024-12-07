@@ -3,6 +3,7 @@ import { Users, Brush, CheckSquare, DollarSign } from "lucide-react";
 import { Link } from "react-router-dom";
 import useProfiles from "@/hooks/useProfiles";
 import { Progress } from "@/components/ui/progress";
+import { GroupSelector } from "@/components/Groups/GroupSelector";
 
 const Index = () => {
   const { profiles } = useProfiles();
@@ -30,9 +31,6 @@ const Index = () => {
     }
   ];
 
-  const generalCleaningAssignee = "Juan";
-  const completionPercentage = 75;
-
   return (
     <div className="container max-w-4xl mx-auto p-4 space-y-6 animate-fade-in">
       <div className="flex items-center justify-between mb-6">
@@ -46,30 +44,7 @@ const Index = () => {
         </div>
       </div>
 
-      <Card className="p-6 mb-6 border-none bg-gradient-to-br from-primary/10 to-primary/5">
-        <h2 className="text-xl font-semibold mb-4">
-          Estado del Aseo General
-        </h2>
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <p className="text-muted-foreground">Responsable actual:</p>
-            <p className="font-medium">{generalCleaningAssignee}</p>
-          </div>
-          <div className="space-y-2">
-            <div className="flex justify-between text-sm">
-              <span>Progreso</span>
-              <span>{completionPercentage}%</span>
-            </div>
-            <Progress value={completionPercentage} className="h-2" />
-          </div>
-          <Link 
-            to="/general-cleaning"
-            className="block text-center text-sm text-primary hover:underline mt-2"
-          >
-            Ver detalles del aseo general
-          </Link>
-        </div>
-      </Card>
+      <GroupSelector />
 
       <div className="grid gap-4 md:grid-cols-3">
         {features.map((feature) => {
