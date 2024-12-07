@@ -13,7 +13,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { Calendar, Trash2, Pencil, Clock } from "lucide-react";
-import { format } from "date-fns";
+import { format, isValid } from "date-fns";
 import { es } from "date-fns/locale";
 import { RecurringTaskForm } from "./RecurringTaskForm";
 
@@ -33,8 +33,11 @@ export const RecurringTaskItem = ({ task, onDelete, onUpdate }: RecurringTaskIte
 
   const getRecurrenceText = () => {
     switch (task.recurrenceType) {
-      case "specific":
-        return format(new Date(task.day), "EEEE", { locale: es });
+      case "specific": {
+        const date = task.day ? new Date(task.day) : null;
+        if (!date || !isValid(date)) return "Fecha inválida";
+        return format(date, "EEEE", { locale: es });
+      }
       case "weekly":
         if (!task.selectedDays || task.selectedDays.length === 0) return "";
         
