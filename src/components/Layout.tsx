@@ -1,4 +1,4 @@
-import { Home, DollarSign, Users, Brush } from "lucide-react";
+import { Home, DollarSign, Users, Brush, CalendarCheck } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import { ThemeToggle } from "./ThemeToggle";
 
@@ -9,6 +9,7 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
     { path: "/", icon: Home, label: "Inicio" },
     { path: "/profiles", icon: Users, label: "Perfiles" },
     { path: "/general-cleaning", icon: Brush, label: "Aseo" },
+    { path: "/recurring-tasks", icon: CalendarCheck, label: "Tareas Periódicas" },
     { path: "/bills", icon: DollarSign, label: "Facturas" },
   ];
 
