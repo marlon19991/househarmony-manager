@@ -1,5 +1,6 @@
 import { Home, DollarSign, Users, Brush, CalendarCheck, Settings } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
+import { ThemeToggle } from "./ThemeToggle";
 
 const Layout = ({ children }: { children: React.ReactNode }) => {
   const location = useLocation();
@@ -14,6 +15,9 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
 
   return (
     <div className="min-h-screen bg-background">
+      <div className="fixed top-4 right-4 z-50">
+        <ThemeToggle />
+      </div>
       <main className="pb-20">{children}</main>
       
       <nav className="fixed bottom-0 left-0 right-0 bg-background border-t border-border px-4 py-2">
