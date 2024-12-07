@@ -20,7 +20,7 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
       </div>
       <main className="pb-20">{children}</main>
       
-      <nav className="fixed bottom-0 left-0 right-0 bg-background border-t border-border px-4 py-2">
+      <nav className="fixed bottom-0 left-0 right-0 bg-background border-t border-border px-4 py-2 z-40">
         <div className="flex justify-around items-center">
           {navItems.map((item) => {
             const Icon = item.icon;

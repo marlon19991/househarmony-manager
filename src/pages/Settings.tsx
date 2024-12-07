@@ -1,4 +1,4 @@
-import { Settings as SettingsIcon, Palette, DollarSign } from "lucide-react";
+import { Settings as SettingsIcon } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import {
   SidebarProvider,
@@ -9,16 +9,14 @@ import {
   SidebarMenuItem,
   SidebarMenuButton,
 } from "@/components/ui/sidebar";
-import { CurrencySelector } from "@/components/Settings/CurrencySelector";
 import { ProfilesSection } from "@/components/Settings/ProfilesSection";
 import { useState } from "react";
 
 const Settings = () => {
-  const [currentSection, setCurrentSection] = useState<"profiles" | "currency">("profiles");
+  const [currentSection, setCurrentSection] = useState<"profiles">("profiles");
 
   const menuItems = [
     { id: "profiles" as const, label: "Perfiles", icon: SettingsIcon },
-    { id: "currency" as const, label: "Moneda", icon: DollarSign },
   ];
 
   return (
@@ -46,10 +44,9 @@ const Settings = () => {
             </SidebarContent>
           </Sidebar>
 
-          <main className="flex-1 p-6">
+          <main className="flex-1 p-6 relative z-0">
             <Card className="p-6">
               {currentSection === "profiles" && <ProfilesSection />}
-              {currentSection === "currency" && <CurrencySelector />}
             </Card>
           </main>
         </div>
