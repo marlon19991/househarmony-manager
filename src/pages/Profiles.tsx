@@ -6,6 +6,25 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { User, UserPlus, UserX, Pencil } from "lucide-react";
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 interface Profile {
   id: number;
@@ -66,48 +85,56 @@ const Profiles = () => {
     <div className="container max-w-4xl mx-auto p-4 space-y-6">
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold">Perfiles</h1>
-        <UserPlus className="w-6 h-6 text-gray-500" />
+        <Sheet>
+          <SheetTrigger asChild>
+            <Button variant="outline" size="icon">
+              <UserPlus className="h-5 w-5" />
+            </Button>
+          </SheetTrigger>
+          <SheetContent>
+            <SheetHeader>
+              <SheetTitle>Crear Nuevo Perfil</SheetTitle>
+              <SheetDescription>
+                Agrega un nuevo perfil para gestionar tareas y responsabilidades.
+              </SheetDescription>
+            </SheetHeader>
+            <div className="space-y-4 mt-6">
+              <div>
+                <Label htmlFor="name">Nombre</Label>
+                <Input
+                  id="name"
+                  value={newProfile.name}
+                  onChange={(e) => setNewProfile({ ...newProfile, name: e.target.value })}
+                  placeholder="Nombre del perfil"
+                />
+              </div>
+              <div>
+                <Label>Ícono</Label>
+                <div className="flex gap-2 mt-2">
+                  {iconOptions.map((icon) => (
+                    <button
+                      key={icon.src}
+                      onClick={() => setNewProfile({ ...newProfile, icon: icon.src })}
+                      className={`p-1 rounded-full ${
+                        newProfile.icon === icon.src ? "ring-2 ring-primary" : ""
+                      }`}
+                    >
+                      <Avatar>
+                        <AvatarImage src={icon.src} alt={icon.label} />
+                        <AvatarFallback><User /></AvatarFallback>
+                      </Avatar>
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <Button onClick={handleAddProfile} className="w-full">
+                Crear Perfil
+              </Button>
+            </div>
+          </SheetContent>
+        </Sheet>
       </div>
 
-      {/* Formulario para nuevo perfil */}
-      <Card className="p-4">
-        <h2 className="text-lg font-semibold mb-4">Crear Nuevo Perfil</h2>
-        <div className="space-y-4">
-          <div>
-            <Label htmlFor="name">Nombre</Label>
-            <Input
-              id="name"
-              value={newProfile.name}
-              onChange={(e) => setNewProfile({ ...newProfile, name: e.target.value })}
-              placeholder="Nombre del perfil"
-            />
-          </div>
-          <div>
-            <Label>Ícono</Label>
-            <div className="flex gap-2 mt-2">
-              {iconOptions.map((icon) => (
-                <button
-                  key={icon.src}
-                  onClick={() => setNewProfile({ ...newProfile, icon: icon.src })}
-                  className={`p-1 rounded-full ${
-                    newProfile.icon === icon.src ? "ring-2 ring-primary" : ""
-                  }`}
-                >
-                  <Avatar>
-                    <AvatarImage src={icon.src} alt={icon.label} />
-                    <AvatarFallback><User /></AvatarFallback>
-                  </Avatar>
-                </button>
-              ))}
-            </div>
-          </div>
-          <Button onClick={handleAddProfile} className="w-full">
-            Crear Perfil
-          </Button>
-        </div>
-      </Card>
-
-      {/* Lista de perfiles */}
       <div className="grid gap-4 md:grid-cols-2">
         {profiles.map((profile) => (
           <Card key={profile.id} className="p-4">
@@ -140,13 +167,27 @@ const Profiles = () => {
                     <Pencil className="w-4 h-4" />
                   </Button>
                 )}
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => handleDeleteProfile(profile.id)}
-                >
-                  <UserX className="w-4 h-4 text-destructive" />
-                </Button>
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button variant="ghost" size="icon">
+                      <UserX className="w-4 h-4 text-destructive" />
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>¿Estás seguro?</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        Esta acción no se puede deshacer. Se eliminará permanentemente este perfil.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                      <AlertDialogAction onClick={() => handleDeleteProfile(profile.id)}>
+                        Eliminar
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
               </div>
             </div>
           </Card>

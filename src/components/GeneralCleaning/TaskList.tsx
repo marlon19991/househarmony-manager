@@ -7,6 +7,16 @@ import { useState } from "react";
 import { toast } from "sonner";
 import TaskForm from "./TaskForm";
 import TaskItem from "./TaskItem";
+import { Button } from "@/components/ui/button";
+import { Plus } from "lucide-react";
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
 
 interface Task {
   id: number;
@@ -90,15 +100,34 @@ const TaskList = ({ currentAssignee, onTaskComplete, onAssigneeChange }: TaskLis
 
   return (
     <div className="space-y-4">
-      <div className="text-lg font-semibold mb-4">
-        Responsable actual: {currentAssignee}
+      <div className="flex items-center justify-between">
+        <div className="text-lg font-semibold">
+          Responsable actual: {currentAssignee}
+        </div>
+        <Sheet>
+          <SheetTrigger asChild>
+            <Button size="sm">
+              <Plus className="w-4 h-4 mr-2" />
+              Agregar Tarea
+            </Button>
+          </SheetTrigger>
+          <SheetContent>
+            <SheetHeader>
+              <SheetTitle>Agregar Nueva Tarea</SheetTitle>
+              <SheetDescription>
+                Crea una nueva tarea de limpieza general.
+              </SheetDescription>
+            </SheetHeader>
+            <div className="mt-6">
+              <TaskForm
+                newTask={newTask}
+                setNewTask={setNewTask}
+                onAddTask={handleAddTask}
+              />
+            </div>
+          </SheetContent>
+        </Sheet>
       </div>
-
-      <TaskForm
-        newTask={newTask}
-        setNewTask={setNewTask}
-        onAddTask={handleAddTask}
-      />
 
       <div className="grid gap-3">
         {tasks.map((task) => (
