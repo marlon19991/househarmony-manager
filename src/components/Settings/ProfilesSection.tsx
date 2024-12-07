@@ -32,7 +32,7 @@ interface Profile {
   icon: string;
 }
 
-const ProfilesSection = () => {
+export const ProfilesSection = () => {
   const [profiles, setProfiles] = useState<Profile[]>([
     { id: 1, name: "Juan", icon: "/placeholder.svg" },
     { id: 2, name: "María", icon: "/placeholder.svg" },
@@ -196,5 +196,3 @@ const ProfilesSection = () => {
     </div>
   );
 };
-
-export default ProfilesSection;
