@@ -1,8 +1,8 @@
-import { Settings as SettingsIcon, Users } from "lucide-react";
+import { Settings as SettingsIcon, Palette, Users } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ThemeSelector } from "@/components/Settings/ThemeSelector";
-import { ProfilesSection } from "@/components/Settings/ProfilesSection";
+import ProfilesSection from "@/components/Settings/ProfilesSection";
 
 const Settings = () => {
   return (
@@ -12,26 +12,28 @@ const Settings = () => {
         <h1 className="text-2xl font-bold">Ajustes</h1>
       </div>
 
-      <Tabs defaultValue="profiles" className="w-full">
-        <TabsList className="w-full justify-start">
-          <TabsTrigger value="profiles" className="flex items-center gap-2">
-            <Users className="w-4 h-4" />
-            Perfiles
-          </TabsTrigger>
-          <TabsTrigger value="theme" className="flex items-center gap-2">
-            <SettingsIcon className="w-4 h-4" />
-            Tema
-          </TabsTrigger>
-        </TabsList>
-        <TabsContent value="profiles">
-          <ProfilesSection />
-        </TabsContent>
-        <TabsContent value="theme">
-          <Card className="p-6">
+      <Card className="p-6">
+        <Tabs defaultValue="theme" className="w-full">
+          <TabsList className="w-full justify-start mb-6">
+            <TabsTrigger value="theme" className="flex items-center gap-2">
+              <Palette className="w-4 h-4" />
+              Tema
+            </TabsTrigger>
+            <TabsTrigger value="profiles" className="flex items-center gap-2">
+              <Users className="w-4 h-4" />
+              Perfiles
+            </TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="theme" className="mt-0">
             <ThemeSelector />
-          </Card>
-        </TabsContent>
-      </Tabs>
+          </TabsContent>
+          
+          <TabsContent value="profiles" className="mt-0">
+            <ProfilesSection />
+          </TabsContent>
+        </Tabs>
+      </Card>
     </div>
   );
 };
