@@ -3,20 +3,18 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
+import { Plus } from "lucide-react";
 import { toast } from "sonner";
 import useProfiles from "@/hooks/useProfiles";
 import { BillItem } from "./BillItem";
 import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
 
 interface Bill {
   id: number;
@@ -60,6 +58,7 @@ export const BillsSection = () => {
     },
   ]);
   const [newBill, setNewBill] = useState({ title: "", amount: "", splitBetween: "1" });
+  const [isOpen, setIsOpen] = useState(false);
 
   const handleAddBill = (e: React.FormEvent) => {
     e.preventDefault();
@@ -80,6 +79,7 @@ export const BillsSection = () => {
 
     setBills([...bills, bill]);
     setNewBill({ title: "", amount: "", splitBetween: "1" });
+    setIsOpen(false);
     toast.success("Factura agregada exitosamente");
   };
 
@@ -107,42 +107,60 @@ export const BillsSection = () => {
 
   return (
     <div className="space-y-6">
-      <h2 className="text-2xl font-bold">Facturas</h2>
-      <form onSubmit={handleAddBill} className="space-y-4">
-        <div>
-          <Label htmlFor="billTitle">Nueva Factura</Label>
-          <Input
-            id="billTitle"
-            value={newBill.title}
-            onChange={(e) => setNewBill({ ...newBill, title: e.target.value })}
-            placeholder="Título de la factura"
-          />
-        </div>
-        <div>
-          <Label htmlFor="billAmount">Monto</Label>
-          <Input
-            id="billAmount"
-            type="number"
-            value={newBill.amount}
-            onChange={(e) => setNewBill({ ...newBill, amount: e.target.value })}
-            placeholder="Monto de la factura"
-          />
-        </div>
-        <div>
-          <Label htmlFor="splitBetween">Dividir entre</Label>
-          <Input
-            id="splitBetween"
-            type="number"
-            min="1"
-            value={newBill.splitBetween}
-            onChange={(e) => setNewBill({ ...newBill, splitBetween: e.target.value })}
-            placeholder="Número de personas"
-          />
-        </div>
-        <Button type="submit" className="w-full">
-          Agregar Factura
-        </Button>
-      </form>
+      <div className="flex items-center justify-between">
+        <h2 className="text-2xl font-bold">Facturas</h2>
+        <Sheet open={isOpen} onOpenChange={setIsOpen}>
+          <SheetTrigger asChild>
+            <Button>
+              <Plus className="w-4 h-4 mr-2" />
+              Agregar Factura
+            </Button>
+          </SheetTrigger>
+          <SheetContent>
+            <SheetHeader>
+              <SheetTitle>Nueva Factura</SheetTitle>
+              <SheetDescription>
+                Agrega una nueva factura para dividir entre los miembros.
+              </SheetDescription>
+            </SheetHeader>
+            <form onSubmit={handleAddBill} className="space-y-4 mt-6">
+              <div>
+                <Label htmlFor="billTitle">Título</Label>
+                <Input
+                  id="billTitle"
+                  value={newBill.title}
+                  onChange={(e) => setNewBill({ ...newBill, title: e.target.value })}
+                  placeholder="Título de la factura"
+                />
+              </div>
+              <div>
+                <Label htmlFor="billAmount">Monto</Label>
+                <Input
+                  id="billAmount"
+                  type="number"
+                  value={newBill.amount}
+                  onChange={(e) => setNewBill({ ...newBill, amount: e.target.value })}
+                  placeholder="Monto de la factura"
+                />
+              </div>
+              <div>
+                <Label htmlFor="splitBetween">Dividir entre</Label>
+                <Input
+                  id="splitBetween"
+                  type="number"
+                  min="1"
+                  value={newBill.splitBetween}
+                  onChange={(e) => setNewBill({ ...newBill, splitBetween: e.target.value })}
+                  placeholder="Número de personas"
+                />
+              </div>
+              <Button type="submit" className="w-full">
+                Agregar Factura
+              </Button>
+            </form>
+          </SheetContent>
+        </Sheet>
+      </div>
       <div className="space-y-3">
         {bills.map((bill) => (
           <BillItem
