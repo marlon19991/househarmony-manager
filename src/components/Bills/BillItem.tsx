@@ -1,9 +1,19 @@
 import { useState } from "react";
 import { Card } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { toast } from "sonner";
-import useProfiles from "@/hooks/useProfiles";
+import { Input } from "@/components/ui/input";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { Pencil, Trash2, Check, X } from "lucide-react";
 
 interface Bill {
   id: number;
@@ -17,100 +27,99 @@ interface Bill {
 
 interface BillItemProps {
   bill: Bill;
-  onUpdate: (updatedBill: Bill) => void;
-  onDelete: (billId: number) => void;
-  onToggleStatus: (billId: number) => void;
+  onUpdate: (bill: Bill) => void;
+  onDelete: (id: number) => void;
+  onToggleStatus: (id: number) => void;
 }
 
 export const BillItem = ({ bill, onUpdate, onDelete, onToggleStatus }: BillItemProps) => {
   const [isEditing, setIsEditing] = useState(false);
   const [editedBill, setEditedBill] = useState(bill);
-  const { profiles } = useProfiles();
 
   const handleSave = () => {
-    if (!editedBill.title || !editedBill.amount) {
-      toast.error("Por favor completa todos los campos");
-      return;
-    }
     onUpdate(editedBill);
     setIsEditing(false);
-    toast.success("Factura actualizada exitosamente");
   };
 
   return (
     <Card className="p-4">
-      <div className="flex items-center justify-between">
-        {isEditing ? (
-          <div className="w-full space-y-2">
-            <Input
-              value={editedBill.title}
-              onChange={(e) => setEditedBill({ ...editedBill, title: e.target.value })}
-              placeholder="Título de la factura"
-            />
-            <Input
-              type="number"
-              value={editedBill.amount}
-              onChange={(e) => setEditedBill({ ...editedBill, amount: parseFloat(e.target.value) })}
-              placeholder="Monto de la factura"
-            />
-            <Input
-              type="number"
-              min="1"
-              value={editedBill.splitBetween}
-              onChange={(e) => setEditedBill({ ...editedBill, splitBetween: parseInt(e.target.value) })}
-              placeholder="Dividir entre"
-            />
-            <div className="flex gap-2">
-              <Button onClick={handleSave}>Guardar</Button>
-              <Button variant="outline" onClick={() => setIsEditing(false)}>
-                Cancelar
-              </Button>
-            </div>
+      {isEditing ? (
+        <div className="space-y-4">
+          <Input
+            value={editedBill.title}
+            onChange={(e) => setEditedBill({ ...editedBill, title: e.target.value })}
+            placeholder="Título de la factura"
+          />
+          <Input
+            type="number"
+            value={editedBill.amount}
+            onChange={(e) => setEditedBill({ ...editedBill, amount: parseFloat(e.target.value) })}
+            placeholder="Monto"
+          />
+          <Input
+            type="number"
+            value={editedBill.splitBetween}
+            onChange={(e) => setEditedBill({ ...editedBill, splitBetween: parseInt(e.target.value) })}
+            placeholder="Dividir entre"
+          />
+          <div className="flex justify-end space-x-2">
+            <Button onClick={handleSave} size="sm">
+              <Check className="h-4 w-4 mr-2" />
+              Guardar
+            </Button>
+            <Button onClick={() => setIsEditing(false)} variant="outline" size="sm">
+              <X className="h-4 w-4 mr-2" />
+              Cancelar
+            </Button>
           </div>
-        ) : (
-          <>
-            <div>
-              <h3 className="font-medium">{bill.title}</h3>
-              <p className="text-sm text-gray-500">Vence {bill.dueDate}</p>
-            </div>
-            <div className="text-right">
-              <div className="flex items-center gap-2">
-                <Button
-                  variant="ghost"
-                  onClick={() => onToggleStatus(bill.id)}
-                  className={bill.status === "paid" ? "text-green-500" : "text-amber-500"}
-                >
-                  <p className="font-medium">${bill.amount}</p>
-                  <p className="text-xs">
-                    {bill.status === "paid" ? "Pagado" : "Pendiente"}
-                  </p>
+        </div>
+      ) : (
+        <div className="flex items-center justify-between">
+          <div>
+            <h3 className="font-medium">{bill.title}</h3>
+            <p className="text-sm text-muted-foreground">
+              ${bill.amount} - Dividido entre {bill.splitBetween}
+            </p>
+          </div>
+          <div className="flex items-center space-x-2">
+            <Button
+              variant="ghost"
+              onClick={() => onToggleStatus(bill.id)}
+              className={bill.status === "paid" ? "text-green-500" : "text-amber-500"}
+            >
+              {bill.status === "paid" ? "Pagada" : "Pendiente"}
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setIsEditing(true)}
+            >
+              <Pencil className="h-4 w-4" />
+            </Button>
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button variant="ghost" size="icon" className="text-destructive">
+                  <Trash2 className="h-4 w-4" />
                 </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setIsEditing(true)}
-                >
-                  Editar
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => {
-                    onDelete(bill.id);
-                    toast.success("Factura eliminada exitosamente");
-                  }}
-                  className="text-red-500"
-                >
-                  Eliminar
-                </Button>
-              </div>
-              <p className="text-xs text-gray-500">
-                ${(bill.amount / bill.splitBetween).toFixed(2)} por persona ({bill.splitBetween} personas)
-              </p>
-            </div>
-          </>
-        )}
-      </div>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>¿Estás seguro?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Esta acción no se puede deshacer. Se eliminará la factura permanentemente.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                  <AlertDialogAction onClick={() => onDelete(bill.id)}>
+                    Eliminar
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          </div>
+        </div>
+      )}
     </Card>
   );
 };
