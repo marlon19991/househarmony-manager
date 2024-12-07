@@ -11,6 +11,7 @@ import { es } from "date-fns/locale";
 import { Calendar as CalendarIcon, Clock } from "lucide-react";
 import useProfiles from "@/hooks/useProfiles";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Checkbox } from "@/components/ui/checkbox";
 
 interface RecurringTaskFormProps {
   onSubmit: (task: any) => void;
@@ -26,8 +27,7 @@ export const RecurringTaskForm = ({ onSubmit, initialTask, onCancel }: Recurring
   const [assignee, setAssignee] = useState(initialTask?.assignee || "all");
   const [icon, setIcon] = useState(initialTask?.icon || "calendar");
   const [recurrenceType, setRecurrenceType] = useState(initialTask?.recurrenceType || "specific");
-  const [weekday, setWeekday] = useState(initialTask?.weekday || "monday");
-  const [workdays, setWorkdays] = useState(initialTask?.workdays || false);
+  const [selectedDays, setSelectedDays] = useState<string[]>(initialTask?.selectedDays || []);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -38,8 +38,7 @@ export const RecurringTaskForm = ({ onSubmit, initialTask, onCancel }: Recurring
       assignee,
       icon,
       recurrenceType,
-      weekday,
-      workdays,
+      selectedDays,
     });
   };
 
@@ -59,6 +58,14 @@ export const RecurringTaskForm = ({ onSubmit, initialTask, onCancel }: Recurring
     { value: "saturday", label: "Sábado" },
     { value: "sunday", label: "Domingo" },
   ];
+
+  const handleDayToggle = (day: string) => {
+    setSelectedDays(current =>
+      current.includes(day)
+        ? current.filter(d => d !== day)
+        : [...current, day]
+    );
+  };
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
@@ -82,7 +89,7 @@ export const RecurringTaskForm = ({ onSubmit, initialTask, onCancel }: Recurring
           </div>
           <div className="flex items-center space-x-2">
             <RadioGroupItem value="weekly" id="weekly" />
-            <Label htmlFor="weekly">Cada semana</Label>
+            <Label htmlFor="weekly">Semanal</Label>
           </div>
           <div className="flex items-center space-x-2">
             <RadioGroupItem value="workdays" id="workdays" />
@@ -120,20 +127,20 @@ export const RecurringTaskForm = ({ onSubmit, initialTask, onCancel }: Recurring
       )}
 
       {recurrenceType === "weekly" && (
-        <div>
-          <Label>Día de la semana</Label>
-          <Select value={weekday} onValueChange={setWeekday}>
-            <SelectTrigger>
-              <SelectValue placeholder="Seleccionar día" />
-            </SelectTrigger>
-            <SelectContent>
-              {weekdays.map((day) => (
-                <SelectItem key={day.value} value={day.value}>
-                  {day.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+        <div className="space-y-4">
+          <Label>Días de la semana</Label>
+          <div className="grid grid-cols-2 gap-4">
+            {weekdays.map((day) => (
+              <div key={day.value} className="flex items-center space-x-2">
+                <Checkbox
+                  id={day.value}
+                  checked={selectedDays.includes(day.value)}
+                  onCheckedChange={() => handleDayToggle(day.value)}
+                />
+                <Label htmlFor={day.value}>{day.label}</Label>
+              </div>
+            ))}
+          </div>
         </div>
       )}
 

@@ -36,6 +36,8 @@ export const RecurringTaskItem = ({ task, onDelete, onUpdate }: RecurringTaskIte
       case "specific":
         return format(new Date(task.day), "EEEE", { locale: es });
       case "weekly":
+        if (!task.selectedDays || task.selectedDays.length === 0) return "";
+        
         const weekdays = {
           monday: "Lunes",
           tuesday: "Martes",
@@ -45,7 +47,22 @@ export const RecurringTaskItem = ({ task, onDelete, onUpdate }: RecurringTaskIte
           saturday: "Sábado",
           sunday: "Domingo",
         };
-        return `Cada ${weekdays[task.weekday as keyof typeof weekdays]}`;
+
+        const selectedDayNames = task.selectedDays
+          .map((day: string) => weekdays[day as keyof typeof weekdays])
+          .sort((a: string, b: string) => {
+            const order = Object.values(weekdays);
+            return order.indexOf(a) - order.indexOf(b);
+          });
+
+        if (selectedDayNames.length === 1) {
+          return `Cada ${selectedDayNames[0]}`;
+        } else if (selectedDayNames.length === 2) {
+          return `Cada ${selectedDayNames[0]} y ${selectedDayNames[1]}`;
+        } else {
+          const lastDay = selectedDayNames.pop();
+          return `Cada ${selectedDayNames.join(", ")} y ${lastDay}`;
+        }
       case "workdays":
         return "Lunes a viernes";
       default:
