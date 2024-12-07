@@ -1,54 +1,42 @@
 import { Card } from "@/components/ui/card";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Users } from "lucide-react";
 import useGroupStore from "@/stores/useGroupStore";
+import { Button } from "@/components/ui/button";
+import { Link } from "react-router-dom";
 
 export const GroupSelector = () => {
-  const { groups, selectedGroup, setSelectedGroup } = useGroupStore();
+  const { selectedGroup } = useGroupStore();
 
   return (
     <Card className="p-4 mb-6">
       <div className="space-y-4">
-        <div className="flex items-center gap-2">
-          <Users className="w-5 h-5 text-primary" />
-          <h2 className="text-lg font-semibold">Grupo Actual</h2>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Users className="w-5 h-5 text-primary" />
+            <h2 className="text-lg font-semibold">Grupo Actual</h2>
+          </div>
+          <Link to="/settings">
+            <Button variant="outline" size="sm">
+              Administrar Grupos
+            </Button>
+          </Link>
         </div>
         
-        <Select
-          value={selectedGroup?.id?.toString() || ""}
-          onValueChange={(value) => {
-            const group = groups.find((g) => g.id.toString() === value);
-            setSelectedGroup(group || null);
-          }}
-        >
-          <SelectTrigger className="w-full">
-            <SelectValue placeholder="Selecciona un grupo" />
-          </SelectTrigger>
-          <SelectContent>
-            {groups.map((group) => (
-              <SelectItem key={group.id} value={group.id.toString()}>
-                <div className="flex items-center gap-2">
-                  <Users className="w-4 h-4" />
-                  <span>{group.name}</span>
-                </div>
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-
-        {selectedGroup && (
+        {selectedGroup ? (
           <div className="text-sm text-muted-foreground">
-            <p>{selectedGroup.description}</p>
+            <p className="font-medium text-foreground">{selectedGroup.name}</p>
+            <p className="mt-1">{selectedGroup.description}</p>
             <p className="mt-2">
               {selectedGroup.members.length} miembro
               {selectedGroup.members.length !== 1 ? "s" : ""}
             </p>
+          </div>
+        ) : (
+          <div className="text-sm text-muted-foreground">
+            <p>No hay ningún grupo seleccionado.</p>
+            <Link to="/settings" className="text-primary hover:underline">
+              Haz clic aquí para crear o seleccionar un grupo
+            </Link>
           </div>
         )}
       </div>
