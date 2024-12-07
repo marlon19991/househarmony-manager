@@ -6,7 +6,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { ThemeProvider } from "next-themes";
 import Layout from "./components/Layout";
 import Index from "./pages/Index";
-import Settings from "./pages/Settings";
+import Profiles from "./pages/Profiles";
 import GeneralCleaning from "./pages/GeneralCleaning";
 import Bills from "./pages/Bills";
 import RecurringTasks from "./pages/RecurringTasks";
@@ -23,7 +23,7 @@ const App = () => (
           <Layout>
             <Routes>
               <Route path="/" element={<Index />} />
-              <Route path="/settings" element={<Settings />} />
+              <Route path="/profiles" element={<Profiles />} />
               <Route path="/general-cleaning" element={<GeneralCleaning />} />
               <Route path="/recurring-tasks" element={<RecurringTasks />} />
               <Route path="/bills" element={<Bills />} />

@@ -1,20 +1,25 @@
-import { Home, DollarSign, Users, Brush, CalendarCheck, Settings } from "lucide-react";
+import { Home, DollarSign, Users, Brush, CalendarCheck } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
+import { ThemeToggle } from "./ThemeToggle";
 
 const Layout = ({ children }: { children: React.ReactNode }) => {
   const location = useLocation();
 
   const navItems = [
     { path: "/", icon: Home, label: "Inicio" },
+    { path: "/profiles", icon: Users, label: "Perfiles" },
     { path: "/general-cleaning", icon: Brush, label: "Aseo" },
     { path: "/recurring-tasks", icon: CalendarCheck, label: "Tareas Periódicas" },
     { path: "/bills", icon: DollarSign, label: "Facturas" },
-    { path: "/settings", icon: Settings, label: "Ajustes" },
   ];
 
   return (
     <div className="min-h-screen bg-background">
-      <main className="pb-20">{children}</main>
+      <header className="fixed top-0 left-0 right-0 z-50 flex items-center justify-end p-4 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+        <ThemeToggle />
+      </header>
+
+      <main className="pb-20 pt-16">{children}</main>
       
       <nav className="fixed bottom-0 left-0 right-0 bg-background border-t border-border px-4 py-2">
         <div className="flex justify-around items-center">
