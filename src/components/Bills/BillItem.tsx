@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { format } from "date-fns";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -20,6 +21,7 @@ interface Bill {
   title: string;
   amount: number;
   dueDate: string;
+  paymentDueDate: Date;
   status: "pending" | "paid";
   splitBetween: number;
   selectedProfiles: number[];
@@ -57,6 +59,12 @@ export const BillItem = ({ bill, onUpdate, onDelete, onToggleStatus }: BillItemP
             placeholder="Monto"
           />
           <Input
+            type="date"
+            value={editedBill.paymentDueDate.toISOString().split('T')[0]}
+            onChange={(e) => setEditedBill({ ...editedBill, paymentDueDate: new Date(e.target.value) })}
+            placeholder="Fecha límite de pago"
+          />
+          <Input
             type="number"
             value={editedBill.splitBetween}
             onChange={(e) => setEditedBill({ ...editedBill, splitBetween: parseInt(e.target.value) })}
@@ -79,6 +87,9 @@ export const BillItem = ({ bill, onUpdate, onDelete, onToggleStatus }: BillItemP
             <h3 className="font-medium">{bill.title}</h3>
             <p className="text-sm text-muted-foreground">
               ${bill.amount} - Dividido entre {bill.splitBetween}
+            </p>
+            <p className="text-sm text-muted-foreground">
+              Fecha límite: {format(new Date(bill.paymentDueDate), 'dd/MM/yyyy')}
             </p>
           </div>
           <div className="flex items-center space-x-2">

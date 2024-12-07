@@ -1,5 +1,6 @@
-import { Settings as SettingsIcon } from "lucide-react";
+import { Settings as SettingsIcon, Moon } from "lucide-react";
 import { Card } from "@/components/ui/card";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import {
   SidebarProvider,
   Sidebar,
@@ -13,10 +14,11 @@ import { ProfilesSection } from "@/components/Settings/ProfilesSection";
 import { useState } from "react";
 
 const Settings = () => {
-  const [currentSection, setCurrentSection] = useState<"profiles">("profiles");
+  const [currentSection, setCurrentSection] = useState<"profiles" | "appearance">("profiles");
 
   const menuItems = [
     { id: "profiles" as const, label: "Perfiles", icon: SettingsIcon },
+    { id: "appearance" as const, label: "Apariencia", icon: Moon },
   ];
 
   return (
@@ -47,6 +49,15 @@ const Settings = () => {
           <main className="flex-1 p-6 relative z-0">
             <Card className="p-6">
               {currentSection === "profiles" && <ProfilesSection />}
+              {currentSection === "appearance" && (
+                <div className="space-y-4">
+                  <h3 className="text-lg font-semibold">Tema</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Selecciona el tema de la aplicación
+                  </p>
+                  <ThemeToggle />
+                </div>
+              )}
             </Card>
           </main>
         </div>

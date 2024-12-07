@@ -21,6 +21,7 @@ interface Bill {
   title: string;
   amount: number;
   dueDate: string;
+  paymentDueDate: Date;
   status: "pending" | "paid";
   splitBetween: number;
   selectedProfiles: number[];
@@ -33,7 +34,8 @@ export const BillsSection = () => {
       id: 1, 
       title: "Electricidad", 
       amount: 120, 
-      dueDate: "25 Marzo", 
+      dueDate: "25 Marzo",
+      paymentDueDate: new Date('2024-03-25'),
       status: "pending",
       splitBetween: profiles.length || 1,
       selectedProfiles: profiles.map(p => p.id)
@@ -42,7 +44,8 @@ export const BillsSection = () => {
       id: 2, 
       title: "Internet", 
       amount: 80, 
-      dueDate: "28 Marzo", 
+      dueDate: "28 Marzo",
+      paymentDueDate: new Date('2024-03-28'),
       status: "paid",
       splitBetween: profiles.length || 1,
       selectedProfiles: profiles.map(p => p.id)
@@ -51,13 +54,19 @@ export const BillsSection = () => {
       id: 3, 
       title: "Agua", 
       amount: 60, 
-      dueDate: "1 Abril", 
+      dueDate: "1 Abril",
+      paymentDueDate: new Date('2024-04-01'),
       status: "pending",
       splitBetween: profiles.length || 1,
       selectedProfiles: profiles.map(p => p.id)
     },
   ]);
-  const [newBill, setNewBill] = useState({ title: "", amount: "", splitBetween: "1" });
+  const [newBill, setNewBill] = useState({ 
+    title: "", 
+    amount: "", 
+    splitBetween: "1",
+    paymentDueDate: new Date().toISOString().split('T')[0]
+  });
   const [isOpen, setIsOpen] = useState(false);
 
   const handleAddBill = (e: React.FormEvent) => {
@@ -72,13 +81,14 @@ export const BillsSection = () => {
       title: newBill.title,
       amount: parseFloat(newBill.amount),
       dueDate: "Próximo mes",
+      paymentDueDate: new Date(newBill.paymentDueDate),
       status: "pending" as const,
       splitBetween: parseInt(newBill.splitBetween),
       selectedProfiles: profiles.map(p => p.id)
     };
 
     setBills([...bills, bill]);
-    setNewBill({ title: "", amount: "", splitBetween: "1" });
+    setNewBill({ title: "", amount: "", splitBetween: "1", paymentDueDate: new Date().toISOString().split('T')[0] });
     setIsOpen(false);
     toast.success("Factura agregada exitosamente");
   };
@@ -87,6 +97,7 @@ export const BillsSection = () => {
     setBills(bills.map(bill => 
       bill.id === updatedBill.id ? updatedBill : bill
     ));
+    toast.success("Factura actualizada exitosamente");
   };
 
   const handleDeleteBill = (billId: number) => {
@@ -141,6 +152,15 @@ export const BillsSection = () => {
                   value={newBill.amount}
                   onChange={(e) => setNewBill({ ...newBill, amount: e.target.value })}
                   placeholder="Monto de la factura"
+                />
+              </div>
+              <div>
+                <Label htmlFor="paymentDueDate">Fecha límite de pago</Label>
+                <Input
+                  id="paymentDueDate"
+                  type="date"
+                  value={newBill.paymentDueDate}
+                  onChange={(e) => setNewBill({ ...newBill, paymentDueDate: e.target.value })}
                 />
               </div>
               <div>
