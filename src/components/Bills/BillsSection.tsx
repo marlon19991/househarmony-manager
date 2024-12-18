@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -7,6 +7,8 @@ import { Plus } from "lucide-react";
 import { toast } from "sonner";
 import useProfiles from "@/hooks/useProfiles";
 import { BillItem } from "./BillItem";
+import { supabase } from "@/integrations/supabase/client";
+import { AssigneeField } from "@/components/RecurringTasks/FormFields/AssigneeField";
 import {
   Sheet,
   SheetContent,
@@ -24,96 +26,170 @@ interface Bill {
   paymentDueDate: Date;
   status: "pending" | "paid";
   splitBetween: number;
-  selectedProfiles: number[];
+  selectedProfiles: string[];
 }
 
 export const BillsSection = () => {
   const { profiles } = useProfiles();
-  const [bills, setBills] = useState<Bill[]>([
-    { 
-      id: 1, 
-      title: "Electricidad", 
-      amount: 120, 
-      dueDate: "25 Marzo",
-      paymentDueDate: new Date('2024-03-25'),
-      status: "pending",
-      splitBetween: profiles.length || 1,
-      selectedProfiles: profiles.map(p => p.id)
-    },
-    { 
-      id: 2, 
-      title: "Internet", 
-      amount: 80, 
-      dueDate: "28 Marzo",
-      paymentDueDate: new Date('2024-03-28'),
-      status: "paid",
-      splitBetween: profiles.length || 1,
-      selectedProfiles: profiles.map(p => p.id)
-    },
-    { 
-      id: 3, 
-      title: "Agua", 
-      amount: 60, 
-      dueDate: "1 Abril",
-      paymentDueDate: new Date('2024-04-01'),
-      status: "pending",
-      splitBetween: profiles.length || 1,
-      selectedProfiles: profiles.map(p => p.id)
-    },
-  ]);
+  const [bills, setBills] = useState<Bill[]>([]);
   const [newBill, setNewBill] = useState({ 
     title: "", 
     amount: "", 
     splitBetween: "1",
-    paymentDueDate: new Date().toISOString().split('T')[0]
+    paymentDueDate: new Date().toISOString().split('T')[0],
+    selectedProfiles: [] as string[]
   });
   const [isOpen, setIsOpen] = useState(false);
 
-  const handleAddBill = (e: React.FormEvent) => {
+  useEffect(() => {
+    fetchBills();
+  }, []);
+
+  const fetchBills = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('bills')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+
+      const formattedBills = data.map(bill => ({
+        id: bill.id,
+        title: bill.title,
+        amount: bill.amount,
+        dueDate: new Date(bill.payment_due_date).toLocaleDateString(),
+        paymentDueDate: new Date(bill.payment_due_date),
+        status: bill.status as "pending" | "paid",
+        splitBetween: bill.split_between,
+        selectedProfiles: bill.selected_profiles || []
+      }));
+
+      setBills(formattedBills);
+    } catch (error) {
+      console.error('Error fetching bills:', error);
+      toast.error('Error al cargar las facturas');
+    }
+  };
+
+  const handleAddBill = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newBill.title || !newBill.amount) {
       toast.error("Por favor completa todos los campos de la factura");
       return;
     }
 
-    const bill = {
-      id: Date.now(),
-      title: newBill.title,
-      amount: parseFloat(newBill.amount),
-      dueDate: "Próximo mes",
-      paymentDueDate: new Date(newBill.paymentDueDate),
-      status: "pending" as const,
-      splitBetween: parseInt(newBill.splitBetween),
-      selectedProfiles: profiles.map(p => p.id)
-    };
+    try {
+      const { data, error } = await supabase
+        .from('bills')
+        .insert([{
+          title: newBill.title,
+          amount: parseFloat(newBill.amount),
+          payment_due_date: new Date(newBill.paymentDueDate),
+          status: 'pending',
+          split_between: parseInt(newBill.splitBetween),
+          selected_profiles: newBill.selectedProfiles
+        }])
+        .select()
+        .single();
 
-    setBills([...bills, bill]);
-    setNewBill({ title: "", amount: "", splitBetween: "1", paymentDueDate: new Date().toISOString().split('T')[0] });
-    setIsOpen(false);
-    toast.success("Factura agregada exitosamente");
+      if (error) throw error;
+
+      const formattedBill = {
+        id: data.id,
+        title: data.title,
+        amount: data.amount,
+        dueDate: new Date(data.payment_due_date).toLocaleDateString(),
+        paymentDueDate: new Date(data.payment_due_date),
+        status: data.status as "pending" | "paid",
+        splitBetween: data.split_between,
+        selectedProfiles: data.selected_profiles || []
+      };
+
+      setBills([formattedBill, ...bills]);
+      setNewBill({ 
+        title: "", 
+        amount: "", 
+        splitBetween: "1", 
+        paymentDueDate: new Date().toISOString().split('T')[0],
+        selectedProfiles: []
+      });
+      setIsOpen(false);
+      toast.success("Factura agregada exitosamente");
+    } catch (error) {
+      console.error('Error adding bill:', error);
+      toast.error('Error al agregar la factura');
+    }
   };
 
-  const handleUpdateBill = (updatedBill: Bill) => {
-    setBills(bills.map(bill => 
-      bill.id === updatedBill.id ? updatedBill : bill
-    ));
-    toast.success("Factura actualizada exitosamente");
+  const handleUpdateBill = async (updatedBill: Bill) => {
+    try {
+      const { error } = await supabase
+        .from('bills')
+        .update({
+          title: updatedBill.title,
+          amount: updatedBill.amount,
+          payment_due_date: updatedBill.paymentDueDate,
+          split_between: updatedBill.splitBetween,
+          selected_profiles: updatedBill.selectedProfiles
+        })
+        .eq('id', updatedBill.id);
+
+      if (error) throw error;
+
+      setBills(bills.map(bill => 
+        bill.id === updatedBill.id ? updatedBill : bill
+      ));
+      toast.success("Factura actualizada exitosamente");
+    } catch (error) {
+      console.error('Error updating bill:', error);
+      toast.error('Error al actualizar la factura');
+    }
   };
 
-  const handleDeleteBill = (billId: number) => {
-    setBills(bills.filter(bill => bill.id !== billId));
-    toast.success("Factura eliminada exitosamente");
+  const handleDeleteBill = async (billId: number) => {
+    try {
+      const { error } = await supabase
+        .from('bills')
+        .delete()
+        .eq('id', billId);
+
+      if (error) throw error;
+
+      setBills(bills.filter(bill => bill.id !== billId));
+      toast.success("Factura eliminada exitosamente");
+    } catch (error) {
+      console.error('Error deleting bill:', error);
+      toast.error('Error al eliminar la factura');
+    }
   };
 
-  const toggleBillStatus = (billId: number) => {
-    setBills(bills.map(bill => {
-      if (bill.id === billId) {
-        const newStatus = bill.status === "paid" ? "pending" : "paid";
-        toast.success(`Factura marcada como ${newStatus === "paid" ? "pagada" : "pendiente"}`);
-        return { ...bill, status: newStatus };
-      }
-      return bill;
-    }));
+  const toggleBillStatus = async (billId: number) => {
+    const bill = bills.find(b => b.id === billId);
+    if (!bill) return;
+
+    const newStatus = bill.status === "paid" ? "pending" : "paid";
+
+    try {
+      const { error } = await supabase
+        .from('bills')
+        .update({ status: newStatus })
+        .eq('id', billId);
+
+      if (error) throw error;
+
+      setBills(bills.map(b => {
+        if (b.id === billId) {
+          return { ...b, status: newStatus };
+        }
+        return b;
+      }));
+      
+      toast.success(`Factura marcada como ${newStatus === "paid" ? "pagada" : "pendiente"}`);
+    } catch (error) {
+      console.error('Error updating bill status:', error);
+      toast.error('Error al actualizar el estado de la factura');
+    }
   };
 
   return (
@@ -163,17 +239,10 @@ export const BillsSection = () => {
                   onChange={(e) => setNewBill({ ...newBill, paymentDueDate: e.target.value })}
                 />
               </div>
-              <div>
-                <Label htmlFor="splitBetween">Dividir entre</Label>
-                <Input
-                  id="splitBetween"
-                  type="number"
-                  min="1"
-                  value={newBill.splitBetween}
-                  onChange={(e) => setNewBill({ ...newBill, splitBetween: e.target.value })}
-                  placeholder="Número de personas"
-                />
-              </div>
+              <AssigneeField
+                selectedAssignees={newBill.selectedProfiles}
+                onChange={(profiles) => setNewBill({ ...newBill, selectedProfiles: profiles })}
+              />
               <Button type="submit" className="w-full">
                 Agregar Factura
               </Button>

@@ -3,6 +3,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { format } from "date-fns";
+import { AssigneeField } from "@/components/RecurringTasks/FormFields/AssigneeField";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -24,7 +25,7 @@ interface Bill {
   paymentDueDate: Date;
   status: "pending" | "paid";
   splitBetween: number;
-  selectedProfiles: number[];
+  selectedProfiles: string[];
 }
 
 interface BillItemProps {
@@ -42,6 +43,10 @@ export const BillItem = ({ bill, onUpdate, onDelete, onToggleStatus }: BillItemP
     onUpdate(editedBill);
     setIsEditing(false);
   };
+
+  const amountPerPerson = editedBill.selectedProfiles.length > 0 
+    ? editedBill.amount / editedBill.selectedProfiles.length 
+    : editedBill.amount;
 
   return (
     <Card className="p-4">
@@ -64,11 +69,9 @@ export const BillItem = ({ bill, onUpdate, onDelete, onToggleStatus }: BillItemP
             onChange={(e) => setEditedBill({ ...editedBill, paymentDueDate: new Date(e.target.value) })}
             placeholder="Fecha límite de pago"
           />
-          <Input
-            type="number"
-            value={editedBill.splitBetween}
-            onChange={(e) => setEditedBill({ ...editedBill, splitBetween: parseInt(e.target.value) })}
-            placeholder="Dividir entre"
+          <AssigneeField
+            selectedAssignees={editedBill.selectedProfiles}
+            onChange={(profiles) => setEditedBill({ ...editedBill, selectedProfiles: profiles })}
           />
           <div className="flex justify-end space-x-2">
             <Button onClick={handleSave} size="sm">
@@ -86,10 +89,13 @@ export const BillItem = ({ bill, onUpdate, onDelete, onToggleStatus }: BillItemP
           <div>
             <h3 className="font-medium">{bill.title}</h3>
             <p className="text-sm text-muted-foreground">
-              ${bill.amount} - Dividido entre {bill.splitBetween}
+              Total: ${bill.amount.toFixed(2)} - ${amountPerPerson.toFixed(2)} por persona
             </p>
             <p className="text-sm text-muted-foreground">
               Fecha límite: {format(new Date(bill.paymentDueDate), 'dd/MM/yyyy')}
+            </p>
+            <p className="text-sm text-muted-foreground">
+              Dividido entre: {bill.selectedProfiles.length} persona(s)
             </p>
           </div>
           <div className="flex items-center space-x-2">
