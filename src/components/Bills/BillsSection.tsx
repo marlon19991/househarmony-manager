@@ -82,14 +82,14 @@ export const BillsSection = () => {
     try {
       const { data, error } = await supabase
         .from('bills')
-        .insert([{
+        .insert({
           title: newBill.title,
           amount: parseFloat(newBill.amount),
-          payment_due_date: new Date(newBill.paymentDueDate),
+          payment_due_date: new Date(newBill.paymentDueDate).toISOString(),
           status: 'pending',
           split_between: parseInt(newBill.splitBetween),
           selected_profiles: newBill.selectedProfiles
-        }])
+        })
         .select()
         .single();
 
@@ -129,7 +129,7 @@ export const BillsSection = () => {
         .update({
           title: updatedBill.title,
           amount: updatedBill.amount,
-          payment_due_date: updatedBill.paymentDueDate,
+          payment_due_date: updatedBill.paymentDueDate.toISOString(),
           split_between: updatedBill.splitBetween,
           selected_profiles: updatedBill.selectedProfiles
         })

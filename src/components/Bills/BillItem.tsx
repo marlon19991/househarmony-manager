@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { format } from "date-fns";
+import { format, differenceInDays } from "date-fns";
 import { AssigneeField } from "@/components/RecurringTasks/FormFields/AssigneeField";
 import {
   AlertDialog,
@@ -16,6 +16,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { Pencil, Trash2, Check, X } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface Bill {
   id: number;
@@ -48,8 +49,21 @@ export const BillItem = ({ bill, onUpdate, onDelete, onToggleStatus }: BillItemP
     ? editedBill.amount / editedBill.selectedProfiles.length 
     : editedBill.amount;
 
+  const getDueDateColor = (dueDate: Date) => {
+    const today = new Date();
+    const daysUntilDue = differenceInDays(dueDate, today);
+
+    if (daysUntilDue < 0) {
+      return "bg-red-100 border-red-200"; // Vencida
+    } else if (daysUntilDue <= 5) {
+      return "bg-orange-100 border-orange-200"; // Próxima a vencer
+    } else {
+      return "bg-green-100 border-green-200"; // Con tiempo
+    }
+  };
+
   return (
-    <Card className="p-4">
+    <Card className={cn("p-4", getDueDateColor(bill.paymentDueDate))}>
       {isEditing ? (
         <div className="space-y-4">
           <Input
