@@ -1,8 +1,9 @@
 import { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { format, differenceInDays, addMonths } from "date-fns";
-import { Pencil, Trash2, Check } from "lucide-react";
+import { format, differenceInDays, addMonths, isBefore } from "date-fns";
+import { es } from "date-fns/locale";
+import { Pencil, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { BillForm } from "./BillForm";
 import { Badge } from "@/components/ui/badge";
@@ -66,16 +67,23 @@ export const BillItem = ({ bill, onUpdate, onDelete, onToggleStatus }: BillItemP
 
   const getStatusText = () => {
     const status = getBillStatus();
-    switch (status) {
-      case "paid":
-        return "Pagada";
-      case "overdue":
-        return "Vencida";
-      case "pending":
-        return "Pendiente";
-      default:
-        return "Próxima";
+    const today = new Date();
+    
+    if (status === "paid") {
+      return "Pagada";
     }
+    
+    if (status === "overdue") {
+      const daysOverdue = Math.abs(differenceInDays(bill.paymentDueDate, today));
+      const monthName = format(bill.paymentDueDate, 'MMMM', { locale: es });
+      return `Vencida (${daysOverdue} días) - Factura de ${monthName}`;
+    }
+    
+    if (status === "pending") {
+      return "Próxima a vencer";
+    }
+    
+    return "Próxima";
   };
 
   const getStatusColor = () => {
@@ -92,17 +100,21 @@ export const BillItem = ({ bill, onUpdate, onDelete, onToggleStatus }: BillItemP
     }
   };
 
-  const handlePayment = () => {
-    // Create a new bill for next month when marking as paid
-    if (bill.status !== "paid") {
-      const nextMonthDueDate = addMonths(bill.paymentDueDate, 1);
-      const newBill = {
-        ...bill,
-        paymentDueDate: nextMonthDueDate,
-        status: "pending" as const,
-      };
-      onUpdate(newBill);
+  const getNextPaymentInfo = () => {
+    const today = new Date();
+    let nextPaymentDate;
+
+    if (bill.status === "paid") {
+      nextPaymentDate = addMonths(bill.paymentDueDate, 1);
+      return `Próximo pago: ${format(nextPaymentDate, "dd 'de' MMMM, yyyy", { locale: es })}`;
+    } else if (isBefore(bill.paymentDueDate, today)) {
+      return "Pago vencido";
+    } else {
+      return `Fecha límite: ${format(bill.paymentDueDate, "dd 'de' MMMM, yyyy", { locale: es })}`;
     }
+  };
+
+  const handlePayment = () => {
     onToggleStatus(bill.id);
   };
 
@@ -147,7 +159,7 @@ export const BillItem = ({ bill, onUpdate, onDelete, onToggleStatus }: BillItemP
               Total: ${bill.amount.toFixed(2)} - ${amountPerPerson.toFixed(2)} por persona
             </p>
             <p className="text-sm text-muted-foreground">
-              Fecha límite: {format(bill.paymentDueDate, 'dd/MM/yyyy')}
+              {getNextPaymentInfo()}
             </p>
             <p className="text-sm text-muted-foreground">
               Dividido entre: {bill.selectedProfiles.length} persona(s)
