@@ -9,9 +9,16 @@ interface BillsListProps {
   onUpdate: (bill: Bill) => void;
   onDelete: (id: number) => void;
   onToggleStatus: (id: number) => void;
+  onUndoPay: (id: number) => void;
 }
 
-export const BillsList = ({ bills, onUpdate, onDelete, onToggleStatus }: BillsListProps) => {
+export const BillsList = ({ 
+  bills, 
+  onUpdate, 
+  onDelete, 
+  onToggleStatus,
+  onUndoPay 
+}: BillsListProps) => {
   const currentDate = new Date();
   const previousMonth = addMonths(currentDate, -1);
 
@@ -19,13 +26,14 @@ export const BillsList = ({ bills, onUpdate, onDelete, onToggleStatus }: BillsLi
     const isPaid = bill.status === "paid";
     const billDate = new Date(bill.paymentDueDate);
     
-    // Para facturas pagadas del mes anterior
-    if (isPaid && isSameMonth(billDate, previousMonth)) {
-      if (!acc.previousPaid) acc.previousPaid = [];
-      acc.previousPaid.push(bill);
+    // Para facturas pagadas (mostrar todas las pagadas)
+    if (isPaid) {
+      const monthKey = format(billDate, 'MMMM yyyy', { locale: es });
+      if (!acc[monthKey]) acc[monthKey] = [];
+      acc[monthKey].push(bill);
     } 
     // Para facturas pendientes (mostrar todas las pendientes)
-    else if (!isPaid) {
+    else {
       if (!acc.currentPending) acc.currentPending = [];
       acc.currentPending.push(bill);
     }
@@ -47,6 +55,7 @@ export const BillsList = ({ bills, onUpdate, onDelete, onToggleStatus }: BillsLi
               onUpdate={onUpdate}
               onDelete={onDelete}
               onToggleStatus={onToggleStatus}
+              onUndoPay={onUndoPay}
             />
           ))}
         </div>
@@ -54,22 +63,27 @@ export const BillsList = ({ bills, onUpdate, onDelete, onToggleStatus }: BillsLi
     );
   };
 
-  const previousMonthTitle = `Facturas ${format(previousMonth, 'MMMM yyyy', { locale: es })} - Pagadas`;
-  const currentMonthTitle = `Facturas Pendientes`;
-
   return (
     <div className="space-y-8">
       {renderMonthlySection(
-        previousMonthTitle,
-        categorizedBills.previousPaid,
-        "text-green-600"
-      )}
-      <Separator className="my-8" />
-      {renderMonthlySection(
-        currentMonthTitle,
+        "Facturas Pendientes",
         categorizedBills.currentPending,
         "text-blue-600"
       )}
+      <Separator className="my-8" />
+      {Object.entries(categorizedBills)
+        .filter(([key]) => key !== 'currentPending')
+        .sort((a, b) => new Date(b[0]).getTime() - new Date(a[0]).getTime())
+        .map(([month, bills]) => (
+          <div key={month}>
+            {renderMonthlySection(
+              `Facturas ${month} - Pagadas`,
+              bills,
+              "text-green-600"
+            )}
+            <Separator className="my-8" />
+          </div>
+        ))}
     </div>
   );
 };

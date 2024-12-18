@@ -17,7 +17,7 @@ interface BillActionsProps {
   onToggleStatus: () => void;
   onEdit: () => void;
   onDelete: () => void;
-  onUndoPay?: () => void;
+  onUndoPay: () => void;
 }
 
 export const BillActions = ({ 
@@ -73,7 +73,7 @@ export const BillActions = ({
         </AlertDialogContent>
       </AlertDialog>
 
-      {status === "paid" && onUndoPay && (
+      {status === "paid" && (
         <Button
           variant="outline"
           size="sm"
