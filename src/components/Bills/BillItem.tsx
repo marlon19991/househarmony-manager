@@ -1,10 +1,11 @@
 import { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { format, differenceInDays } from "date-fns";
-import { Pencil, Trash2, Check, X } from "lucide-react";
+import { format, differenceInDays, addMonths } from "date-fns";
+import { Pencil, Trash2, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { BillForm } from "./BillForm";
+import { Badge } from "@/components/ui/badge";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -81,14 +82,28 @@ export const BillItem = ({ bill, onUpdate, onDelete, onToggleStatus }: BillItemP
     const status = getBillStatus();
     switch (status) {
       case "paid":
-        return "text-green-500";
+        return "bg-green-500";
       case "overdue":
-        return "text-red-500";
+        return "bg-red-500";
       case "pending":
-        return "text-amber-500";
+        return "bg-amber-500";
       default:
-        return "text-green-500";
+        return "bg-green-500";
     }
+  };
+
+  const handlePayment = () => {
+    // Create a new bill for next month when marking as paid
+    if (bill.status !== "paid") {
+      const nextMonthDueDate = addMonths(bill.paymentDueDate, 1);
+      const newBill = {
+        ...bill,
+        paymentDueDate: nextMonthDueDate,
+        status: "pending" as const,
+      };
+      onUpdate(newBill);
+    }
+    onToggleStatus(bill.id);
   };
 
   const amountPerPerson = bill.selectedProfiles.length > 0 
@@ -121,8 +136,13 @@ export const BillItem = ({ bill, onUpdate, onDelete, onToggleStatus }: BillItemP
         />
       ) : (
         <div className="flex items-center justify-between">
-          <div>
-            <h3 className="font-medium">{bill.title}</h3>
+          <div className="space-y-2">
+            <div className="flex items-center gap-2">
+              <h3 className="font-medium">{bill.title}</h3>
+              <Badge variant="secondary" className={cn("text-white", getStatusColor())}>
+                {getStatusText()}
+              </Badge>
+            </div>
             <p className="text-sm text-muted-foreground">
               Total: ${bill.amount.toFixed(2)} - ${amountPerPerson.toFixed(2)} por persona
             </p>
@@ -133,42 +153,44 @@ export const BillItem = ({ bill, onUpdate, onDelete, onToggleStatus }: BillItemP
               Dividido entre: {bill.selectedProfiles.length} persona(s)
             </p>
           </div>
-          <div className="flex items-center space-x-2">
+          <div className="flex flex-col gap-2">
             <Button
-              variant="ghost"
-              onClick={() => onToggleStatus(bill.id)}
-              className={getStatusColor()}
+              variant="outline"
+              size="sm"
+              onClick={handlePayment}
             >
-              {getStatusText()}
+              {bill.status === "paid" ? "Marcar como pendiente" : "Marcar como pagada"}
             </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => setIsEditing(true)}
-            >
-              <Pencil className="h-4 w-4" />
-            </Button>
-            <AlertDialog>
-              <AlertDialogTrigger asChild>
-                <Button variant="ghost" size="icon" className="text-destructive">
-                  <Trash2 className="h-4 w-4" />
-                </Button>
-              </AlertDialogTrigger>
-              <AlertDialogContent>
-                <AlertDialogHeader>
-                  <AlertDialogTitle>¿Estás seguro?</AlertDialogTitle>
-                  <AlertDialogDescription>
-                    Esta acción no se puede deshacer. Se eliminará la factura permanentemente.
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                  <AlertDialogAction onClick={() => onDelete(bill.id)}>
-                    Eliminar
-                  </AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
+            <div className="flex gap-2">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setIsEditing(true)}
+              >
+                <Pencil className="h-4 w-4" />
+              </Button>
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button variant="ghost" size="icon" className="text-destructive">
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>¿Estás seguro?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      Esta acción no se puede deshacer. Se eliminará la factura permanentemente.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                    <AlertDialogAction onClick={() => onDelete(bill.id)}>
+                      Eliminar
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            </div>
           </div>
         </div>
       )}
