@@ -1,12 +1,11 @@
 import { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { format, differenceInDays, addMonths, isBefore } from "date-fns";
-import { es } from "date-fns/locale";
 import { Pencil, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { BillForm } from "./BillForm";
-import { Badge } from "@/components/ui/badge";
+import { BillStatus } from "./BillStatus";
+import { BillDates } from "./BillDates";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -40,87 +39,16 @@ interface BillItemProps {
 export const BillItem = ({ bill, onUpdate, onDelete, onToggleStatus }: BillItemProps) => {
   const [isEditing, setIsEditing] = useState(false);
 
-  const getBillStatus = () => {
-    if (bill.status === "paid") return "paid";
-    
-    const today = new Date();
-    const daysUntilDue = differenceInDays(bill.paymentDueDate, today);
-    
-    if (daysUntilDue < 0) return "overdue";
-    if (daysUntilDue <= 5) return "pending";
-    return "upcoming";
-  };
-
   const getBorderColor = () => {
-    const status = getBillStatus();
-    switch (status) {
-      case "paid":
-        return "border-green-500";
-      case "overdue":
-        return "border-red-500";
-      case "pending":
-        return "border-orange-500";
-      default:
-        return "border-green-500";
-    }
-  };
-
-  const getStatusText = () => {
-    const status = getBillStatus();
+    if (bill.status === "paid") return "border-green-500";
+    
     const today = new Date();
+    const daysUntilDue = Math.floor((bill.paymentDueDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
     
-    if (status === "paid") {
-      return "Pagada";
-    }
-    
-    if (status === "overdue") {
-      const daysOverdue = Math.abs(differenceInDays(bill.paymentDueDate, today));
-      const monthName = format(bill.paymentDueDate, 'MMMM', { locale: es });
-      return `Vencida (${daysOverdue} días) - Factura de ${monthName}`;
-    }
-    
-    if (status === "pending") {
-      return "Próxima a vencer";
-    }
-    
-    return "Próxima";
+    if (daysUntilDue < 0) return "border-red-500";
+    if (daysUntilDue <= 5) return "border-orange-500";
+    return "border-green-500";
   };
-
-  const getStatusColor = () => {
-    const status = getBillStatus();
-    switch (status) {
-      case "paid":
-        return "bg-green-500";
-      case "overdue":
-        return "bg-red-500";
-      case "pending":
-        return "bg-amber-500";
-      default:
-        return "bg-green-500";
-    }
-  };
-
-  const getNextPaymentInfo = () => {
-    const today = new Date();
-    let nextPaymentDate;
-
-    if (bill.status === "paid") {
-      nextPaymentDate = addMonths(bill.paymentDueDate, 1);
-      return `Próximo pago: ${format(nextPaymentDate, "dd 'de' MMMM, yyyy", { locale: es })}`;
-    } else if (isBefore(bill.paymentDueDate, today)) {
-      return "Pago vencido";
-    } else {
-      return `Fecha límite: ${format(bill.paymentDueDate, "dd 'de' MMMM, yyyy", { locale: es })}`;
-    }
-  };
-
-  const handlePayment = () => {
-    onToggleStatus(bill.id);
-  };
-
-  const amountPerPerson = bill.selectedProfiles.length > 0 
-    ? bill.amount / bill.selectedProfiles.length 
-    : bill.amount;
 
   const handleUpdate = (formData: any) => {
     onUpdate({
@@ -133,6 +61,10 @@ export const BillItem = ({ bill, onUpdate, onDelete, onToggleStatus }: BillItemP
     });
     setIsEditing(false);
   };
+
+  const amountPerPerson = bill.selectedProfiles.length > 0 
+    ? bill.amount / bill.selectedProfiles.length 
+    : bill.amount;
 
   return (
     <Card className={cn("p-4 border-2", getBorderColor())}>
@@ -151,16 +83,18 @@ export const BillItem = ({ bill, onUpdate, onDelete, onToggleStatus }: BillItemP
           <div className="space-y-2">
             <div className="flex items-center gap-2">
               <h3 className="font-medium">{bill.title}</h3>
-              <Badge variant="secondary" className={cn("text-white", getStatusColor())}>
-                {getStatusText()}
-              </Badge>
+              <BillStatus 
+                status={bill.status}
+                paymentDueDate={bill.paymentDueDate}
+              />
             </div>
             <p className="text-sm text-muted-foreground">
               Total: ${bill.amount.toFixed(2)} - ${amountPerPerson.toFixed(2)} por persona
             </p>
-            <p className="text-sm text-muted-foreground">
-              {getNextPaymentInfo()}
-            </p>
+            <BillDates 
+              paymentDueDate={bill.paymentDueDate}
+              status={bill.status}
+            />
             <p className="text-sm text-muted-foreground">
               Dividido entre: {bill.selectedProfiles.length} persona(s)
             </p>
@@ -169,7 +103,7 @@ export const BillItem = ({ bill, onUpdate, onDelete, onToggleStatus }: BillItemP
             <Button
               variant="outline"
               size="sm"
-              onClick={handlePayment}
+              onClick={() => onToggleStatus(bill.id)}
             >
               {bill.status === "paid" ? "Marcar como pendiente" : "Marcar como pagada"}
             </Button>
