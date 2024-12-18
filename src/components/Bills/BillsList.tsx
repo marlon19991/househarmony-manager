@@ -1,7 +1,7 @@
 import { BillItem } from "./BillItem";
 import { Card } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { format } from "date-fns";
+import { format, isSameMonth, addMonths, isAfter, isBefore, startOfMonth } from "date-fns";
 import { es } from "date-fns/locale";
 
 interface Bill {
@@ -23,17 +23,20 @@ interface BillsListProps {
 }
 
 export const BillsList = ({ bills, onUpdate, onDelete, onToggleStatus }: BillsListProps) => {
-  const currentMonth = new Date();
-  const previousMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1);
+  const currentDate = new Date();
+  const previousMonth = addMonths(currentDate, -1);
 
   const categorizedBills = bills.reduce((acc: Record<string, Bill[]>, bill) => {
     const isPaid = bill.status === "paid";
-    const billMonth = new Date(bill.paymentDueDate).getMonth();
+    const billDate = new Date(bill.paymentDueDate);
     
-    if (isPaid && billMonth === previousMonth.getMonth()) {
+    // Para facturas pagadas del mes anterior
+    if (isPaid && isSameMonth(billDate, previousMonth)) {
       if (!acc.previousPaid) acc.previousPaid = [];
       acc.previousPaid.push(bill);
-    } else if (!isPaid && billMonth === currentMonth.getMonth()) {
+    } 
+    // Para facturas pendientes del mes actual
+    else if (!isPaid && isSameMonth(billDate, currentDate)) {
       if (!acc.currentPending) acc.currentPending = [];
       acc.currentPending.push(bill);
     }
@@ -63,7 +66,7 @@ export const BillsList = ({ bills, onUpdate, onDelete, onToggleStatus }: BillsLi
   };
 
   const previousMonthTitle = `Facturas ${format(previousMonth, 'MMMM yyyy', { locale: es })} - Pagadas`;
-  const currentMonthTitle = `Facturas ${format(currentMonth, 'MMMM yyyy', { locale: es })} - Por Pagar`;
+  const currentMonthTitle = `Facturas ${format(currentDate, 'MMMM yyyy', { locale: es })} - Por Pagar`;
 
   return (
     <div className="space-y-8">

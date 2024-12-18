@@ -3,6 +3,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { BillsHeader } from "./BillsHeader";
 import { BillsList } from "./BillsList";
+import { addMonths } from "date-fns";
 
 interface Bill {
   id: number;
@@ -129,6 +130,44 @@ export const BillsSection = () => {
     }
   };
 
+  const createNextMonthBill = async (currentBill: Bill) => {
+    const nextMonthDate = addMonths(currentBill.paymentDueDate, 1);
+    
+    try {
+      const { data, error } = await supabase
+        .from('bills')
+        .insert({
+          title: currentBill.title,
+          amount: currentBill.amount,
+          payment_due_date: nextMonthDate.toISOString(),
+          status: 'pending',
+          split_between: currentBill.splitBetween,
+          selected_profiles: currentBill.selectedProfiles
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      const newBill = {
+        id: data.id,
+        title: data.title,
+        amount: data.amount,
+        dueDate: new Date(data.payment_due_date).toLocaleDateString(),
+        paymentDueDate: new Date(data.payment_due_date),
+        status: data.status as "pending" | "paid",
+        splitBetween: data.split_between,
+        selectedProfiles: data.selected_profiles || []
+      };
+
+      setBills(prevBills => [...prevBills, newBill]);
+      toast.success("Factura creada para el próximo mes");
+    } catch (error) {
+      console.error('Error creating next month bill:', error);
+      toast.error('Error al crear la factura para el próximo mes');
+    }
+  };
+
   const toggleBillStatus = async (billId: number) => {
     const bill = bills.find(b => b.id === billId);
     if (!bill) return;
@@ -142,6 +181,11 @@ export const BillsSection = () => {
         .eq('id', billId);
 
       if (error) throw error;
+
+      // Si la factura se está marcando como pagada, crear la del próximo mes
+      if (newStatus === "paid") {
+        await createNextMonthBill(bill);
+      }
 
       setBills(bills.map(b => {
         if (b.id === billId) {
