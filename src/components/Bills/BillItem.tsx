@@ -66,6 +66,25 @@ export const BillItem = ({ bill, onUpdate, onDelete, onToggleStatus }: BillItemP
     ? bill.amount / bill.selectedProfiles.length 
     : bill.amount;
 
+  const getStatusDialogContent = () => {
+    if (bill.status === "paid") {
+      return {
+        title: "¿Deseas marcar esta factura como pendiente?",
+        description: "Esto revertirá el estado de la factura a pendiente.",
+        actionText: "Marcar como pendiente",
+        variant: "outline" as const
+      };
+    }
+    return {
+      title: "¿Deseas marcar esta factura como pagada?",
+      description: "Esto creará automáticamente una nueva factura para el próximo mes.",
+      actionText: "Marcar como pagada",
+      variant: "default" as const
+    };
+  };
+
+  const dialogContent = getStatusDialogContent();
+
   return (
     <Card className={cn("p-4 border-l-4", getBorderColor())}>
       {isEditing ? (
@@ -107,13 +126,30 @@ export const BillItem = ({ bill, onUpdate, onDelete, onToggleStatus }: BillItemP
             )}
           </div>
           <div className="flex flex-col gap-2">
-            <Button
-              variant={bill.status === "paid" ? "outline" : "default"}
-              size="sm"
-              onClick={() => onToggleStatus(bill.id)}
-            >
-              {bill.status === "paid" ? "Marcar como pendiente" : "Marcar como pagada"}
-            </Button>
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button
+                  variant={dialogContent.variant}
+                  size="sm"
+                >
+                  {dialogContent.actionText}
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>{dialogContent.title}</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    {dialogContent.description}
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                  <AlertDialogAction onClick={() => onToggleStatus(bill.id)}>
+                    Confirmar
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
             <div className="flex gap-2">
               <Button
                 variant="ghost"
