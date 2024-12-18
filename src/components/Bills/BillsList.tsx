@@ -1,7 +1,4 @@
 import { BillItem } from "./BillItem";
-import { Separator } from "@/components/ui/separator";
-import { format } from "date-fns";
-import { es } from "date-fns/locale";
 import type { Bill } from "./utils/billsLogic";
 
 interface BillsListProps {
@@ -17,64 +14,28 @@ export const BillsList = ({
   onDelete, 
   onToggleStatus
 }: BillsListProps) => {
-  const categorizedBills = bills.reduce((acc: Record<string, Bill[]>, bill) => {
-    const isPaid = bill.status === "paid";
-    const billDate = new Date(bill.paymentDueDate);
-    
-    if (isPaid) {
-      const monthKey = format(billDate, 'MMMM yyyy', { locale: es });
-      if (!acc[monthKey]) acc[monthKey] = [];
-      acc[monthKey].push(bill);
-    } else {
-      if (!acc.currentPending) acc.currentPending = [];
-      acc.currentPending.push(bill);
-    }
-    
-    return acc;
-  }, {});
+  // Filter to only show pending bills
+  const pendingBills = bills.filter(bill => bill.status === "pending");
 
-  const renderMonthlySection = (title: string, bills: Bill[] | undefined, className: string) => {
-    if (!bills?.length) return null;
-
+  if (!pendingBills.length) {
     return (
-      <div className="space-y-3">
-        <h3 className={`text-lg font-semibold ${className}`}>{title}</h3>
-        <div className="space-y-3">
-          {bills.map((bill) => (
-            <BillItem
-              key={bill.id}
-              bill={bill}
-              onUpdate={onUpdate}
-              onDelete={onDelete}
-              onToggleStatus={onToggleStatus}
-            />
-          ))}
-        </div>
+      <div className="text-center text-gray-500 py-8">
+        No hay facturas pendientes
       </div>
     );
-  };
+  }
 
   return (
-    <div className="space-y-8">
-      {renderMonthlySection(
-        "Facturas Pendientes",
-        categorizedBills.currentPending,
-        "text-blue-600"
-      )}
-      <Separator className="my-8" />
-      {Object.entries(categorizedBills)
-        .filter(([key]) => key !== 'currentPending')
-        .sort((a, b) => new Date(b[0]).getTime() - new Date(a[0]).getTime())
-        .map(([month, bills]) => (
-          <div key={month}>
-            {renderMonthlySection(
-              `Facturas ${month} - Pagadas`,
-              bills,
-              "text-green-600"
-            )}
-            <Separator className="my-8" />
-          </div>
-        ))}
+    <div className="space-y-4">
+      {pendingBills.map((bill) => (
+        <BillItem
+          key={bill.id}
+          bill={bill}
+          onUpdate={onUpdate}
+          onDelete={onDelete}
+          onToggleStatus={onToggleStatus}
+        />
+      ))}
     </div>
   );
 };
