@@ -14,7 +14,8 @@ const AssigneeSelector = ({ currentAssignee, onAssigneeChange, completionPercent
   const { profiles } = useProfiles();
 
   const handleAssigneeChange = (newAssignee: string) => {
-    if (completionPercentage < 75) {
+    // Skip validation if current assignee is "Sin asignar"
+    if (currentAssignee !== "Sin asignar" && completionPercentage < 75) {
       toast.error("Debe completar al menos el 75% de las tareas antes de cambiar el responsable");
       return;
     }
