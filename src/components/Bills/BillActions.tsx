@@ -37,12 +37,12 @@ export const BillActions = ({
   if (status === "paid") return null;
 
   return (
-    <div className="flex items-center gap-2">
+    <div className="flex flex-col sm:flex-row w-full sm:w-auto gap-2 mt-4 sm:mt-0">
       <AlertDialog open={showPayConfirmation} onOpenChange={setShowPayConfirmation}>
         <Button
           variant="outline"
           size="sm"
-          className="text-green-600 hover:text-green-700 hover:bg-green-50"
+          className="text-green-600 hover:text-green-700 hover:bg-green-50 w-full sm:w-auto"
           onClick={() => setShowPayConfirmation(true)}
         >
           <CheckCircle className="mr-2 h-4 w-4" />
@@ -68,6 +68,7 @@ export const BillActions = ({
         variant="outline"
         size="sm"
         onClick={onEdit}
+        className="w-full sm:w-auto"
       >
         <Pencil className="mr-2 h-4 w-4" />
         Editar
@@ -76,7 +77,7 @@ export const BillActions = ({
       <Button
         variant="outline"
         size="sm"
-        className="text-red-600 hover:text-red-700 hover:bg-red-50"
+        className="text-red-600 hover:text-red-700 hover:bg-red-50 w-full sm:w-auto"
         onClick={onDelete}
       >
         <Trash2 className="mr-2 h-4 w-4" />
