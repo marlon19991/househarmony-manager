@@ -1,203 +1,87 @@
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
 import { BillsHeader } from "./BillsHeader";
 import { BillsList } from "./BillsList";
-import { addMonths } from "date-fns";
-
-interface Bill {
-  id: number;
-  title: string;
-  amount: number;
-  dueDate: string;
-  paymentDueDate: Date;
-  status: "pending" | "paid";
-  splitBetween: number;
-  selectedProfiles: string[];
-}
+import { 
+  fetchBills, 
+  createBill, 
+  updateBill, 
+  deleteBill, 
+  toggleBillStatus,
+  type Bill 
+} from "./utils/billsLogic";
 
 export const BillsSection = () => {
   const [bills, setBills] = useState<Bill[]>([]);
   const [isOpen, setIsOpen] = useState(false);
 
   useEffect(() => {
-    fetchBills();
+    loadBills();
   }, []);
 
-  const fetchBills = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('bills')
-        .select('*')
-        .order('payment_due_date', { ascending: true });
-
-      if (error) throw error;
-
-      const formattedBills = data.map(bill => ({
-        id: bill.id,
-        title: bill.title,
-        amount: bill.amount,
-        dueDate: new Date(bill.payment_due_date).toLocaleDateString(),
-        paymentDueDate: new Date(bill.payment_due_date),
-        status: bill.status as "pending" | "paid",
-        splitBetween: bill.split_between,
-        selectedProfiles: bill.selected_profiles || []
-      }));
-
-      setBills(formattedBills);
-    } catch (error) {
-      console.error('Error fetching bills:', error);
-      toast.error('Error al cargar las facturas');
-    }
+  const loadBills = async () => {
+    const fetchedBills = await fetchBills();
+    setBills(fetchedBills);
   };
 
   const handleAddBill = async (newBill: any) => {
     try {
-      const { data, error } = await supabase
-        .from('bills')
-        .insert({
-          title: newBill.title,
-          amount: parseFloat(newBill.amount),
-          payment_due_date: new Date(newBill.paymentDueDate).toISOString(),
-          status: 'pending',
-          split_between: newBill.selectedProfiles.length || 1,
-          selected_profiles: newBill.selectedProfiles
-        })
-        .select()
-        .single();
-
-      if (error) throw error;
-
-      const formattedBill = {
-        id: data.id,
-        title: data.title,
-        amount: data.amount,
-        dueDate: new Date(data.payment_due_date).toLocaleDateString(),
-        paymentDueDate: new Date(data.payment_due_date),
-        status: data.status as "pending" | "paid",
-        splitBetween: data.split_between,
-        selectedProfiles: data.selected_profiles || []
-      };
-
-      setBills([formattedBill, ...bills]);
+      const createdBill = await createBill(newBill);
+      setBills(prevBills => [createdBill, ...prevBills]);
       setIsOpen(false);
       toast.success("Factura agregada exitosamente");
     } catch (error) {
-      console.error('Error adding bill:', error);
-      toast.error('Error al agregar la factura');
+      // Error already handled in createBill
     }
   };
 
   const handleUpdateBill = async (updatedBill: Bill) => {
     try {
-      const { error } = await supabase
-        .from('bills')
-        .update({
-          title: updatedBill.title,
-          amount: updatedBill.amount,
-          payment_due_date: updatedBill.paymentDueDate.toISOString(),
-          split_between: updatedBill.splitBetween,
-          selected_profiles: updatedBill.selectedProfiles
-        })
-        .eq('id', updatedBill.id);
-
-      if (error) throw error;
-
-      setBills(bills.map(bill => 
-        bill.id === updatedBill.id ? updatedBill : bill
-      ));
+      await updateBill(updatedBill);
+      setBills(prevBills => 
+        prevBills.map(bill => bill.id === updatedBill.id ? updatedBill : bill)
+      );
       toast.success("Factura actualizada exitosamente");
     } catch (error) {
-      console.error('Error updating bill:', error);
-      toast.error('Error al actualizar la factura');
+      // Error already handled in updateBill
     }
   };
 
   const handleDeleteBill = async (billId: number) => {
     try {
-      const { error } = await supabase
-        .from('bills')
-        .delete()
-        .eq('id', billId);
-
-      if (error) throw error;
-
-      setBills(bills.filter(bill => bill.id !== billId));
+      await deleteBill(billId);
+      setBills(prevBills => prevBills.filter(bill => bill.id !== billId));
       toast.success("Factura eliminada exitosamente");
     } catch (error) {
-      console.error('Error deleting bill:', error);
-      toast.error('Error al eliminar la factura');
+      // Error already handled in deleteBill
     }
   };
 
-  const createNextMonthBill = async (currentBill: Bill) => {
-    const nextMonthDate = addMonths(currentBill.paymentDueDate, 1);
-    
-    try {
-      const { data, error } = await supabase
-        .from('bills')
-        .insert({
-          title: currentBill.title,
-          amount: currentBill.amount,
-          payment_due_date: nextMonthDate.toISOString(),
-          status: 'pending',
-          split_between: currentBill.splitBetween,
-          selected_profiles: currentBill.selectedProfiles
-        })
-        .select()
-        .single();
-
-      if (error) throw error;
-
-      const newBill = {
-        id: data.id,
-        title: data.title,
-        amount: data.amount,
-        dueDate: new Date(data.payment_due_date).toLocaleDateString(),
-        paymentDueDate: new Date(data.payment_due_date),
-        status: data.status as "pending" | "paid",
-        splitBetween: data.split_between,
-        selectedProfiles: data.selected_profiles || []
-      };
-
-      setBills(prevBills => [...prevBills, newBill]);
-      toast.success("Factura creada para el próximo mes");
-    } catch (error) {
-      console.error('Error creating next month bill:', error);
-      toast.error('Error al crear la factura para el próximo mes');
-    }
-  };
-
-  const toggleBillStatus = async (billId: number) => {
+  const handleToggleBillStatus = async (billId: number) => {
     const bill = bills.find(b => b.id === billId);
     if (!bill) return;
 
-    const newStatus = bill.status === "paid" ? "pending" : "paid";
-
     try {
-      const { error } = await supabase
-        .from('bills')
-        .update({ status: newStatus })
-        .eq('id', billId);
+      const { newStatus, nextMonthBill } = await toggleBillStatus(bill);
+      
+      setBills(prevBills => {
+        const updatedBills = prevBills.map(b => {
+          if (b.id === billId) {
+            return { ...b, status: newStatus };
+          }
+          return b;
+        });
 
-      if (error) throw error;
-
-      // Si la factura se está marcando como pagada, crear la del próximo mes
-      if (newStatus === "paid") {
-        await createNextMonthBill(bill);
-      }
-
-      setBills(bills.map(b => {
-        if (b.id === billId) {
-          return { ...b, status: newStatus };
+        if (nextMonthBill) {
+          return [...updatedBills, nextMonthBill];
         }
-        return b;
-      }));
+
+        return updatedBills;
+      });
       
       toast.success(`Factura marcada como ${newStatus === "paid" ? "pagada" : "pendiente"}`);
     } catch (error) {
-      console.error('Error updating bill status:', error);
-      toast.error('Error al actualizar el estado de la factura');
+      // Error already handled in toggleBillStatus
     }
   };
 
@@ -212,7 +96,7 @@ export const BillsSection = () => {
         bills={bills}
         onUpdate={handleUpdateBill}
         onDelete={handleDeleteBill}
-        onToggleStatus={toggleBillStatus}
+        onToggleStatus={handleToggleBillStatus}
       />
     </div>
   );

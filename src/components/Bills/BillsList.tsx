@@ -1,19 +1,8 @@
 import { BillItem } from "./BillItem";
-import { Card } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { format, isSameMonth, addMonths, isAfter, isBefore, startOfMonth } from "date-fns";
+import { format, isSameMonth, addMonths } from "date-fns";
 import { es } from "date-fns/locale";
-
-interface Bill {
-  id: number;
-  title: string;
-  amount: number;
-  dueDate: string;
-  paymentDueDate: Date;
-  status: "pending" | "paid";
-  splitBetween: number;
-  selectedProfiles: string[];
-}
+import type { Bill } from "./utils/billsLogic";
 
 interface BillsListProps {
   bills: Bill[];
@@ -35,8 +24,8 @@ export const BillsList = ({ bills, onUpdate, onDelete, onToggleStatus }: BillsLi
       if (!acc.previousPaid) acc.previousPaid = [];
       acc.previousPaid.push(bill);
     } 
-    // Para facturas pendientes del mes actual
-    else if (!isPaid && isSameMonth(billDate, currentDate)) {
+    // Para facturas pendientes (mostrar todas las pendientes)
+    else if (!isPaid) {
       if (!acc.currentPending) acc.currentPending = [];
       acc.currentPending.push(bill);
     }
@@ -66,7 +55,7 @@ export const BillsList = ({ bills, onUpdate, onDelete, onToggleStatus }: BillsLi
   };
 
   const previousMonthTitle = `Facturas ${format(previousMonth, 'MMMM yyyy', { locale: es })} - Pagadas`;
-  const currentMonthTitle = `Facturas ${format(currentDate, 'MMMM yyyy', { locale: es })} - Por Pagar`;
+  const currentMonthTitle = `Facturas Pendientes`;
 
   return (
     <div className="space-y-8">
