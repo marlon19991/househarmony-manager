@@ -24,7 +24,7 @@ interface Bill {
   amount: number;
   dueDate: string;
   paymentDueDate: Date;
-  status: "pending" | "paid";
+  status: "pending" | "paid" | "overdue";
   splitBetween: number;
   selectedProfiles: string[];
 }
@@ -49,21 +49,62 @@ export const BillItem = ({ bill, onUpdate, onDelete, onToggleStatus }: BillItemP
     ? editedBill.amount / editedBill.selectedProfiles.length 
     : editedBill.amount;
 
-  const getDueDateColor = (dueDate: Date) => {
+  const getBillStatus = (dueDate: Date, currentStatus: string) => {
+    if (currentStatus === "paid") return "paid";
+    
+    const today = new Date();
+    const daysUntilDue = differenceInDays(dueDate, today);
+    
+    if (daysUntilDue < 0) return "overdue";
+    if (daysUntilDue <= 5) return "pending";
+    return "upcoming";
+  };
+
+  const getDueDateColor = (dueDate: Date, status: string) => {
+    if (status === "paid") return "border-green-500";
+    
     const today = new Date();
     const daysUntilDue = differenceInDays(dueDate, today);
 
     if (daysUntilDue < 0) {
-      return "bg-red-100 border-red-200"; // Vencida
+      return "border-red-500"; // Vencida
     } else if (daysUntilDue <= 5) {
-      return "bg-orange-100 border-orange-200"; // Próxima a vencer
+      return "border-orange-500"; // Próxima a vencer
     } else {
-      return "bg-green-100 border-green-200"; // Con tiempo
+      return "border-green-500"; // Con tiempo
     }
   };
 
+  const getStatusText = (status: string) => {
+    switch (status) {
+      case "paid":
+        return "Pagada";
+      case "overdue":
+        return "Vencida";
+      case "pending":
+        return "Pendiente";
+      default:
+        return "Próxima";
+    }
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case "paid":
+        return "text-green-500";
+      case "overdue":
+        return "text-red-500";
+      case "pending":
+        return "text-amber-500";
+      default:
+        return "text-green-500";
+    }
+  };
+
+  const billStatus = getBillStatus(bill.paymentDueDate, bill.status);
+
   return (
-    <Card className={cn("p-4", getDueDateColor(bill.paymentDueDate))}>
+    <Card className={cn("p-4 border-2", getDueDateColor(bill.paymentDueDate, bill.status))}>
       {isEditing ? (
         <div className="space-y-4">
           <Input
@@ -116,9 +157,9 @@ export const BillItem = ({ bill, onUpdate, onDelete, onToggleStatus }: BillItemP
             <Button
               variant="ghost"
               onClick={() => onToggleStatus(bill.id)}
-              className={bill.status === "paid" ? "text-green-500" : "text-amber-500"}
+              className={getStatusColor(billStatus)}
             >
-              {bill.status === "paid" ? "Pagada" : "Pendiente"}
+              {getStatusText(billStatus)}
             </Button>
             <Button
               variant="ghost"
