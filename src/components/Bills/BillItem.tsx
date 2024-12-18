@@ -23,8 +23,6 @@ interface BillItemProps {
   onUpdate: (bill: Bill) => void;
   onDelete: (id: number) => void;
   onToggleStatus: (id: number) => void;
-  onUndoPay: (id: number, targetMonth: string) => void;
-  availableMonths: string[];
 }
 
 export const BillItem = ({ 
@@ -32,8 +30,6 @@ export const BillItem = ({
   onUpdate, 
   onDelete, 
   onToggleStatus,
-  onUndoPay,
-  availableMonths
 }: BillItemProps) => {
   const [isEditing, setIsEditing] = useState(false);
 
@@ -96,8 +92,6 @@ export const BillItem = ({
             onToggleStatus={() => onToggleStatus(bill.id)}
             onEdit={() => setIsEditing(true)}
             onDelete={() => onDelete(bill.id)}
-            onUndoPay={(targetMonth) => onUndoPay(bill.id, targetMonth)}
-            availableMonths={availableMonths}
             title={bill.title}
           />
         </div>

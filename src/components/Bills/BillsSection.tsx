@@ -8,7 +8,6 @@ import {
   updateBill, 
   deleteBill, 
   toggleBillStatus,
-  undoPayBill,
   type Bill 
 } from "./utils/billsLogic";
 
@@ -86,25 +85,6 @@ export const BillsSection = () => {
     }
   };
 
-  const handleUndoPay = async (billId: number, targetMonth: string) => {
-    const bill = bills.find(b => b.id === billId);
-    if (!bill) return;
-
-    try {
-      const { newStatus } = await undoPayBill(bill);
-      
-      setBills(prevBills => 
-        prevBills.map(b => 
-          b.id === billId ? { ...b, status: newStatus } : b
-        )
-      );
-      
-      toast.success(`Pago de factura devuelto al mes de ${targetMonth}`);
-    } catch (error) {
-      // Error already handled in undoPayBill
-    }
-  };
-
   return (
     <div className="space-y-6">
       <BillsHeader 
@@ -117,7 +97,6 @@ export const BillsSection = () => {
         onUpdate={handleUpdateBill}
         onDelete={handleDeleteBill}
         onToggleStatus={handleToggleBillStatus}
-        onUndoPay={handleUndoPay}
       />
     </div>
   );

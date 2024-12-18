@@ -42,21 +42,59 @@ export type Database = {
         }
         Relationships: []
       }
+      notifications: {
+        Row: {
+          created_at: string
+          id: number
+          message: string
+          profile_id: number | null
+          read: boolean | null
+          title: string
+        }
+        Insert: {
+          created_at?: string
+          id?: number
+          message: string
+          profile_id?: number | null
+          read?: boolean | null
+          title: string
+        }
+        Update: {
+          created_at?: string
+          id?: number
+          message?: string
+          profile_id?: number | null
+          read?: boolean | null
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notifications_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           created_at: string
+          email: string | null
           icon: string
           id: number
           name: string
         }
         Insert: {
           created_at?: string
+          email?: string | null
           icon: string
           id?: never
           name: string
         }
         Update: {
           created_at?: string
+          email?: string | null
           icon?: string
           id?: never
           name?: string
