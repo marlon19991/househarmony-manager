@@ -46,7 +46,7 @@ export const BillItem = ({ bill, onUpdate, onDelete, onToggleStatus }: BillItemP
     const daysUntilDue = Math.floor((bill.paymentDueDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
     
     if (daysUntilDue < 0) return "border-red-500";
-    if (daysUntilDue <= 5) return "border-orange-500";
+    if (daysUntilDue <= 5) return "border-yellow-500";
     return "border-green-500";
   };
 
@@ -67,7 +67,7 @@ export const BillItem = ({ bill, onUpdate, onDelete, onToggleStatus }: BillItemP
     : bill.amount;
 
   return (
-    <Card className={cn("p-4 border-2", getBorderColor())}>
+    <Card className={cn("p-4 border-l-4", getBorderColor())}>
       {isEditing ? (
         <BillForm 
           onSubmit={handleUpdate}
@@ -88,20 +88,27 @@ export const BillItem = ({ bill, onUpdate, onDelete, onToggleStatus }: BillItemP
                 paymentDueDate={bill.paymentDueDate}
               />
             </div>
-            <p className="text-sm text-muted-foreground">
-              Total: ${bill.amount.toFixed(2)} - ${amountPerPerson.toFixed(2)} por persona
+            <p className="text-lg font-semibold text-primary">
+              ${bill.amount.toFixed(2)}
             </p>
+            {bill.selectedProfiles.length > 1 && (
+              <p className="text-sm text-muted-foreground">
+                ${amountPerPerson.toFixed(2)} por persona
+              </p>
+            )}
             <BillDates 
               paymentDueDate={bill.paymentDueDate}
               status={bill.status}
             />
-            <p className="text-sm text-muted-foreground">
-              Dividido entre: {bill.selectedProfiles.length} persona(s)
-            </p>
+            {bill.selectedProfiles.length > 0 && (
+              <p className="text-sm text-muted-foreground">
+                Dividido entre {bill.selectedProfiles.length} persona(s)
+              </p>
+            )}
           </div>
           <div className="flex flex-col gap-2">
             <Button
-              variant="outline"
+              variant={bill.status === "paid" ? "outline" : "default"}
               size="sm"
               onClick={() => onToggleStatus(bill.id)}
             >

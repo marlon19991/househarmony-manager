@@ -1,6 +1,8 @@
 import { BillItem } from "./BillItem";
 import { Card } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
+import { format } from "date-fns";
+import { es } from "date-fns/locale";
 
 interface Bill {
   id: number;
@@ -21,31 +23,30 @@ interface BillsListProps {
 }
 
 export const BillsList = ({ bills, onUpdate, onDelete, onToggleStatus }: BillsListProps) => {
-  const getBillCategory = (bill: Bill) => {
-    if (bill.status === "paid") return "paid";
-    
-    const today = new Date();
-    const dueDate = new Date(bill.paymentDueDate);
-    const daysUntilDue = Math.floor((dueDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
-
-    if (daysUntilDue < 0) return "overdue";
-    if (daysUntilDue <= 5) return "upcoming";
-    return "future";
-  };
+  const currentMonth = new Date();
+  const previousMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1);
 
   const categorizedBills = bills.reduce((acc: Record<string, Bill[]>, bill) => {
-    const category = getBillCategory(bill);
-    if (!acc[category]) acc[category] = [];
-    acc[category].push(bill);
+    const isPaid = bill.status === "paid";
+    const billMonth = new Date(bill.paymentDueDate).getMonth();
+    
+    if (isPaid && billMonth === previousMonth.getMonth()) {
+      if (!acc.previousPaid) acc.previousPaid = [];
+      acc.previousPaid.push(bill);
+    } else if (!isPaid && billMonth === currentMonth.getMonth()) {
+      if (!acc.currentPending) acc.currentPending = [];
+      acc.currentPending.push(bill);
+    }
+    
     return acc;
   }, {});
 
-  const renderBillsSection = (title: string, bills: Bill[], className: string) => {
+  const renderMonthlySection = (title: string, bills: Bill[] | undefined, className: string) => {
     if (!bills?.length) return null;
 
     return (
       <div className="space-y-3">
-        <h3 className={`font-medium ${className}`}>{title}</h3>
+        <h3 className={`text-lg font-semibold ${className}`}>{title}</h3>
         <div className="space-y-3">
           {bills.map((bill) => (
             <BillItem
@@ -61,15 +62,22 @@ export const BillsList = ({ bills, onUpdate, onDelete, onToggleStatus }: BillsLi
     );
   };
 
+  const previousMonthTitle = `Facturas ${format(previousMonth, 'MMMM yyyy', { locale: es })} - Pagadas`;
+  const currentMonthTitle = `Facturas ${format(currentMonth, 'MMMM yyyy', { locale: es })} - Por Pagar`;
+
   return (
-    <div className="space-y-6">
-      {renderBillsSection("Facturas Pagadas", categorizedBills.paid, "text-green-500")}
-      <Separator className="my-6" />
-      <div className="space-y-6">
-        {renderBillsSection("Facturas Vencidas", categorizedBills.overdue, "text-red-500")}
-        {renderBillsSection("Próximas a Vencer", categorizedBills.upcoming, "text-orange-500")}
-        {renderBillsSection("Facturas Futuras", categorizedBills.future, "text-green-500")}
-      </div>
+    <div className="space-y-8">
+      {renderMonthlySection(
+        previousMonthTitle,
+        categorizedBills.previousPaid,
+        "text-green-600"
+      )}
+      <Separator className="my-8" />
+      {renderMonthlySection(
+        currentMonthTitle,
+        categorizedBills.currentPending,
+        "text-blue-600"
+      )}
     </div>
   );
 };
