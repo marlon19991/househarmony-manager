@@ -1,6 +1,6 @@
 import { BillItem } from "./BillItem";
 import { Separator } from "@/components/ui/separator";
-import { format, isSameMonth, addMonths } from "date-fns";
+import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import type { Bill } from "./utils/billsLogic";
 
@@ -9,18 +9,14 @@ interface BillsListProps {
   onUpdate: (bill: Bill) => void;
   onDelete: (id: number) => void;
   onToggleStatus: (id: number) => void;
-  onUndoPay: (id: number, targetMonth: string) => void;
 }
 
 export const BillsList = ({ 
   bills, 
   onUpdate, 
   onDelete, 
-  onToggleStatus,
-  onUndoPay 
+  onToggleStatus
 }: BillsListProps) => {
-  const currentDate = new Date();
-
   const categorizedBills = bills.reduce((acc: Record<string, Bill[]>, bill) => {
     const isPaid = bill.status === "paid";
     const billDate = new Date(bill.paymentDueDate);
@@ -37,19 +33,6 @@ export const BillsList = ({
     return acc;
   }, {});
 
-  // Obtener meses únicos disponibles para cada título de factura
-  const getAvailableMonths = (billTitle: string): string[] => {
-    const months: string[] = [];
-    Object.entries(categorizedBills)
-      .filter(([key]) => key !== 'currentPending')
-      .forEach(([month, bills]) => {
-        if (bills.some(bill => bill.title === billTitle)) {
-          months.push(month);
-        }
-      });
-    return months.sort((a, b) => new Date(b).getTime() - new Date(a).getTime());
-  };
-
   const renderMonthlySection = (title: string, bills: Bill[] | undefined, className: string) => {
     if (!bills?.length) return null;
 
@@ -64,8 +47,6 @@ export const BillsList = ({
               onUpdate={onUpdate}
               onDelete={onDelete}
               onToggleStatus={onToggleStatus}
-              onUndoPay={onUndoPay}
-              availableMonths={getAvailableMonths(bill.title)}
             />
           ))}
         </div>
