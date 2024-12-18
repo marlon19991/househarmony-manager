@@ -1,5 +1,6 @@
 import { BillItem } from "./BillItem";
 import { Card } from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
 
 interface Bill {
   id: number;
@@ -62,10 +63,13 @@ export const BillsList = ({ bills, onUpdate, onDelete, onToggleStatus }: BillsLi
 
   return (
     <div className="space-y-6">
-      {renderBillsSection("Facturas Vencidas", categorizedBills.overdue, "text-red-500")}
-      {renderBillsSection("Próximas a Vencer", categorizedBills.upcoming, "text-orange-500")}
-      {renderBillsSection("Facturas Futuras", categorizedBills.future, "text-green-500")}
-      {renderBillsSection("Facturas Pagadas", categorizedBills.paid, "text-muted-foreground")}
+      {renderBillsSection("Facturas Pagadas", categorizedBills.paid, "text-green-500")}
+      <Separator className="my-6" />
+      <div className="space-y-6">
+        {renderBillsSection("Facturas Vencidas", categorizedBills.overdue, "text-red-500")}
+        {renderBillsSection("Próximas a Vencer", categorizedBills.upcoming, "text-orange-500")}
+        {renderBillsSection("Facturas Futuras", categorizedBills.future, "text-green-500")}
+      </div>
     </div>
   );
 };
