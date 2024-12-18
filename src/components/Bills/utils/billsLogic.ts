@@ -147,23 +147,6 @@ export const createNextMonthBill = async (currentBill: Bill) => {
   }
 };
 
-export const undoPayBill = async (bill: Bill) => {
-  try {
-    const { error } = await supabase
-      .from('bills')
-      .update({ status: "pending" })
-      .eq('id', bill.id);
-
-    if (error) throw error;
-
-    return { newStatus: "pending" as const };
-  } catch (error) {
-    console.error('Error undoing bill payment:', error);
-    toast.error('Error al deshacer el pago de la factura');
-    throw error;
-  }
-};
-
 export const toggleBillStatus = async (bill: Bill) => {
   const newStatus = bill.status === "paid" ? "pending" : "paid";
   

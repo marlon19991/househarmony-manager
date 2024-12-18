@@ -25,6 +25,11 @@ export const BillForm = ({ onSubmit, initialData }: BillFormProps) => {
       return;
     }
 
+    if (formData.selectedProfiles.length === 0) {
+      toast.error("Por favor selecciona al menos un perfil");
+      return;
+    }
+
     onSubmit(formData);
   };
 
@@ -58,10 +63,16 @@ export const BillForm = ({ onSubmit, initialData }: BillFormProps) => {
           onChange={(e) => setFormData({ ...formData, paymentDueDate: e.target.value })}
         />
       </div>
-      <AssigneeField
-        selectedAssignees={formData.selectedProfiles}
-        onChange={(profiles) => setFormData({ ...formData, selectedProfiles: profiles })}
-      />
+      <div>
+        <Label>Asignar a perfiles</Label>
+        <AssigneeField
+          selectedAssignees={formData.selectedProfiles}
+          onChange={(profiles) => setFormData({ ...formData, selectedProfiles: profiles })}
+        />
+        <p className="text-sm text-gray-500 mt-1">
+          Los perfiles seleccionados recibirán notificaciones sobre esta factura
+        </p>
+      </div>
       <Button type="submit" className="w-full">
         {initialData ? "Actualizar" : "Agregar"} Factura
       </Button>
