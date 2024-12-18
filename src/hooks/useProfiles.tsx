@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { useEffect } from 'react';
 
 interface Profile {
   id: number;
@@ -97,11 +98,21 @@ const useProfiles = create<ProfileStore>()((set) => ({
       }));
       
       toast.success('Perfil eliminado exitosamente');
-    } catch (error) {
+    }
+    catch (error) {
       console.error('Error deleting profile:', error);
       toast.error('Error al eliminar el perfil');
     }
   },
 }));
+
+// Custom hook to initialize profiles
+export const useInitializeProfiles = () => {
+  const fetchProfiles = useProfiles((state) => state.fetchProfiles);
+
+  useEffect(() => {
+    fetchProfiles();
+  }, [fetchProfiles]);
+};
 
 export default useProfiles;

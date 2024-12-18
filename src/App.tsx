@@ -11,6 +11,7 @@ import Settings from "./pages/Settings";
 import GeneralCleaning from "./pages/GeneralCleaning";
 import Bills from "./pages/Bills";
 import RecurringTasks from "./pages/RecurringTasks";
+import { useInitializeProfiles } from "./hooks/useProfiles";
 
 // Create a client
 const queryClient = new QueryClient({
@@ -22,6 +23,22 @@ const queryClient = new QueryClient({
   },
 });
 
+const AppContent = () => {
+  useInitializeProfiles();
+
+  return (
+    <Layout>
+      <Routes>
+        <Route path="/" element={<Index />} />
+        <Route path="/settings" element={<Settings />} />
+        <Route path="/general-cleaning" element={<GeneralCleaning />} />
+        <Route path="/recurring-tasks" element={<RecurringTasks />} />
+        <Route path="/bills" element={<Bills />} />
+      </Routes>
+    </Layout>
+  );
+};
+
 const App = () => {
   return (
     <React.StrictMode>
@@ -31,15 +48,7 @@ const App = () => {
             <Toaster />
             <Sonner />
             <BrowserRouter>
-              <Layout>
-                <Routes>
-                  <Route path="/" element={<Index />} />
-                  <Route path="/settings" element={<Settings />} />
-                  <Route path="/general-cleaning" element={<GeneralCleaning />} />
-                  <Route path="/recurring-tasks" element={<RecurringTasks />} />
-                  <Route path="/bills" element={<Bills />} />
-                </Routes>
-              </Layout>
+              <AppContent />
             </BrowserRouter>
           </TooltipProvider>
         </ThemeProvider>
