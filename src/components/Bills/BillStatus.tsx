@@ -41,23 +41,21 @@ export const BillStatus = ({ status, paymentDueDate, lastPaidDate }: BillStatusP
     
     if (billStatus === "paid") {
       if (lastPaidDate) {
-        return `Pagada - Última factura: ${format(lastPaidDate, "MMMM yyyy", { locale: es })}`;
+        return `Pagada - ${format(lastPaidDate, "MMMM yyyy", { locale: es })}`;
       }
       return "Pagada";
     }
     
     if (billStatus === "overdue") {
       const daysOverdue = Math.abs(differenceInDays(paymentDueDate, today));
-      const monthName = format(paymentDueDate, "MMMM yyyy", { locale: es });
-      return `Factura de ${monthName} vencida (${daysOverdue} días)`;
+      return `Factura vencida, pagar lo más pronto posible (${daysOverdue} días de retraso)`;
     }
     
     if (billStatus === "pending") {
-      const daysUntil = differenceInDays(paymentDueDate, today);
-      return `Próxima a vencer (en ${daysUntil} días)`;
+      return "Próxima a vencer";
     }
     
-    return "Próxima";
+    return "A tiempo";
   };
 
   return (

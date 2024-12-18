@@ -19,21 +19,20 @@ export const BillDates = ({ paymentDueDate, status }: BillDatesProps) => {
             Próximo pago: {format(nextPaymentDate, "dd 'de' MMMM, yyyy", { locale: es })}
           </p>
           <p className="text-sm text-muted-foreground">
-            Última factura pagada: {format(paymentDueDate, "MMMM yyyy", { locale: es })}
+            Factura {format(paymentDueDate, "MMMM yyyy", { locale: es })} pagada
           </p>
         </div>
       );
-    } else if (isBefore(paymentDueDate, today)) {
-      return (
-        <p className="text-sm text-muted-foreground">
-          Fecha de vencimiento: {format(paymentDueDate, "dd 'de' MMMM, yyyy", { locale: es })}
-        </p>
-      );
     } else {
       return (
-        <p className="text-sm text-muted-foreground">
-          Fecha límite de pago: {format(paymentDueDate, "dd 'de' MMMM, yyyy", { locale: es })}
-        </p>
+        <div className="space-y-1">
+          <p className="text-sm text-muted-foreground">
+            Factura {format(paymentDueDate, "MMMM yyyy", { locale: es })} por pagar
+          </p>
+          <p className="text-sm text-muted-foreground">
+            Fecha límite: {format(paymentDueDate, "dd 'de' MMMM, yyyy", { locale: es })}
+          </p>
+        </div>
       );
     }
   };
