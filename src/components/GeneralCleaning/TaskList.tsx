@@ -3,7 +3,7 @@
  * Coordina la adición, edición, eliminación y actualización de tareas,
  * así como el cálculo del progreso general.
  */
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import TaskForm from "./TaskForm";
 import TaskItem from "./TaskItem";
@@ -45,6 +45,12 @@ const TaskList = ({ currentAssignee, onTaskComplete, onAssigneeChange }: TaskLis
 
   const [editingTask, setEditingTask] = useState<number | null>(null);
   const [newTask, setNewTask] = useState({ description: "", comment: "" });
+
+  // Reset tasks when assignee changes
+  useEffect(() => {
+    setTasks(tasks.map(task => ({ ...task, completed: false })));
+    onTaskComplete(0);
+  }, [currentAssignee]);
 
   const calculateCompletionPercentage = () => {
     const completedTasks = tasks.filter(task => task.completed).length;

@@ -5,8 +5,13 @@ import TaskList from "./TaskList";
 import AssigneeSelector from "./AssigneeSelector";
 
 const GeneralCleaningSection = () => {
-  const [currentAssignee, setCurrentAssignee] = useState("Juan");
+  const [currentAssignee, setCurrentAssignee] = useState("Sin asignar");
   const [completionPercentage, setCompletionPercentage] = useState(0);
+
+  const handleAssigneeChange = (newAssignee: string) => {
+    setCurrentAssignee(newAssignee);
+    setCompletionPercentage(0); // Reset completion when assignee changes
+  };
 
   return (
     <Card className="p-6 space-y-6">
@@ -22,11 +27,11 @@ const GeneralCleaningSection = () => {
         <TaskList
           currentAssignee={currentAssignee}
           onTaskComplete={setCompletionPercentage}
-          onAssigneeChange={setCurrentAssignee}
+          onAssigneeChange={handleAssigneeChange}
         />
         <AssigneeSelector
           currentAssignee={currentAssignee}
-          onAssigneeChange={setCurrentAssignee}
+          onAssigneeChange={handleAssigneeChange}
           completionPercentage={completionPercentage}
         />
       </div>
