@@ -9,7 +9,7 @@ interface BillsListProps {
   onUpdate: (bill: Bill) => void;
   onDelete: (id: number) => void;
   onToggleStatus: (id: number) => void;
-  onUndoPay: (id: number) => void;
+  onUndoPay: (id: number, targetMonth: string) => void;
 }
 
 export const BillsList = ({ 
@@ -20,26 +20,35 @@ export const BillsList = ({
   onUndoPay 
 }: BillsListProps) => {
   const currentDate = new Date();
-  const previousMonth = addMonths(currentDate, -1);
 
   const categorizedBills = bills.reduce((acc: Record<string, Bill[]>, bill) => {
     const isPaid = bill.status === "paid";
     const billDate = new Date(bill.paymentDueDate);
     
-    // Para facturas pagadas (mostrar todas las pagadas)
     if (isPaid) {
       const monthKey = format(billDate, 'MMMM yyyy', { locale: es });
       if (!acc[monthKey]) acc[monthKey] = [];
       acc[monthKey].push(bill);
-    } 
-    // Para facturas pendientes (mostrar todas las pendientes)
-    else {
+    } else {
       if (!acc.currentPending) acc.currentPending = [];
       acc.currentPending.push(bill);
     }
     
     return acc;
   }, {});
+
+  // Obtener meses únicos disponibles para cada título de factura
+  const getAvailableMonths = (billTitle: string): string[] => {
+    const months: string[] = [];
+    Object.entries(categorizedBills)
+      .filter(([key]) => key !== 'currentPending')
+      .forEach(([month, bills]) => {
+        if (bills.some(bill => bill.title === billTitle)) {
+          months.push(month);
+        }
+      });
+    return months.sort((a, b) => new Date(b).getTime() - new Date(a).getTime());
+  };
 
   const renderMonthlySection = (title: string, bills: Bill[] | undefined, className: string) => {
     if (!bills?.length) return null;
@@ -56,6 +65,7 @@ export const BillsList = ({
               onDelete={onDelete}
               onToggleStatus={onToggleStatus}
               onUndoPay={onUndoPay}
+              availableMonths={getAvailableMonths(bill.title)}
             />
           ))}
         </div>

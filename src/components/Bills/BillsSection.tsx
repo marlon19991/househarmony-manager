@@ -86,7 +86,7 @@ export const BillsSection = () => {
     }
   };
 
-  const handleUndoPay = async (billId: number) => {
+  const handleUndoPay = async (billId: number, targetMonth: string) => {
     const bill = bills.find(b => b.id === billId);
     if (!bill) return;
 
@@ -99,7 +99,7 @@ export const BillsSection = () => {
         )
       );
       
-      toast.success("Pago de factura deshecho exitosamente");
+      toast.success(`Pago de factura devuelto al mes de ${targetMonth}`);
     } catch (error) {
       // Error already handled in undoPayBill
     }

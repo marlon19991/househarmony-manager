@@ -11,13 +11,25 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { useState } from "react";
+import { format } from "date-fns";
+import { es } from "date-fns/locale";
 
 interface BillActionsProps {
   status: "pending" | "paid";
   onToggleStatus: () => void;
   onEdit: () => void;
   onDelete: () => void;
-  onUndoPay: () => void;
+  onUndoPay: (targetMonth: string) => void;
+  availableMonths: string[];
+  title: string;
 }
 
 export const BillActions = ({ 
@@ -25,8 +37,12 @@ export const BillActions = ({
   onToggleStatus, 
   onEdit, 
   onDelete,
-  onUndoPay
+  onUndoPay,
+  availableMonths,
+  title
 }: BillActionsProps) => {
+  const [selectedMonth, setSelectedMonth] = useState<string>("");
+
   const getStatusDialogContent = () => {
     if (status === "paid") {
       return {
@@ -42,6 +58,12 @@ export const BillActions = ({
       actionText: "Marcar como pagada",
       variant: "default" as const
     };
+  };
+
+  const handleUndoPay = () => {
+    if (selectedMonth) {
+      onUndoPay(selectedMonth);
+    }
   };
 
   const dialogContent = getStatusDialogContent();
@@ -73,16 +95,53 @@ export const BillActions = ({
         </AlertDialogContent>
       </AlertDialog>
 
-      {status === "paid" && (
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={onUndoPay}
-          className="gap-2"
-        >
-          <RotateCcw className="h-4 w-4" />
-          Deshacer pago
-        </Button>
+      {status === "paid" && availableMonths.length > 0 && (
+        <AlertDialog>
+          <AlertDialogTrigger asChild>
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-2"
+            >
+              <RotateCcw className="h-4 w-4" />
+              Deshacer pago
+            </Button>
+          </AlertDialogTrigger>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Deshacer pago de {title}</AlertDialogTitle>
+              <AlertDialogDescription>
+                Selecciona el mes al cual deseas devolver el pago:
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <Select
+              value={selectedMonth}
+              onValueChange={setSelectedMonth}
+            >
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Selecciona un mes" />
+              </SelectTrigger>
+              <SelectContent>
+                {availableMonths.map((month) => (
+                  <SelectItem key={month} value={month}>
+                    {month}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <AlertDialogFooter>
+              <AlertDialogCancel onClick={() => setSelectedMonth("")}>
+                Cancelar
+              </AlertDialogCancel>
+              <AlertDialogAction
+                onClick={handleUndoPay}
+                disabled={!selectedMonth}
+              >
+                Confirmar
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       )}
 
       <div className="flex gap-2">
