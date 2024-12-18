@@ -1,22 +1,8 @@
 import { useState, useEffect } from "react";
-import { Card } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Button } from "@/components/ui/button";
-import { Plus } from "lucide-react";
 import { toast } from "sonner";
-import useProfiles from "@/hooks/useProfiles";
-import { BillItem } from "./BillItem";
 import { supabase } from "@/integrations/supabase/client";
-import { AssigneeField } from "@/components/RecurringTasks/FormFields/AssigneeField";
-import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
-} from "@/components/ui/sheet";
+import { BillsHeader } from "./BillsHeader";
+import { BillsList } from "./BillsList";
 
 interface Bill {
   id: number;
@@ -30,15 +16,7 @@ interface Bill {
 }
 
 export const BillsSection = () => {
-  const { profiles } = useProfiles();
   const [bills, setBills] = useState<Bill[]>([]);
-  const [newBill, setNewBill] = useState({ 
-    title: "", 
-    amount: "", 
-    splitBetween: "1",
-    paymentDueDate: new Date().toISOString().split('T')[0],
-    selectedProfiles: [] as string[]
-  });
   const [isOpen, setIsOpen] = useState(false);
 
   useEffect(() => {
@@ -50,7 +28,7 @@ export const BillsSection = () => {
       const { data, error } = await supabase
         .from('bills')
         .select('*')
-        .order('created_at', { ascending: false });
+        .order('payment_due_date', { ascending: true });
 
       if (error) throw error;
 
@@ -72,13 +50,7 @@ export const BillsSection = () => {
     }
   };
 
-  const handleAddBill = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newBill.title || !newBill.amount) {
-      toast.error("Por favor completa todos los campos de la factura");
-      return;
-    }
-
+  const handleAddBill = async (newBill: any) => {
     try {
       const { data, error } = await supabase
         .from('bills')
@@ -87,7 +59,7 @@ export const BillsSection = () => {
           amount: parseFloat(newBill.amount),
           payment_due_date: new Date(newBill.paymentDueDate).toISOString(),
           status: 'pending',
-          split_between: parseInt(newBill.splitBetween),
+          split_between: newBill.selectedProfiles.length || 1,
           selected_profiles: newBill.selectedProfiles
         })
         .select()
@@ -107,13 +79,6 @@ export const BillsSection = () => {
       };
 
       setBills([formattedBill, ...bills]);
-      setNewBill({ 
-        title: "", 
-        amount: "", 
-        splitBetween: "1", 
-        paymentDueDate: new Date().toISOString().split('T')[0],
-        selectedProfiles: []
-      });
       setIsOpen(false);
       toast.success("Factura agregada exitosamente");
     } catch (error) {
@@ -194,73 +159,17 @@ export const BillsSection = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-bold">Facturas</h2>
-        <Sheet open={isOpen} onOpenChange={setIsOpen}>
-          <SheetTrigger asChild>
-            <Button>
-              <Plus className="w-4 h-4 mr-2" />
-              Agregar Factura
-            </Button>
-          </SheetTrigger>
-          <SheetContent>
-            <SheetHeader>
-              <SheetTitle>Nueva Factura</SheetTitle>
-              <SheetDescription>
-                Agrega una nueva factura para dividir entre los miembros.
-              </SheetDescription>
-            </SheetHeader>
-            <form onSubmit={handleAddBill} className="space-y-4 mt-6">
-              <div>
-                <Label htmlFor="billTitle">Título</Label>
-                <Input
-                  id="billTitle"
-                  value={newBill.title}
-                  onChange={(e) => setNewBill({ ...newBill, title: e.target.value })}
-                  placeholder="Título de la factura"
-                />
-              </div>
-              <div>
-                <Label htmlFor="billAmount">Monto</Label>
-                <Input
-                  id="billAmount"
-                  type="number"
-                  value={newBill.amount}
-                  onChange={(e) => setNewBill({ ...newBill, amount: e.target.value })}
-                  placeholder="Monto de la factura"
-                />
-              </div>
-              <div>
-                <Label htmlFor="paymentDueDate">Fecha límite de pago</Label>
-                <Input
-                  id="paymentDueDate"
-                  type="date"
-                  value={newBill.paymentDueDate}
-                  onChange={(e) => setNewBill({ ...newBill, paymentDueDate: e.target.value })}
-                />
-              </div>
-              <AssigneeField
-                selectedAssignees={newBill.selectedProfiles}
-                onChange={(profiles) => setNewBill({ ...newBill, selectedProfiles: profiles })}
-              />
-              <Button type="submit" className="w-full">
-                Agregar Factura
-              </Button>
-            </form>
-          </SheetContent>
-        </Sheet>
-      </div>
-      <div className="space-y-3">
-        {bills.map((bill) => (
-          <BillItem
-            key={bill.id}
-            bill={bill}
-            onUpdate={handleUpdateBill}
-            onDelete={handleDeleteBill}
-            onToggleStatus={toggleBillStatus}
-          />
-        ))}
-      </div>
+      <BillsHeader 
+        isOpen={isOpen}
+        setIsOpen={setIsOpen}
+        onAddBill={handleAddBill}
+      />
+      <BillsList
+        bills={bills}
+        onUpdate={handleUpdateBill}
+        onDelete={handleDeleteBill}
+        onToggleStatus={toggleBillStatus}
+      />
     </div>
   );
 };

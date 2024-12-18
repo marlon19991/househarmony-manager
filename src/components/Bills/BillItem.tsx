@@ -1,9 +1,10 @@
 import { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { format, differenceInDays } from "date-fns";
-import { AssigneeField } from "@/components/RecurringTasks/FormFields/AssigneeField";
+import { Pencil, Trash2, Check, X } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { BillForm } from "./BillForm";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -15,8 +16,6 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { Pencil, Trash2, Check, X } from "lucide-react";
-import { cn } from "@/lib/utils";
 
 interface Bill {
   id: number;
@@ -24,7 +23,7 @@ interface Bill {
   amount: number;
   dueDate: string;
   paymentDueDate: Date;
-  status: "pending" | "paid" | "overdue";
+  status: "pending" | "paid";
   splitBetween: number;
   selectedProfiles: string[];
 }
@@ -38,44 +37,34 @@ interface BillItemProps {
 
 export const BillItem = ({ bill, onUpdate, onDelete, onToggleStatus }: BillItemProps) => {
   const [isEditing, setIsEditing] = useState(false);
-  const [editedBill, setEditedBill] = useState(bill);
 
-  const handleSave = () => {
-    onUpdate(editedBill);
-    setIsEditing(false);
-  };
-
-  const amountPerPerson = editedBill.selectedProfiles.length > 0 
-    ? editedBill.amount / editedBill.selectedProfiles.length 
-    : editedBill.amount;
-
-  const getBillStatus = (dueDate: Date, currentStatus: string) => {
-    if (currentStatus === "paid") return "paid";
+  const getBillStatus = () => {
+    if (bill.status === "paid") return "paid";
     
     const today = new Date();
-    const daysUntilDue = differenceInDays(dueDate, today);
+    const daysUntilDue = differenceInDays(bill.paymentDueDate, today);
     
     if (daysUntilDue < 0) return "overdue";
     if (daysUntilDue <= 5) return "pending";
     return "upcoming";
   };
 
-  const getDueDateColor = (dueDate: Date, status: string) => {
-    if (status === "paid") return "border-green-500";
-    
-    const today = new Date();
-    const daysUntilDue = differenceInDays(dueDate, today);
-
-    if (daysUntilDue < 0) {
-      return "border-red-500"; // Vencida
-    } else if (daysUntilDue <= 5) {
-      return "border-orange-500"; // Próxima a vencer
-    } else {
-      return "border-green-500"; // Con tiempo
+  const getBorderColor = () => {
+    const status = getBillStatus();
+    switch (status) {
+      case "paid":
+        return "border-green-500";
+      case "overdue":
+        return "border-red-500";
+      case "pending":
+        return "border-orange-500";
+      default:
+        return "border-green-500";
     }
   };
 
-  const getStatusText = (status: string) => {
+  const getStatusText = () => {
+    const status = getBillStatus();
     switch (status) {
       case "paid":
         return "Pagada";
@@ -88,7 +77,8 @@ export const BillItem = ({ bill, onUpdate, onDelete, onToggleStatus }: BillItemP
     }
   };
 
-  const getStatusColor = (status: string) => {
+  const getStatusColor = () => {
+    const status = getBillStatus();
     switch (status) {
       case "paid":
         return "text-green-500";
@@ -101,44 +91,34 @@ export const BillItem = ({ bill, onUpdate, onDelete, onToggleStatus }: BillItemP
     }
   };
 
-  const billStatus = getBillStatus(bill.paymentDueDate, bill.status);
+  const amountPerPerson = bill.selectedProfiles.length > 0 
+    ? bill.amount / bill.selectedProfiles.length 
+    : bill.amount;
+
+  const handleUpdate = (formData: any) => {
+    onUpdate({
+      ...bill,
+      title: formData.title,
+      amount: parseFloat(formData.amount),
+      paymentDueDate: new Date(formData.paymentDueDate),
+      selectedProfiles: formData.selectedProfiles,
+      splitBetween: formData.selectedProfiles.length || 1
+    });
+    setIsEditing(false);
+  };
 
   return (
-    <Card className={cn("p-4 border-2", getDueDateColor(bill.paymentDueDate, bill.status))}>
+    <Card className={cn("p-4 border-2", getBorderColor())}>
       {isEditing ? (
-        <div className="space-y-4">
-          <Input
-            value={editedBill.title}
-            onChange={(e) => setEditedBill({ ...editedBill, title: e.target.value })}
-            placeholder="Título de la factura"
-          />
-          <Input
-            type="number"
-            value={editedBill.amount}
-            onChange={(e) => setEditedBill({ ...editedBill, amount: parseFloat(e.target.value) })}
-            placeholder="Monto"
-          />
-          <Input
-            type="date"
-            value={editedBill.paymentDueDate.toISOString().split('T')[0]}
-            onChange={(e) => setEditedBill({ ...editedBill, paymentDueDate: new Date(e.target.value) })}
-            placeholder="Fecha límite de pago"
-          />
-          <AssigneeField
-            selectedAssignees={editedBill.selectedProfiles}
-            onChange={(profiles) => setEditedBill({ ...editedBill, selectedProfiles: profiles })}
-          />
-          <div className="flex justify-end space-x-2">
-            <Button onClick={handleSave} size="sm">
-              <Check className="h-4 w-4 mr-2" />
-              Guardar
-            </Button>
-            <Button onClick={() => setIsEditing(false)} variant="outline" size="sm">
-              <X className="h-4 w-4 mr-2" />
-              Cancelar
-            </Button>
-          </div>
-        </div>
+        <BillForm 
+          onSubmit={handleUpdate}
+          initialData={{
+            title: bill.title,
+            amount: bill.amount,
+            paymentDueDate: bill.paymentDueDate.toISOString().split('T')[0],
+            selectedProfiles: bill.selectedProfiles
+          }}
+        />
       ) : (
         <div className="flex items-center justify-between">
           <div>
@@ -147,7 +127,7 @@ export const BillItem = ({ bill, onUpdate, onDelete, onToggleStatus }: BillItemP
               Total: ${bill.amount.toFixed(2)} - ${amountPerPerson.toFixed(2)} por persona
             </p>
             <p className="text-sm text-muted-foreground">
-              Fecha límite: {format(new Date(bill.paymentDueDate), 'dd/MM/yyyy')}
+              Fecha límite: {format(bill.paymentDueDate, 'dd/MM/yyyy')}
             </p>
             <p className="text-sm text-muted-foreground">
               Dividido entre: {bill.selectedProfiles.length} persona(s)
@@ -157,9 +137,9 @@ export const BillItem = ({ bill, onUpdate, onDelete, onToggleStatus }: BillItemP
             <Button
               variant="ghost"
               onClick={() => onToggleStatus(bill.id)}
-              className={getStatusColor(billStatus)}
+              className={getStatusColor()}
             >
-              {getStatusText(billStatus)}
+              {getStatusText()}
             </Button>
             <Button
               variant="ghost"
