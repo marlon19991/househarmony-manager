@@ -13,7 +13,6 @@ import Bills from "./pages/Bills";
 import RecurringTasks from "./pages/RecurringTasks";
 import { useInitializeProfiles } from "./hooks/useProfiles";
 
-// Create a client
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
@@ -23,7 +22,7 @@ const queryClient = new QueryClient({
   },
 });
 
-const AppContent = () => {
+const AppRoutes = () => {
   useInitializeProfiles();
 
   return (
@@ -41,19 +40,19 @@ const AppContent = () => {
 
 const App = () => {
   return (
-    <React.StrictMode>
-      <QueryClientProvider client={queryClient}>
+    <QueryClientProvider client={queryClient}>
+      <React.StrictMode>
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
           <TooltipProvider>
             <Toaster />
             <Sonner />
             <BrowserRouter>
-              <AppContent />
+              <AppRoutes />
             </BrowserRouter>
           </TooltipProvider>
         </ThemeProvider>
-      </QueryClientProvider>
-    </React.StrictMode>
+      </React.StrictMode>
+    </QueryClientProvider>
   );
 };
 
