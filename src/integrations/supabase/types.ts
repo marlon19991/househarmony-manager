@@ -30,6 +30,42 @@ export type Database = {
         }
         Relationships: []
       }
+      recurring_tasks: {
+        Row: {
+          assignees: string[] | null
+          created_at: string
+          icon: string
+          id: number
+          recurrence_type: string
+          selected_days: string[] | null
+          specific_day: string | null
+          time: string | null
+          title: string
+        }
+        Insert: {
+          assignees?: string[] | null
+          created_at?: string
+          icon: string
+          id?: number
+          recurrence_type: string
+          selected_days?: string[] | null
+          specific_day?: string | null
+          time?: string | null
+          title: string
+        }
+        Update: {
+          assignees?: string[] | null
+          created_at?: string
+          icon?: string
+          id?: number
+          recurrence_type?: string
+          selected_days?: string[] | null
+          specific_day?: string | null
+          time?: string | null
+          title?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

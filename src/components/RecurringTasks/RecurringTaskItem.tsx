@@ -12,7 +12,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { Calendar, Trash2, Pencil, Clock } from "lucide-react";
+import { Calendar, Trash2, Pencil, Clock, Users } from "lucide-react";
 import { format, isValid } from "date-fns";
 import { es } from "date-fns/locale";
 import { RecurringTaskForm } from "./RecurringTaskForm";
@@ -32,14 +32,14 @@ export const RecurringTaskItem = ({ task, onDelete, onUpdate }: RecurringTaskIte
   };
 
   const getRecurrenceText = () => {
-    switch (task.recurrenceType) {
+    switch (task.recurrence_type) {
       case "specific": {
-        const date = task.day ? new Date(task.day) : null;
+        const date = task.specific_day ? new Date(task.specific_day) : null;
         if (!date || !isValid(date)) return "Fecha inválida";
         return format(date, "EEEE", { locale: es });
       }
       case "weekly":
-        if (!task.selectedDays || task.selectedDays.length === 0) return "";
+        if (!task.selected_days || task.selected_days.length === 0) return "";
         
         const weekdays = {
           monday: "Lunes",
@@ -51,7 +51,7 @@ export const RecurringTaskItem = ({ task, onDelete, onUpdate }: RecurringTaskIte
           sunday: "Domingo",
         };
 
-        const selectedDayNames = task.selectedDays
+        const selectedDayNames = task.selected_days
           .map((day: string) => weekdays[day as keyof typeof weekdays])
           .sort((a: string, b: string) => {
             const order = Object.values(weekdays);
@@ -92,15 +92,23 @@ export const RecurringTaskItem = ({ task, onDelete, onUpdate }: RecurringTaskIte
           <Calendar className="h-5 w-5 text-muted-foreground" />
           <div>
             <h3 className="font-medium">{task.title}</h3>
-            <p className="text-sm text-muted-foreground">
-              {getRecurrenceText()}
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <span>{getRecurrenceText()}</span>
               {task.time && (
-                <span className="flex items-center ml-2">
+                <span className="flex items-center">
                   <Clock className="h-3 w-3 mr-1" />
                   {task.time}
                 </span>
               )}
-            </p>
+              {task.assignees && task.assignees.length > 0 && (
+                <span className="flex items-center">
+                  <Users className="h-3 w-3 mr-1" />
+                  {task.assignees.length === 1 
+                    ? task.assignees[0]
+                    : `${task.assignees.length} asignados`}
+                </span>
+              )}
+            </div>
           </div>
         </div>
         <div className="flex items-center space-x-2">

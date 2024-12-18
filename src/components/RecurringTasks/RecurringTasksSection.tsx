@@ -1,30 +1,74 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 import { toast } from "sonner";
 import { RecurringTaskForm } from "./RecurringTaskForm";
 import { RecurringTaskItem } from "./RecurringTaskItem";
+import { supabase } from "@/integrations/supabase/client";
 
 export const RecurringTasksSection = () => {
   const [tasks, setTasks] = useState<any[]>([]);
   const [isAddingTask, setIsAddingTask] = useState(false);
 
-  const handleAddTask = (newTask: any) => {
-    setTasks([...tasks, { ...newTask, id: Date.now() }]);
+  useEffect(() => {
+    fetchTasks();
+
+    const channel = supabase
+      .channel('recurring-tasks-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'recurring_tasks'
+        },
+        () => {
+          fetchTasks();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, []);
+
+  const fetchTasks = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('recurring_tasks')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setTasks(data || []);
+    } catch (error) {
+      console.error('Error fetching tasks:', error);
+      toast.error("Error al cargar las tareas");
+    }
+  };
+
+  const handleAddTask = async (newTask: any) => {
     setIsAddingTask(false);
-    toast.success("Tarea periódica creada exitosamente");
   };
 
-  const handleUpdateTask = (taskId: number, updatedTask: any) => {
-    setTasks(tasks.map(task => 
-      task.id === taskId ? { ...updatedTask, id: taskId } : task
-    ));
-    toast.success("Tarea periódica actualizada exitosamente");
+  const handleUpdateTask = async (taskId: number, updatedTask: any) => {
+    // The update is handled in the form component
   };
 
-  const handleDeleteTask = (taskId: number) => {
-    setTasks(tasks.filter(task => task.id !== taskId));
-    toast.success("Tarea periódica eliminada exitosamente");
+  const handleDeleteTask = async (taskId: number) => {
+    try {
+      const { error } = await supabase
+        .from('recurring_tasks')
+        .delete()
+        .eq('id', taskId);
+
+      if (error) throw error;
+      toast.success("Tarea periódica eliminada exitosamente");
+    } catch (error) {
+      console.error('Error deleting task:', error);
+      toast.error("Error al eliminar la tarea");
+    }
   };
 
   return (

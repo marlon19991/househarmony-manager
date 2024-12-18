@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Calendar } from "@/components/ui/calendar";
@@ -9,9 +8,13 @@ import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { Calendar as CalendarIcon, Clock } from "lucide-react";
-import useProfiles from "@/hooks/useProfiles";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
+import { TitleField } from "./FormFields/TitleField";
+import { RecurrenceTypeField } from "./FormFields/RecurrenceTypeField";
+import { AssigneeField } from "./FormFields/AssigneeField";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 interface RecurringTaskFormProps {
   onSubmit: (task: any) => void;
@@ -20,34 +23,15 @@ interface RecurringTaskFormProps {
 }
 
 export const RecurringTaskForm = ({ onSubmit, initialTask, onCancel }: RecurringTaskFormProps) => {
-  const { profiles } = useProfiles();
   const [title, setTitle] = useState(initialTask?.title || "");
-  const [selectedDay, setSelectedDay] = useState<Date | undefined>(initialTask?.day ? new Date(initialTask.day) : undefined);
+  const [selectedDay, setSelectedDay] = useState<Date | undefined>(
+    initialTask?.specific_day ? new Date(initialTask.specific_day) : undefined
+  );
   const [time, setTime] = useState(initialTask?.time || "");
-  const [assignee, setAssignee] = useState(initialTask?.assignee || "all");
+  const [assignees, setAssignees] = useState<string[]>(initialTask?.assignees || []);
   const [icon, setIcon] = useState(initialTask?.icon || "calendar");
-  const [recurrenceType, setRecurrenceType] = useState(initialTask?.recurrenceType || "specific");
-  const [selectedDays, setSelectedDays] = useState<string[]>(initialTask?.selectedDays || []);
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    onSubmit({
-      title,
-      day: selectedDay,
-      time,
-      assignee,
-      icon,
-      recurrenceType,
-      selectedDays,
-    });
-  };
-
-  const icons = [
-    { value: "calendar", label: "Calendario" },
-    { value: "trash", label: "Basura" },
-    { value: "recycle", label: "Reciclaje" },
-    { value: "broom", label: "Limpieza" },
-  ];
+  const [recurrenceType, setRecurrenceType] = useState(initialTask?.recurrence_type || "specific");
+  const [selectedDays, setSelectedDays] = useState<string[]>(initialTask?.selected_days || []);
 
   const weekdays = [
     { value: "monday", label: "Lunes" },
@@ -59,6 +43,13 @@ export const RecurringTaskForm = ({ onSubmit, initialTask, onCancel }: Recurring
     { value: "sunday", label: "Domingo" },
   ];
 
+  const icons = [
+    { value: "calendar", label: "Calendario" },
+    { value: "trash", label: "Basura" },
+    { value: "recycle", label: "Reciclaje" },
+    { value: "broom", label: "Limpieza" },
+  ];
+
   const handleDayToggle = (day: string) => {
     setSelectedDays(current =>
       current.includes(day)
@@ -67,36 +58,48 @@ export const RecurringTaskForm = ({ onSubmit, initialTask, onCancel }: Recurring
     );
   };
 
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    const taskData = {
+      title,
+      recurrence_type: recurrenceType,
+      specific_day: selectedDay ? format(selectedDay, 'yyyy-MM-dd') : null,
+      selected_days: selectedDays,
+      time,
+      assignees,
+      icon,
+    };
+
+    try {
+      if (initialTask?.id) {
+        const { error } = await supabase
+          .from('recurring_tasks')
+          .update(taskData)
+          .eq('id', initialTask.id);
+        
+        if (error) throw error;
+        toast.success("Tarea actualizada exitosamente");
+      } else {
+        const { error } = await supabase
+          .from('recurring_tasks')
+          .insert([taskData]);
+        
+        if (error) throw error;
+        toast.success("Tarea creada exitosamente");
+      }
+
+      onSubmit(taskData);
+    } catch (error) {
+      console.error('Error saving task:', error);
+      toast.error("Error al guardar la tarea");
+    }
+  };
+
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
-      <div>
-        <Label htmlFor="title">Título de la tarea</Label>
-        <Input
-          id="title"
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-          placeholder="Ej: Sacar el reciclaje"
-          required
-        />
-      </div>
-
-      <div className="space-y-3">
-        <Label>Tipo de recurrencia</Label>
-        <RadioGroup value={recurrenceType} onValueChange={setRecurrenceType}>
-          <div className="flex items-center space-x-2">
-            <RadioGroupItem value="specific" id="specific" />
-            <Label htmlFor="specific">Día específico</Label>
-          </div>
-          <div className="flex items-center space-x-2">
-            <RadioGroupItem value="weekly" id="weekly" />
-            <Label htmlFor="weekly">Semanal</Label>
-          </div>
-          <div className="flex items-center space-x-2">
-            <RadioGroupItem value="workdays" id="workdays" />
-            <Label htmlFor="workdays">Lunes a viernes</Label>
-          </div>
-        </RadioGroup>
-      </div>
+      <TitleField value={title} onChange={setTitle} />
+      <RecurrenceTypeField value={recurrenceType} onChange={setRecurrenceType} />
 
       {recurrenceType === "specific" && (
         <div>
@@ -157,22 +160,7 @@ export const RecurringTaskForm = ({ onSubmit, initialTask, onCancel }: Recurring
         </div>
       </div>
 
-      <div>
-        <Label>Asignar a</Label>
-        <Select value={assignee} onValueChange={setAssignee}>
-          <SelectTrigger>
-            <SelectValue placeholder="Seleccionar responsable" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Todos</SelectItem>
-            {profiles.map((profile) => (
-              <SelectItem key={profile.id} value={profile.id.toString()}>
-                {profile.name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
+      <AssigneeField selectedAssignees={assignees} onChange={setAssignees} />
 
       <div>
         <Label>Icono</Label>
