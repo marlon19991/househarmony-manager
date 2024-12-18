@@ -66,7 +66,7 @@ export const RecurringTaskForm = ({ onSubmit, initialTask, onCancel }: Recurring
       recurrence_type: recurrenceType,
       specific_day: selectedDay ? format(selectedDay, 'yyyy-MM-dd') : null,
       selected_days: selectedDays,
-      time,
+      time: time || null, // Send null instead of empty string
       assignees,
       icon,
     };
@@ -90,9 +90,9 @@ export const RecurringTaskForm = ({ onSubmit, initialTask, onCancel }: Recurring
       }
 
       onSubmit(taskData);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error saving task:', error);
-      toast.error("Error al guardar la tarea");
+      toast.error(error.message || "Error al guardar la tarea");
     }
   };
 
