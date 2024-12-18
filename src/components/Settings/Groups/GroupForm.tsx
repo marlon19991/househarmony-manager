@@ -1,18 +1,19 @@
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Button } from "@/components/ui/button";
 
 interface GroupFormProps {
   group: {
     name: string;
     description: string;
+    members: string[];
   };
-  setGroup: (group: { name: string; description: string }) => void;
+  setGroup: (group: { name: string; description: string; members: string[] }) => void;
   onSubmit: () => void;
-  buttonText?: string;
 }
 
-export const GroupForm = ({ group, setGroup, onSubmit, buttonText = "Crear Grupo" }: GroupFormProps) => {
+export const GroupForm = ({ group, setGroup, onSubmit }: GroupFormProps) => {
   return (
     <div className="space-y-4">
       <div>
@@ -26,7 +27,7 @@ export const GroupForm = ({ group, setGroup, onSubmit, buttonText = "Crear Grupo
       </div>
       <div>
         <Label htmlFor="description">Descripción</Label>
-        <Input
+        <Textarea
           id="description"
           value={group.description}
           onChange={(e) => setGroup({ ...group, description: e.target.value })}
@@ -34,7 +35,7 @@ export const GroupForm = ({ group, setGroup, onSubmit, buttonText = "Crear Grupo
         />
       </div>
       <Button onClick={onSubmit} className="w-full">
-        {buttonText}
+        Guardar
       </Button>
     </div>
   );

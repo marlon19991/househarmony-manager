@@ -1,5 +1,7 @@
 import { create } from 'zustand';
-import { persist, createJSONStorage } from 'zustand/middleware';
+import { persist } from 'zustand/middleware';
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 interface Profile {
   id: number;
@@ -9,36 +11,97 @@ interface Profile {
 
 interface ProfileStore {
   profiles: Profile[];
-  addProfile: (profile: Omit<Profile, "id">) => void;
-  updateProfile: (profile: Profile) => void;
-  deleteProfile: (id: number) => void;
+  loading: boolean;
+  fetchProfiles: () => Promise<void>;
+  addProfile: (profile: Omit<Profile, "id">) => Promise<void>;
+  updateProfile: (profile: Profile) => Promise<void>;
+  deleteProfile: (id: number) => Promise<void>;
 }
 
-const useProfiles = create<ProfileStore>()(
-  persist(
-    (set) => ({
-      profiles: [],
-      addProfile: (profile) =>
-        set((state) => ({
-          profiles: [...state.profiles, { ...profile, id: Date.now() }],
-        })),
-      updateProfile: (updatedProfile) =>
-        set((state) => ({
-          profiles: state.profiles.map((profile) =>
-            profile.id === updatedProfile.id ? updatedProfile : profile
-          ),
-        })),
-      deleteProfile: (id) =>
-        set((state) => ({
-          profiles: state.profiles.filter((profile) => profile.id !== id),
-        })),
-    }),
-    {
-      name: 'household-profiles',
-      storage: createJSONStorage(() => localStorage),
-      version: 1,
+const useProfiles = create<ProfileStore>()((set) => ({
+  profiles: [],
+  loading: false,
+
+  fetchProfiles: async () => {
+    set({ loading: true });
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .order('created_at', { ascending: true });
+
+      if (error) throw error;
+      set({ profiles: data || [] });
+    } catch (error) {
+      console.error('Error fetching profiles:', error);
+      toast.error('Error al cargar los perfiles');
+    } finally {
+      set({ loading: false });
     }
-  )
-);
+  },
+
+  addProfile: async (profile) => {
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .insert([profile])
+        .select()
+        .single();
+
+      if (error) throw error;
+      
+      set((state) => ({
+        profiles: [...state.profiles, data],
+      }));
+      
+      toast.success('Perfil creado exitosamente');
+    } catch (error) {
+      console.error('Error adding profile:', error);
+      toast.error('Error al crear el perfil');
+    }
+  },
+
+  updateProfile: async (profile) => {
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({ name: profile.name, icon: profile.icon })
+        .eq('id', profile.id);
+
+      if (error) throw error;
+
+      set((state) => ({
+        profiles: state.profiles.map((p) =>
+          p.id === profile.id ? profile : p
+        ),
+      }));
+      
+      toast.success('Perfil actualizado exitosamente');
+    } catch (error) {
+      console.error('Error updating profile:', error);
+      toast.error('Error al actualizar el perfil');
+    }
+  },
+
+  deleteProfile: async (id) => {
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+
+      set((state) => ({
+        profiles: state.profiles.filter((profile) => profile.id !== id),
+      }));
+      
+      toast.success('Perfil eliminado exitosamente');
+    } catch (error) {
+      console.error('Error deleting profile:', error);
+      toast.error('Error al eliminar el perfil');
+    }
+  },
+}));
 
 export default useProfiles;

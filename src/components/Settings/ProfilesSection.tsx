@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -25,6 +25,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import useProfiles from "@/hooks/useProfiles";
 
 interface Profile {
   id: number;
@@ -33,46 +34,32 @@ interface Profile {
 }
 
 export const ProfilesSection = () => {
-  const [profiles, setProfiles] = useState<Profile[]>([
-    { id: 1, name: "Juan", icon: "/placeholder.svg" },
-    { id: 2, name: "María", icon: "/placeholder.svg" },
-  ]);
-
+  const { profiles, loading, fetchProfiles, addProfile, updateProfile, deleteProfile } = useProfiles();
   const [editingProfile, setEditingProfile] = useState<Profile | null>(null);
   const [newProfile, setNewProfile] = useState({ name: "", icon: "/placeholder.svg" });
 
-  const handleAddProfile = () => {
+  useEffect(() => {
+    fetchProfiles();
+  }, [fetchProfiles]);
+
+  const handleAddProfile = async () => {
     if (!newProfile.name) {
       toast.error("Por favor ingresa un nombre para el perfil");
       return;
     }
 
-    const profile = {
-      id: profiles.length + 1,
-      name: newProfile.name,
-      icon: newProfile.icon,
-    };
-
-    setProfiles([...profiles, profile]);
+    await addProfile(newProfile);
     setNewProfile({ name: "", icon: "/placeholder.svg" });
-    toast.success("Perfil creado exitosamente");
   };
 
-  const handleUpdateProfile = () => {
+  const handleUpdateProfile = async () => {
     if (!editingProfile) return;
-
-    setProfiles(
-      profiles.map((p) =>
-        p.id === editingProfile.id ? editingProfile : p
-      )
-    );
+    await updateProfile(editingProfile);
     setEditingProfile(null);
-    toast.success("Perfil actualizado exitosamente");
   };
 
-  const handleDeleteProfile = (id: number) => {
-    setProfiles(profiles.filter((p) => p.id !== id));
-    toast.success("Perfil eliminado exitosamente");
+  const handleDeleteProfile = async (id: number) => {
+    await deleteProfile(id);
   };
 
   const iconOptions = [
@@ -80,6 +67,10 @@ export const ProfilesSection = () => {
     { src: "https://github.com/shadcn.png", label: "Avatar 1" },
     { src: "https://api.dicebear.com/7.x/avataaars/svg", label: "Avatar 2" },
   ];
+
+  if (loading) {
+    return <div>Cargando perfiles...</div>;
+  }
 
   return (
     <div className="container max-w-4xl mx-auto p-4 space-y-6">
