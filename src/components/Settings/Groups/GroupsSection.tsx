@@ -21,9 +21,14 @@ interface Group {
   members: string[];
 }
 
+interface NewGroup {
+  name: string;
+  description: string;
+}
+
 export const GroupsSection = () => {
   const { groups, loading, addGroup, updateGroup: updateGroupInStore, deleteGroup: deleteGroupFromStore, fetchGroups } = useGroupStore();
-  const [newGroup, setNewGroup] = useState({ name: "", description: "" });
+  const [newGroup, setNewGroup] = useState<NewGroup>({ name: "", description: "" });
   const [editingGroup, setEditingGroup] = useState<Group | null>(null);
   const [isCreating, setIsCreating] = useState(false);
 
@@ -42,10 +47,7 @@ export const GroupsSection = () => {
 
     setIsCreating(true);
     try {
-      await addGroup({
-        name: newGroup.name,
-        description: newGroup.description,
-      });
+      await addGroup(newGroup);
       setNewGroup({ name: "", description: "" });
       toast.success("Grupo creado exitosamente");
     } catch (error) {

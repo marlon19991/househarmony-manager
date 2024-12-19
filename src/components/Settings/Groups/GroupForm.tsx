@@ -7,9 +7,8 @@ interface GroupFormProps {
   group: {
     name: string;
     description: string;
-    members: string[];
   };
-  setGroup: (group: { name: string; description: string; members: string[] }) => void;
+  setGroup: (group: { name: string; description: string; }) => void;
   onSubmit: () => void;
   isSubmitting?: boolean;
 }
