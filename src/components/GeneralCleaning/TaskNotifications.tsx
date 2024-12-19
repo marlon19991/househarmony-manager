@@ -23,6 +23,5 @@ export const useTaskNotifications = ({ tasks, currentAssignee }: TaskNotificatio
     }
     
     setPreviousPercentage(percentage);
-    return percentage;
   }, [tasks, lastCompletionMessageTime, previousPercentage]);
 };

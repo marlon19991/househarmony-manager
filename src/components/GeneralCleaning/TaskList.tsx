@@ -1,22 +1,12 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { toast } from "sonner";
-import TaskForm from "./TaskForm";
-import TaskItem from "./TaskItem";
-import { Button } from "@/components/ui/button";
-import { Plus } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import useProfiles from "@/hooks/useProfiles";
 import { useTaskPersistence } from "./hooks/useTaskPersistence";
 import { useTaskNotifications } from "./TaskNotifications";
 import { sendTaskAssignmentEmail } from "@/utils/emailUtils";
-import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
-} from "@/components/ui/sheet";
+import TaskListHeader from "./components/TaskListHeader";
+import TaskListContent from "./components/TaskListContent";
 
 interface TaskListProps {
   currentAssignee: string;
@@ -25,14 +15,19 @@ interface TaskListProps {
   isDisabled: boolean;
 }
 
-const TaskList = ({ currentAssignee, onTaskComplete, onAssigneeChange, isDisabled }: TaskListProps) => {
+const TaskList = ({ 
+  currentAssignee, 
+  onTaskComplete, 
+  onAssigneeChange, 
+  isDisabled 
+}: TaskListProps) => {
   const [editingTask, setEditingTask] = useState<number | null>(null);
   const [newTask, setNewTask] = useState({ title: "", comment: "" });
   const { profiles } = useProfiles();
   const { tasks, setTasks, updateTaskState } = useTaskPersistence(currentAssignee);
 
   // Use the notifications hook
-  const percentage = useTaskNotifications({ tasks, currentAssignee });
+  useTaskNotifications({ tasks, currentAssignee });
   
   // Update completion percentage whenever tasks change
   useEffect(() => {
@@ -196,51 +191,22 @@ const TaskList = ({ currentAssignee, onTaskComplete, onAssigneeChange, isDisable
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <div className="text-lg font-semibold">
-          Responsable actual: {currentAssignee}
-        </div>
-        <Sheet>
-          <SheetTrigger asChild>
-            <Button size="sm">
-              <Plus className="w-4 h-4 mr-2" />
-              Agregar Tarea
-            </Button>
-          </SheetTrigger>
-          <SheetContent>
-            <SheetHeader>
-              <SheetTitle>Agregar Nueva Tarea</SheetTitle>
-              <SheetDescription>
-                Crea una nueva tarea de limpieza general.
-              </SheetDescription>
-            </SheetHeader>
-            <div className="mt-6">
-              <TaskForm
-                newTask={newTask}
-                setNewTask={setNewTask}
-                onAddTask={handleAddTask}
-              />
-            </div>
-          </SheetContent>
-        </Sheet>
-      </div>
-
-      <div className="grid gap-3">
-        {tasks.map((task) => (
-          <TaskItem
-            key={task.id}
-            task={task}
-            editingTask={editingTask}
-            onTaskToggle={handleTaskToggle}
-            onUpdateTask={handleUpdateTask}
-            onDeleteTask={handleDeleteTask}
-            setEditingTask={setEditingTask}
-            setTasks={setTasks}
-            tasks={tasks}
-            isDisabled={isDisabled}
-          />
-        ))}
-      </div>
+      <TaskListHeader
+        currentAssignee={currentAssignee}
+        newTask={newTask}
+        setNewTask={setNewTask}
+        onAddTask={handleAddTask}
+      />
+      <TaskListContent
+        tasks={tasks}
+        editingTask={editingTask}
+        onTaskToggle={handleTaskToggle}
+        onUpdateTask={handleUpdateTask}
+        onDeleteTask={handleDeleteTask}
+        setEditingTask={setEditingTask}
+        setTasks={setTasks}
+        isDisabled={isDisabled}
+      />
     </div>
   );
 };
