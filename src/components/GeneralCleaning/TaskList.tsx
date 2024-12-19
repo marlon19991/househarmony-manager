@@ -41,7 +41,6 @@ const TaskList = ({ currentAssignee, onTaskComplete, onAssigneeChange }: TaskLis
   const [editingTask, setEditingTask] = useState<number | null>(null);
   const [newTask, setNewTask] = useState({ title: "", comment: "" });
 
-  // Reset tasks when assignee changes
   useEffect(() => {
     setTasks(tasks.map(task => ({ ...task, completed: false })));
     onTaskComplete(0);
@@ -69,7 +68,7 @@ const TaskList = ({ currentAssignee, onTaskComplete, onAssigneeChange }: TaskLis
     e.preventDefault();
     const task = {
       id: Date.now(),
-      description: newTask.description,
+      description: newTask.title,
       completed: false,
       comment: newTask.comment
     };

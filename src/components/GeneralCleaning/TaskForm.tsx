@@ -25,12 +25,17 @@ const TaskForm = ({ newTask, setNewTask, onAddTask }: TaskFormProps) => {
       if (currentAssignee) {
         const assignee = profiles.find(p => p.name === currentAssignee);
         if (assignee?.email) {
+          console.log("Sending email to:", assignee.email);
           await sendTaskAssignmentEmail(
             assignee.email,
             currentAssignee,
             newTask.title,
             "cleaning"
           );
+          console.log("Email sent successfully");
+          toast.success("Notificación enviada por correo electrónico");
+        } else {
+          console.log("No email found for assignee:", currentAssignee);
         }
       }
 
