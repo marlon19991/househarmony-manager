@@ -22,7 +22,7 @@ interface Group {
 }
 
 export const GroupsSection = () => {
-  const { groups, addGroup, updateGroup: updateGroupInStore, deleteGroup: deleteGroupFromStore } = useGroupStore();
+  const { groups, loading, addGroup, updateGroup: updateGroupInStore, deleteGroup: deleteGroupFromStore } = useGroupStore();
   const [newGroup, setNewGroup] = useState({ name: "", description: "", members: [] });
   const [editingGroup, setEditingGroup] = useState<Group | null>(null);
 
@@ -68,6 +68,10 @@ export const GroupsSection = () => {
       toast.error("Error al eliminar el grupo");
     }
   };
+
+  if (loading) {
+    return <div>Cargando grupos...</div>;
+  }
 
   return (
     <div className="space-y-6">
