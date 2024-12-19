@@ -42,6 +42,54 @@ export type Database = {
         }
         Relationships: []
       }
+      general_cleaning_progress: {
+        Row: {
+          assignee: string
+          completion_percentage: number | null
+          created_at: string
+          id: number
+          last_updated: string
+        }
+        Insert: {
+          assignee: string
+          completion_percentage?: number | null
+          created_at?: string
+          id?: number
+          last_updated?: string
+        }
+        Update: {
+          assignee?: string
+          completion_percentage?: number | null
+          created_at?: string
+          id?: number
+          last_updated?: string
+        }
+        Relationships: []
+      }
+      general_cleaning_tasks: {
+        Row: {
+          comment: string | null
+          completed: boolean | null
+          created_at: string
+          description: string
+          id: number
+        }
+        Insert: {
+          comment?: string | null
+          completed?: boolean | null
+          created_at?: string
+          description: string
+          id?: number
+        }
+        Update: {
+          comment?: string | null
+          completed?: boolean | null
+          created_at?: string
+          description?: string
+          id?: number
+        }
+        Relationships: []
+      }
       notifications: {
         Row: {
           created_at: string
@@ -108,35 +156,44 @@ export type Database = {
         Row: {
           assignees: string[] | null
           created_at: string
+          end_date: string | null
           icon: string
           id: number
           recurrence_type: string
           selected_days: string[] | null
           specific_day: string | null
+          start_date: string | null
           time: string | null
           title: string
+          weekdays: boolean[] | null
         }
         Insert: {
           assignees?: string[] | null
           created_at?: string
+          end_date?: string | null
           icon: string
           id?: number
           recurrence_type: string
           selected_days?: string[] | null
           specific_day?: string | null
+          start_date?: string | null
           time?: string | null
           title: string
+          weekdays?: boolean[] | null
         }
         Update: {
           assignees?: string[] | null
           created_at?: string
+          end_date?: string | null
           icon?: string
           id?: number
           recurrence_type?: string
           selected_days?: string[] | null
           specific_day?: string | null
+          start_date?: string | null
           time?: string | null
           title?: string
+          weekdays?: boolean[] | null
         }
         Relationships: []
       }

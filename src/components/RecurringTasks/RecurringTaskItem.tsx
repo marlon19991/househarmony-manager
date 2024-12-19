@@ -13,7 +13,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { Calendar, Trash2, Pencil, Clock, Users } from "lucide-react";
-import { format, isValid } from "date-fns";
+import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { RecurringTaskForm } from "./RecurringTaskForm";
 
@@ -21,10 +21,9 @@ interface RecurringTaskItemProps {
   task: {
     id: number;
     title: string;
-    recurrence_type: string;
-    selected_days?: string[];
-    specific_day?: string;
-    time?: string;
+    weekdays?: boolean[];
+    start_date?: string;
+    end_date?: string;
     assignees?: string[];
     icon?: string;
   };
@@ -39,46 +38,33 @@ export const RecurringTaskItem = ({ task, onDelete, onUpdate }: RecurringTaskIte
     setIsEditing(false);
   };
 
-  const getRecurrenceText = () => {
-    switch (task.recurrence_type) {
-      case "specific": {
-        const date = task.specific_day ? new Date(task.specific_day) : null;
-        if (!date || !isValid(date)) return "Fecha inválida";
-        return format(date, "EEEE", { locale: es });
+  const getScheduleText = () => {
+    const days = ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
+    const selectedDays = task.weekdays?.map((selected, index) => selected ? days[index] : null).filter(Boolean);
+    
+    let scheduleText = "";
+    
+    if (task.start_date) {
+      const startDate = new Date(task.start_date);
+      scheduleText += `Desde ${format(startDate, "PPP", { locale: es })}`;
+      
+      if (task.end_date) {
+        const endDate = new Date(task.end_date);
+        scheduleText += ` hasta ${format(endDate, "PPP", { locale: es })}`;
       }
-      case "weekly":
-        if (!task.selected_days || task.selected_days.length === 0) return "";
-        
-        const weekdays = {
-          monday: "Lunes",
-          tuesday: "Martes",
-          wednesday: "Miércoles",
-          thursday: "Jueves",
-          friday: "Viernes",
-          saturday: "Sábado",
-          sunday: "Domingo",
-        };
-
-        const selectedDayNames = task.selected_days
-          .map((day: string) => weekdays[day as keyof typeof weekdays])
-          .sort((a: string, b: string) => {
-            const order = Object.values(weekdays);
-            return order.indexOf(a) - order.indexOf(b);
-          });
-
-        if (selectedDayNames.length === 1) {
-          return `Cada ${selectedDayNames[0]}`;
-        } else if (selectedDayNames.length === 2) {
-          return `Cada ${selectedDayNames[0]} y ${selectedDayNames[1]}`;
-        } else {
-          const lastDay = selectedDayNames.pop();
-          return `Cada ${selectedDayNames.join(", ")} y ${lastDay}`;
-        }
-      case "workdays":
-        return "Lunes a viernes";
-      default:
-        return "";
     }
+
+    if (selectedDays && selectedDays.length > 0) {
+      if (scheduleText) scheduleText += " - ";
+      
+      if (selectedDays.length === 7) {
+        scheduleText += "Todos los días";
+      } else {
+        scheduleText += selectedDays.join(", ");
+      }
+    }
+
+    return scheduleText || "Sin programación";
   };
 
   const getAssigneesText = () => {
@@ -97,10 +83,9 @@ export const RecurringTaskItem = ({ task, onDelete, onUpdate }: RecurringTaskIte
           initialData={{
             title: task.title,
             selectedAssignees: task.assignees || [],
-            recurrence_type: task.recurrence_type,
-            selected_days: task.selected_days,
-            specific_day: task.specific_day,
-            time: task.time,
+            weekdays: task.weekdays,
+            start_date: task.start_date ? new Date(task.start_date) : undefined,
+            end_date: task.end_date ? new Date(task.end_date) : undefined,
             icon: task.icon
           }}
           onSubmit={handleUpdate}
@@ -118,13 +103,7 @@ export const RecurringTaskItem = ({ task, onDelete, onUpdate }: RecurringTaskIte
           <div>
             <h3 className="font-medium">{task.title}</h3>
             <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2 text-sm text-muted-foreground">
-              <span>{getRecurrenceText()}</span>
-              {task.time && (
-                <span className="flex items-center">
-                  <Clock className="h-3 w-3 mr-1" />
-                  {task.time}
-                </span>
-              )}
+              <span>{getScheduleText()}</span>
               {task.assignees && task.assignees.length > 0 && (
                 <span className="flex items-center">
                   <Users className="h-3 w-3 mr-1" />
