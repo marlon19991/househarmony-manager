@@ -25,6 +25,7 @@ interface TaskItemProps {
   setEditingTask: (taskId: number | null) => void;
   setTasks: React.Dispatch<React.SetStateAction<Task[]>>;
   tasks: Task[];
+  disabled?: boolean;
 }
 
 const TaskItem = ({
@@ -36,6 +37,7 @@ const TaskItem = ({
   setEditingTask,
   setTasks,
   tasks,
+  disabled = false,
 }: TaskItemProps) => {
   useEffect(() => {
     const initializeTask = async () => {
@@ -65,11 +67,12 @@ const TaskItem = ({
               checked={task.completed}
               onCheckedChange={() => handleTaskToggle(task.id, task, onTaskToggle)}
               id={`task-${task.id}`}
+              disabled={disabled}
             />
             <div>
               <label
                 htmlFor={`task-${task.id}`}
-                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                className={`text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 ${disabled ? 'opacity-50' : ''}`}
               >
                 {task.description}
               </label>
@@ -83,6 +86,7 @@ const TaskItem = ({
               variant="ghost"
               size="sm"
               onClick={() => setEditingTask(task.id)}
+              disabled={disabled}
             >
               Editar
             </Button>
@@ -92,6 +96,7 @@ const TaskItem = ({
                   variant="ghost"
                   size="sm"
                   className="text-red-500"
+                  disabled={disabled}
                 >
                   Eliminar
                 </Button>

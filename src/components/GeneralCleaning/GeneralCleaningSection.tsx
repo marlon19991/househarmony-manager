@@ -3,24 +3,50 @@ import { Progress } from "@/components/ui/progress";
 import { Card } from "@/components/ui/card";
 import TaskList from "./TaskList";
 import AssigneeSelector from "./AssigneeSelector";
+import { supabase } from "@/integrations/supabase/client";
 
 const GeneralCleaningSection = () => {
   const [currentAssignee, setCurrentAssignee] = useState("Sin asignar");
   const [completionPercentage, setCompletionPercentage] = useState(0);
 
   useEffect(() => {
-    // Load saved assignee from localStorage
-    const savedAssignee = localStorage.getItem("currentCleaningAssignee");
-    if (savedAssignee) {
-      setCurrentAssignee(savedAssignee);
-    }
+    const loadSavedAssignee = async () => {
+      // Load saved assignee from localStorage
+      const savedAssignee = localStorage.getItem("currentCleaningAssignee");
+      if (savedAssignee) {
+        setCurrentAssignee(savedAssignee);
+        
+        // Load completion percentage from database
+        const { data: progressData } = await supabase
+          .from('general_cleaning_progress')
+          .select('completion_percentage')
+          .eq('assignee', savedAssignee)
+          .maybeSingle();
+
+        if (progressData?.completion_percentage !== null) {
+          setCompletionPercentage(progressData.completion_percentage);
+        }
+      }
+    };
+
+    loadSavedAssignee();
   }, []);
 
-  const handleAssigneeChange = (newAssignee: string) => {
+  const handleAssigneeChange = async (newAssignee: string) => {
     setCurrentAssignee(newAssignee);
-    // Save to localStorage
     localStorage.setItem("currentCleaningAssignee", newAssignee);
-    setCompletionPercentage(0); // Reset completion when assignee changes
+    
+    if (newAssignee === "Sin asignar") {
+      setCompletionPercentage(0);
+      // Reset progress in database
+      await supabase
+        .from('general_cleaning_progress')
+        .upsert({
+          assignee: newAssignee,
+          completion_percentage: 0,
+          last_updated: new Date().toISOString()
+        });
+    }
   };
 
   return (

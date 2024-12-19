@@ -4,6 +4,7 @@ import TaskForm from "./TaskForm";
 import TaskItem from "./TaskItem";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 import {
   Sheet,
   SheetContent,
@@ -42,8 +43,10 @@ const TaskList = ({ currentAssignee, onTaskComplete, onAssigneeChange }: TaskLis
   const [newTask, setNewTask] = useState({ title: "", comment: "" });
 
   useEffect(() => {
-    setTasks(tasks.map(task => ({ ...task, completed: false })));
-    onTaskComplete(0);
+    if (currentAssignee === "Sin asignar") {
+      setTasks(tasks.map(task => ({ ...task, completed: false })));
+      onTaskComplete(0);
+    }
   }, [currentAssignee]);
 
   const calculateCompletionPercentage = () => {
@@ -51,13 +54,27 @@ const TaskList = ({ currentAssignee, onTaskComplete, onAssigneeChange }: TaskLis
     return (completedTasks / tasks.length) * 100;
   };
 
-  const handleTaskToggle = (taskId: number) => {
+  const handleTaskToggle = async (taskId: number) => {
+    if (currentAssignee === "Sin asignar") {
+      toast.error("Debe asignar un responsable antes de marcar tareas");
+      return;
+    }
+
     setTasks(tasks.map(task => 
       task.id === taskId ? { ...task, completed: !task.completed } : task
     ));
     
     const completionPercentage = calculateCompletionPercentage();
     onTaskComplete(completionPercentage);
+    
+    // Update progress in database
+    await supabase
+      .from('general_cleaning_progress')
+      .upsert({
+        assignee: currentAssignee,
+        completion_percentage: completionPercentage,
+        last_updated: new Date().toISOString()
+      });
     
     if (completionPercentage >= 75) {
       toast.success("¡Has completado suficientes tareas para finalizar el aseo general!");
@@ -106,7 +123,7 @@ const TaskList = ({ currentAssignee, onTaskComplete, onAssigneeChange }: TaskLis
         </div>
         <Sheet>
           <SheetTrigger asChild>
-            <Button size="sm">
+            <Button size="sm" disabled={currentAssignee === "Sin asignar"}>
               <Plus className="w-4 h-4 mr-2" />
               Agregar Tarea
             </Button>
@@ -141,6 +158,7 @@ const TaskList = ({ currentAssignee, onTaskComplete, onAssigneeChange }: TaskLis
             setEditingTask={setEditingTask}
             setTasks={setTasks}
             tasks={tasks}
+            disabled={currentAssignee === "Sin asignar"}
           />
         ))}
       </div>
