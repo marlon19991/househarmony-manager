@@ -183,7 +183,7 @@ export const ProfilesSection = () => {
           {editingProfile && (
             <ProfileForm
               profile={editingProfile}
-              setProfile={(updatedProfile) => setEditingProfile({ ...editingProfile, ...updatedProfile })}
+              setProfile={setEditingProfile}
               onSubmit={handleUpdateProfile}
               iconOptions={iconOptions}
             />
