@@ -73,6 +73,15 @@ export const RecurringTaskItem = ({ task, onDelete, onUpdate }: RecurringTaskIte
     }
   };
 
+  const getAssigneesText = () => {
+    if (!task.assignees || task.assignees.length === 0) return null;
+    
+    if (task.assignees.length <= 4) {
+      return task.assignees.join(", ");
+    }
+    return `${task.assignees.length} asignados`;
+  };
+
   if (isEditing) {
     return (
       <Card className="p-4">
@@ -92,7 +101,7 @@ export const RecurringTaskItem = ({ task, onDelete, onUpdate }: RecurringTaskIte
           <Calendar className="h-5 w-5 text-muted-foreground" />
           <div>
             <h3 className="font-medium">{task.title}</h3>
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2 text-sm text-muted-foreground">
               <span>{getRecurrenceText()}</span>
               {task.time && (
                 <span className="flex items-center">
@@ -103,9 +112,7 @@ export const RecurringTaskItem = ({ task, onDelete, onUpdate }: RecurringTaskIte
               {task.assignees && task.assignees.length > 0 && (
                 <span className="flex items-center">
                   <Users className="h-3 w-3 mr-1" />
-                  {task.assignees.length === 1 
-                    ? task.assignees[0]
-                    : `${task.assignees.length} asignados`}
+                  {getAssigneesText()}
                 </span>
               )}
             </div>
