@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { sendTaskAssignmentEmail } from "@/utils/emailUtils";
 import { AssigneeField } from "./FormFields/AssigneeField";
 import { WeekdaySelector } from "./FormFields/WeekdaySelector";
+import { RecurrenceTypeField } from "./FormFields/RecurrenceTypeField";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -24,6 +25,7 @@ interface RecurringTaskFormProps {
     start_date?: Date;
     end_date?: Date;
     icon?: string;
+    recurrence_type?: string;
   };
 }
 
@@ -38,6 +40,9 @@ export const RecurringTaskForm = ({ onSubmit, onCancel, initialData }: Recurring
   );
   const [endDate, setEndDate] = useState<Date | undefined>(
     initialData?.end_date ? new Date(initialData.end_date) : undefined
+  );
+  const [recurrenceType, setRecurrenceType] = useState<string>(
+    initialData?.recurrence_type || "weekly"
   );
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -62,7 +67,8 @@ export const RecurringTaskForm = ({ onSubmit, onCancel, initialData }: Recurring
           weekdays,
           start_date: startDate?.toISOString(),
           end_date: endDate?.toISOString(),
-          icon: initialData?.icon || '📋'
+          icon: initialData?.icon || '📋',
+          recurrence_type: recurrenceType
         })
         .select()
         .single();
@@ -110,6 +116,11 @@ export const RecurringTaskForm = ({ onSubmit, onCancel, initialData }: Recurring
       <AssigneeField
         selectedAssignees={selectedAssignees}
         onChange={setSelectedAssignees}
+      />
+
+      <RecurrenceTypeField
+        value={recurrenceType}
+        onChange={setRecurrenceType}
       />
 
       <div className="grid gap-4 sm:grid-cols-2">
