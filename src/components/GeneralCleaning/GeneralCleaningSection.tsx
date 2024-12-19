@@ -29,19 +29,27 @@ const GeneralCleaningSection = () => {
           return;
         }
 
+        console.log('Progress data loaded:', progressData);
+
         if (progressData) {
           // Verify if the assignee exists in profiles or is "Sin asignar"
           const assigneeExists = progressData.assignee === "Sin asignar" || 
                                profiles.some(profile => profile.name === progressData.assignee);
           
           if (!assigneeExists) {
+            console.log('Assignee not found in profiles, setting to "Sin asignar"');
             setCurrentAssignee("Sin asignar");
             setCompletionPercentage(0);
             return;
           }
 
+          console.log('Setting current assignee to:', progressData.assignee);
           setCurrentAssignee(progressData.assignee);
           setCompletionPercentage(progressData.completion_percentage || 0);
+        } else {
+          console.log('No progress data found, using default values');
+          setCurrentAssignee("Sin asignar");
+          setCompletionPercentage(0);
         }
       } catch (error) {
         console.error('Error in loadSavedProgress:', error);
@@ -54,6 +62,8 @@ const GeneralCleaningSection = () => {
 
   const handleAssigneeChange = async (newAssignee: string) => {
     try {
+      console.log('Changing assignee to:', newAssignee);
+      
       // Update progress in database
       const { error } = await supabase
         .from('general_cleaning_progress')
