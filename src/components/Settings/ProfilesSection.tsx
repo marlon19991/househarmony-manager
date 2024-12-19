@@ -41,12 +41,18 @@ interface Profile {
   email?: string;
 }
 
+const iconOptions = [
+  { src: "/placeholder.svg", label: "Default" },
+  { src: "https://github.com/shadcn.png", label: "Avatar 1" },
+  { src: "https://api.dicebear.com/7.x/avataaars/svg", label: "Avatar 2" },
+];
+
 export const ProfilesSection = () => {
   const { profiles, loading, fetchProfiles, addProfile, updateProfile, deleteProfile } = useProfiles();
   const [editingProfile, setEditingProfile] = useState<Profile | null>(null);
   const [newProfile, setNewProfile] = useState<Omit<Profile, "id">>({ 
     name: "", 
-    icon: "/placeholder.svg",
+    icon: "/placeholder.svg", 
     whatsapp_number: "",
     email: "" 
   });
@@ -101,13 +107,9 @@ export const ProfilesSection = () => {
             </SheetHeader>
             <ProfileForm
               profile={newProfile}
-              setProfile={setNewProfile as (profile: Omit<Profile, "id">) => void}
+              setProfile={setNewProfile}
               onSubmit={handleAddProfile}
-              iconOptions={[
-                { src: "/placeholder.svg", label: "Default" },
-                { src: "https://github.com/shadcn.png", label: "Avatar 1" },
-                { src: "https://api.dicebear.com/7.x/avataaars/svg", label: "Avatar 2" },
-              ]}
+              iconOptions={iconOptions}
             />
           </SheetContent>
         </Sheet>
@@ -181,13 +183,9 @@ export const ProfilesSection = () => {
           {editingProfile && (
             <ProfileForm
               profile={editingProfile}
-              setProfile={setEditingProfile as unknown as (profile: Profile) => void}
+              setProfile={setEditingProfile}
               onSubmit={handleUpdateProfile}
-              iconOptions={[
-                { src: "/placeholder.svg", label: "Default" },
-                { src: "https://github.com/shadcn.png", label: "Avatar 1" },
-                { src: "https://api.dicebear.com/7.x/avataaars/svg", label: "Avatar 2" },
-              ]}
+              iconOptions={iconOptions}
             />
           )}
         </DialogContent>

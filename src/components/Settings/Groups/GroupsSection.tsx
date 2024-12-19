@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Users } from "lucide-react";
 import { toast } from "sonner";
@@ -12,7 +13,6 @@ import {
 import { GroupForm } from "./GroupForm";
 import { GroupCard } from "./GroupCard";
 import useGroupStore from "@/stores/useGroupStore";
-import { useState, useEffect } from "react";
 
 interface Group {
   id: number;
@@ -21,69 +21,41 @@ interface Group {
   members: string[];
 }
 
-interface NewGroup {
-  name: string;
-  description: string;
-}
-
 export const GroupsSection = () => {
-  const { groups, loading, addGroup, updateGroup: updateGroupInStore, deleteGroup: deleteGroupFromStore, fetchGroups } = useGroupStore();
-  const [newGroup, setNewGroup] = useState<NewGroup>({ name: "", description: "" });
+  const { groups, addGroup: addGroupToStore, updateGroup: updateGroupInStore, deleteGroup: deleteGroupFromStore } = useGroupStore();
+  const [newGroup, setNewGroup] = useState({ name: "", description: "", members: [] });
   const [editingGroup, setEditingGroup] = useState<Group | null>(null);
-  const [isCreating, setIsCreating] = useState(false);
 
-  useEffect(() => {
-    fetchGroups().catch(error => {
-      console.error('Error al cargar grupos:', error);
-      toast.error("Error al cargar los grupos");
-    });
-  }, [fetchGroups]);
-
-  const handleAddGroup = async () => {
+  const handleAddGroup = () => {
     if (!newGroup.name) {
       toast.error("Por favor ingresa un nombre para el grupo");
       return;
     }
 
-    setIsCreating(true);
-    try {
-      await addGroup(newGroup);
-      setNewGroup({ name: "", description: "" });
-      toast.success("Grupo creado exitosamente");
-    } catch (error) {
-      console.error('Error al crear grupo:', error);
-      toast.error("Error al crear el grupo");
-    } finally {
-      setIsCreating(false);
-    }
+    const group = {
+      id: Date.now(),
+      name: newGroup.name,
+      description: newGroup.description,
+      members: newGroup.members,
+    };
+
+    addGroupToStore(group);
+    setNewGroup({ name: "", description: "", members: [] });
+    toast.success("Grupo creado exitosamente");
   };
 
-  const handleUpdateGroup = async () => {
+  const handleUpdateGroup = () => {
     if (!editingGroup) return;
 
-    try {
-      await updateGroupInStore(editingGroup);
-      setEditingGroup(null);
-      toast.success("Grupo actualizado exitosamente");
-    } catch (error) {
-      console.error('Error al actualizar grupo:', error);
-      toast.error("Error al actualizar el grupo");
-    }
+    updateGroupInStore(editingGroup);
+    setEditingGroup(null);
+    toast.success("Grupo actualizado exitosamente");
   };
 
-  const handleDeleteGroup = async (id: number) => {
-    try {
-      await deleteGroupFromStore(id);
-      toast.success("Grupo eliminado exitosamente");
-    } catch (error) {
-      console.error('Error al eliminar grupo:', error);
-      toast.error("Error al eliminar el grupo");
-    }
+  const handleDeleteGroup = (id: number) => {
+    deleteGroupFromStore(id);
+    toast.success("Grupo eliminado exitosamente");
   };
-
-  if (loading) {
-    return <div>Cargando grupos...</div>;
-  }
 
   return (
     <div className="space-y-6">
@@ -91,9 +63,9 @@ export const GroupsSection = () => {
         <h2 className="text-2xl font-bold">Grupos</h2>
         <Sheet>
           <SheetTrigger asChild>
-            <Button disabled={isCreating}>
+            <Button>
               <Users className="h-4 w-4 mr-2" />
-              {isCreating ? 'Creando...' : 'Nuevo Grupo'}
+              Nuevo Grupo
             </Button>
           </SheetTrigger>
           <SheetContent>
@@ -108,7 +80,6 @@ export const GroupsSection = () => {
                 group={newGroup}
                 setGroup={setNewGroup}
                 onSubmit={handleAddGroup}
-                isSubmitting={isCreating}
               />
             </div>
           </SheetContent>
@@ -126,11 +97,6 @@ export const GroupsSection = () => {
             handleDeleteGroup={handleDeleteGroup}
           />
         ))}
-        {groups.length === 0 && (
-          <p className="text-center text-muted-foreground">
-            No hay grupos creados. Crea un grupo para empezar.
-          </p>
-        )}
       </div>
     </div>
   );

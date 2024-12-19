@@ -11,7 +11,7 @@ import Settings from "./pages/Settings";
 import GeneralCleaning from "./pages/GeneralCleaning";
 import Bills from "./pages/Bills";
 import RecurringTasks from "./pages/RecurringTasks";
-import { useInitializeApp } from "./hooks/useInitializeApp";
+import { useInitializeProfiles } from "./hooks/useProfiles";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -23,7 +23,7 @@ const queryClient = new QueryClient({
 });
 
 const AppRoutes = () => {
-  useInitializeApp();
+  useInitializeProfiles();
 
   return (
     <Layout>
