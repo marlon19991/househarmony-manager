@@ -38,6 +38,7 @@ interface Profile {
   name: string;
   icon: string;
   whatsapp_number?: string;
+  email?: string;
 }
 
 const iconOptions = [
@@ -49,7 +50,12 @@ const iconOptions = [
 export const ProfilesSection = () => {
   const { profiles, loading, fetchProfiles, addProfile, updateProfile, deleteProfile } = useProfiles();
   const [editingProfile, setEditingProfile] = useState<Profile | null>(null);
-  const [newProfile, setNewProfile] = useState({ name: "", icon: "/placeholder.svg", whatsapp_number: "" });
+  const [newProfile, setNewProfile] = useState<Omit<Profile, "id">>({ 
+    name: "", 
+    icon: "/placeholder.svg", 
+    whatsapp_number: "",
+    email: "" 
+  });
   const [showEditDialog, setShowEditDialog] = useState(false);
 
   useEffect(() => {
@@ -63,7 +69,7 @@ export const ProfilesSection = () => {
     }
 
     await addProfile(newProfile);
-    setNewProfile({ name: "", icon: "/placeholder.svg", whatsapp_number: "" });
+    setNewProfile({ name: "", icon: "/placeholder.svg", whatsapp_number: "", email: "" });
   };
 
   const handleUpdateProfile = async () => {
@@ -120,6 +126,9 @@ export const ProfilesSection = () => {
                 </Avatar>
                 <div className="space-y-1">
                   <span className="font-medium">{profile.name}</span>
+                  {profile.email && (
+                    <p className="text-sm text-muted-foreground">{profile.email}</p>
+                  )}
                   {profile.whatsapp_number && (
                     <p className="text-sm text-muted-foreground">{profile.whatsapp_number}</p>
                   )}
