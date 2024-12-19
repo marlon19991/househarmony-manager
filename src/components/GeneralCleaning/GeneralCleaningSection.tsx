@@ -17,15 +17,19 @@ const GeneralCleaningSection = () => {
         setCurrentAssignee(savedAssignee);
         
         // Load completion percentage from database
-        const { data: progressData } = await supabase
+        const { data: progressData, error } = await supabase
           .from('general_cleaning_progress')
           .select('completion_percentage')
           .eq('assignee', savedAssignee)
           .maybeSingle();
 
-        if (progressData?.completion_percentage !== null) {
-          setCompletionPercentage(progressData.completion_percentage);
+        if (error) {
+          console.error('Error loading progress:', error);
+          return;
         }
+
+        // Set completion percentage if data exists, otherwise default to 0
+        setCompletionPercentage(progressData?.completion_percentage ?? 0);
       }
     };
 
@@ -46,6 +50,15 @@ const GeneralCleaningSection = () => {
           completion_percentage: 0,
           last_updated: new Date().toISOString()
         });
+    } else {
+      // Load existing progress for the new assignee
+      const { data: progressData } = await supabase
+        .from('general_cleaning_progress')
+        .select('completion_percentage')
+        .eq('assignee', newAssignee)
+        .maybeSingle();
+
+      setCompletionPercentage(progressData?.completion_percentage ?? 0);
     }
   };
 
