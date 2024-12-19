@@ -4,6 +4,7 @@ import { User } from "lucide-react";
 import { toast } from "sonner";
 import useProfiles from "@/hooks/useProfiles";
 import { sendTaskAssignmentEmail } from "@/utils/emailUtils";
+import { useTaskPersistence } from "./hooks/useTaskPersistence";
 
 interface AssigneeSelectorProps {
   currentAssignee: string;
@@ -13,6 +14,7 @@ interface AssigneeSelectorProps {
 
 const AssigneeSelector = ({ currentAssignee, onAssigneeChange, completionPercentage }: AssigneeSelectorProps) => {
   const { profiles } = useProfiles();
+  const { tasks, setTasks } = useTaskPersistence(currentAssignee);
 
   const handleAssigneeChange = async (newAssignee: string) => {
     // Skip validation if current assignee is "Sin asignar"
@@ -39,6 +41,9 @@ const AssigneeSelector = ({ currentAssignee, onAssigneeChange, completionPercent
         console.log("No email found for assignee:", newAssignee);
       }
 
+      // Reset all tasks when changing assignee
+      await resetTasksAndProgress(tasks, setTasks);
+      
       onAssigneeChange(newAssignee);
       toast.success(`Se ha asignado el aseo general a ${newAssignee}`);
     } catch (error) {
