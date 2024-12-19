@@ -10,6 +10,7 @@ import { SpecificDateField } from "./FormFields/SpecificDateField";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 
@@ -18,6 +19,7 @@ interface RecurringTaskFormProps {
   onCancel: () => void;
   initialData?: {
     title: string;
+    description?: string;
     selectedAssignees: string[];
     weekdays?: boolean[];
     start_date?: Date;
@@ -30,6 +32,7 @@ interface RecurringTaskFormProps {
 
 export const RecurringTaskForm = ({ onSubmit, onCancel, initialData }: RecurringTaskFormProps) => {
   const [title, setTitle] = useState(initialData?.title || "");
+  const [description, setDescription] = useState(initialData?.description || "");
   const [selectedAssignees, setSelectedAssignees] = useState(initialData?.selectedAssignees || []);
   const [weekdays, setWeekdays] = useState<boolean[]>(
     initialData?.weekdays || new Array(7).fill(false)
@@ -87,6 +90,7 @@ export const RecurringTaskForm = ({ onSubmit, onCancel, initialData }: Recurring
         .from('recurring_tasks')
         .upsert({
           title,
+          description,
           assignees: selectedAssignees,
           weekdays: recurrenceType === "weekly" || recurrenceType === "workdays" ? weekdays : new Array(7).fill(false),
           start_date: recurrenceType === "specific" ? specificDate?.toISOString() : null,
@@ -142,6 +146,17 @@ export const RecurringTaskForm = ({ onSubmit, onCancel, initialData }: Recurring
           value={title}
           onChange={(e) => setTitle(e.target.value)}
           placeholder="Título de la tarea"
+        />
+      </div>
+
+      <div>
+        <Label htmlFor="taskDescription">Descripción</Label>
+        <Textarea
+          id="taskDescription"
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
+          placeholder="Descripción de la tarea"
+          className="h-24"
         />
       </div>
       

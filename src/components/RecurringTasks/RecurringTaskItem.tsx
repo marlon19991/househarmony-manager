@@ -21,6 +21,7 @@ interface RecurringTaskItemProps {
   task: {
     id: number;
     title: string;
+    description?: string;
     weekdays?: boolean[];
     start_date?: string;
     end_date?: string;
@@ -83,6 +84,7 @@ export const RecurringTaskItem = ({ task, onDelete, onUpdate }: RecurringTaskIte
         <RecurringTaskForm
           initialData={{
             title: task.title,
+            description: task.description,
             selectedAssignees: task.assignees || [],
             weekdays: task.weekdays,
             start_date: task.start_date ? new Date(task.start_date) : undefined,
@@ -105,6 +107,9 @@ export const RecurringTaskItem = ({ task, onDelete, onUpdate }: RecurringTaskIte
           <Calendar className="h-5 w-5 text-muted-foreground" />
           <div>
             <h3 className="font-medium">{task.title}</h3>
+            {task.description && (
+              <p className="text-sm text-muted-foreground mt-1">{task.description}</p>
+            )}
             <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2 text-sm text-muted-foreground">
               <span>{getScheduleText()}</span>
               {task.notification_time && (

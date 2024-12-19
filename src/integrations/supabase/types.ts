@@ -9,6 +9,35 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      bill_notifications: {
+        Row: {
+          bill_id: number
+          created_at: string
+          id: number
+          notification_type: string
+        }
+        Insert: {
+          bill_id: number
+          created_at?: string
+          id?: number
+          notification_type: string
+        }
+        Update: {
+          bill_id?: number
+          created_at?: string
+          id?: number
+          notification_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bill_notifications_bill_id_fkey"
+            columns: ["bill_id"]
+            isOneToOne: false
+            referencedRelation: "bills"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       bills: {
         Row: {
           amount: number
@@ -41,6 +70,38 @@ export type Database = {
           title?: string
         }
         Relationships: []
+      }
+      cleaning_task_states: {
+        Row: {
+          completed: boolean | null
+          created_at: string
+          id: number
+          task_id: number
+          updated_at: string
+        }
+        Insert: {
+          completed?: boolean | null
+          created_at?: string
+          id?: number
+          task_id: number
+          updated_at?: string
+        }
+        Update: {
+          completed?: boolean | null
+          created_at?: string
+          id?: number
+          task_id?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cleaning_task_states_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: true
+            referencedRelation: "general_cleaning_tasks"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       general_cleaning_progress: {
         Row: {
@@ -156,6 +217,7 @@ export type Database = {
         Row: {
           assignees: string[] | null
           created_at: string
+          description: string | null
           end_date: string | null
           icon: string
           id: number
@@ -171,6 +233,7 @@ export type Database = {
         Insert: {
           assignees?: string[] | null
           created_at?: string
+          description?: string | null
           end_date?: string | null
           icon: string
           id?: number
@@ -186,6 +249,7 @@ export type Database = {
         Update: {
           assignees?: string[] | null
           created_at?: string
+          description?: string | null
           end_date?: string | null
           icon?: string
           id?: number

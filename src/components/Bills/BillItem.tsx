@@ -10,6 +10,7 @@ import { sendBillDueEmail } from "@/utils/emailUtils";
 import useProfiles from "@/hooks/useProfiles";
 import { differenceInDays, format } from "date-fns";
 import { es } from "date-fns/locale";
+import { supabase } from "@/integrations/supabase/client";
 import type { Bill } from "./utils/billsLogic";
 
 interface BillItemProps {
@@ -29,20 +30,38 @@ export const BillItem = ({ bill, onUpdate, onDelete, onToggleStatus }: BillItemP
       
       // Send email if bill is due in 5 days or less
       if (daysUntilDue <= 5 && daysUntilDue >= 0 && bill.status === "pending") {
-        const formattedDate = format(bill.paymentDueDate, "dd 'de' MMMM, yyyy", { locale: es });
-        
-        // Send email to each selected profile
-        for (const profileName of bill.selectedProfiles) {
-          const profile = profiles.find(p => p.name === profileName);
-          if (profile?.email) {
-            await sendBillDueEmail(
-              profile.email,
-              profile.name,
-              bill.title,
-              formattedDate,
-              bill.amount
-            );
+        // Check if notification was already sent
+        const { data: existingNotification } = await supabase
+          .from('bill_notifications')
+          .select()
+          .eq('bill_id', bill.id)
+          .eq('notification_type', 'due_date')
+          .single();
+
+        if (!existingNotification) {
+          const formattedDate = format(bill.paymentDueDate, "dd 'de' MMMM, yyyy", { locale: es });
+          
+          // Send email to each selected profile
+          for (const profileName of bill.selectedProfiles) {
+            const profile = profiles.find(p => p.name === profileName);
+            if (profile?.email) {
+              await sendBillDueEmail(
+                profile.email,
+                profile.name,
+                bill.title,
+                formattedDate,
+                bill.amount
+              );
+            }
           }
+
+          // Record the notification
+          await supabase
+            .from('bill_notifications')
+            .insert({
+              bill_id: bill.id,
+              notification_type: 'due_date'
+            });
         }
       }
     };

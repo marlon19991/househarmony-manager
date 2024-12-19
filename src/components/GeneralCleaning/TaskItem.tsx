@@ -1,11 +1,9 @@
-/**
- * Componente que representa una tarea individual.
- * Maneja la visualización, edición y eliminación de una tarea específica.
- */
+import { useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
+import { supabase } from "@/integrations/supabase/client";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -46,6 +44,49 @@ const TaskItem = ({
   setTasks,
   tasks,
 }: TaskItemProps) => {
+  useEffect(() => {
+    const loadTaskState = async () => {
+      const { data: taskState } = await supabase
+        .from('cleaning_task_states')
+        .select('completed')
+        .eq('task_id', task.id)
+        .single();
+
+      if (taskState) {
+        setTasks(prevTasks => 
+          prevTasks.map(t => 
+            t.id === task.id ? { ...t, completed: taskState.completed } : t
+          )
+        );
+      }
+    };
+
+    loadTaskState();
+  }, [task.id]);
+
+  const handleTaskToggle = async (taskId: number) => {
+    onTaskToggle(taskId);
+    
+    const newCompleted = !task.completed;
+    
+    const { data: existingState } = await supabase
+      .from('cleaning_task_states')
+      .select()
+      .eq('task_id', taskId)
+      .single();
+
+    if (existingState) {
+      await supabase
+        .from('cleaning_task_states')
+        .update({ completed: newCompleted, updated_at: new Date().toISOString() })
+        .eq('task_id', taskId);
+    } else {
+      await supabase
+        .from('cleaning_task_states')
+        .insert({ task_id: taskId, completed: newCompleted });
+    }
+  };
+
   return (
     <Card key={task.id} className="p-4">
       {editingTask === task.id ? (
@@ -90,7 +131,7 @@ const TaskItem = ({
           <div className="flex items-center space-x-3">
             <Checkbox
               checked={task.completed}
-              onCheckedChange={() => onTaskToggle(task.id)}
+              onCheckedChange={() => handleTaskToggle(task.id)}
               id={`task-${task.id}`}
             />
             <div>
