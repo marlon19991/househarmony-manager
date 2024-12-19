@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { toast } from "sonner";
 import TaskForm from "./TaskForm";
 import TaskItem from "./TaskItem";
@@ -6,9 +6,9 @@ import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import useProfiles from "@/hooks/useProfiles";
-import { useTaskState } from "./hooks/useTaskState";
+import { useTaskPersistence } from "./hooks/useTaskPersistence";
+import { useTaskNotifications } from "./TaskNotifications";
 import { sendTaskAssignmentEmail } from "@/utils/emailUtils";
-import { resetTasksAndProgress } from "./utils/taskResetOperations";
 import {
   Sheet,
   SheetContent,
@@ -29,32 +29,17 @@ const TaskList = ({ currentAssignee, onTaskComplete, onAssigneeChange, isDisable
   const [editingTask, setEditingTask] = useState<number | null>(null);
   const [newTask, setNewTask] = useState({ title: "", comment: "" });
   const { profiles } = useProfiles();
-  const { tasks, setTasks, updateTaskState } = useTaskState(currentAssignee);
-  const [previousPercentage, setPreviousPercentage] = useState(0);
-  const [lastCompletionMessageTime, setLastCompletionMessageTime] = useState(0);
+  const { tasks, setTasks, updateTaskState } = useTaskPersistence(currentAssignee);
 
+  // Use the notifications hook
+  const percentage = useTaskNotifications({ tasks, currentAssignee });
+  
+  // Update completion percentage whenever tasks change
   useEffect(() => {
     const completedTasks = tasks.filter(task => task.completed).length;
-    const percentage = tasks.length > 0 ? Math.round((completedTasks / tasks.length) * 100) : 0;
-    
-    // Only show completion message when crossing 75% threshold upwards and if it hasn't been shown in the last minute
-    const currentTime = Date.now();
-    if (percentage >= 75 && previousPercentage < 75 && (currentTime - lastCompletionMessageTime) > 60000) {
-      toast.success("¡Has completado suficientes tareas para finalizar el aseo general!");
-      setLastCompletionMessageTime(currentTime);
-    }
-    
-    setPreviousPercentage(percentage);
-    onTaskComplete(percentage);
-  }, [currentAssignee, profiles, tasks]);
-
-  // Reset tasks when assignee changes
-  useEffect(() => {
-    const resetTasks = async () => {
-      await resetTasksAndProgress(tasks, setTasks);
-    };
-    resetTasks();
-  }, [currentAssignee]);
+    const currentPercentage = tasks.length > 0 ? Math.round((completedTasks / tasks.length) * 100) : 0;
+    onTaskComplete(currentPercentage);
+  }, [tasks, onTaskComplete]);
 
   const handleTaskToggle = async (taskId: number) => {
     if (isDisabled) return;
