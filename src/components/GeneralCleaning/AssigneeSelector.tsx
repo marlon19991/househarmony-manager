@@ -16,81 +16,45 @@ const AssigneeSelector = ({ currentAssignee, onAssigneeChange, completionPercent
   const { profiles } = useProfiles();
 
   const handleAssigneeChange = async (newAssignee: string) => {
+    if (newAssignee === currentAssignee) return;
+
     console.log('Iniciando cambio de responsable:', { 
       anteriorResponsable: currentAssignee, 
       nuevoResponsable: newAssignee 
     });
 
     try {
-      // 1. Verificar estado actual antes del reseteo
-      const { data: currentTasks, error: checkError } = await supabase
-        .from('cleaning_task_states')
-        .select('*');
-
-      if (checkError) {
-        console.error('Error checking current tasks:', checkError);
-      } else {
-        console.log('Estado actual de las tareas:', currentTasks);
-      }
-
-      // 2. Resetear el progreso a 0%
-      const { data: progressData, error: progressError } = await supabase
+      // 1. Resetear el progreso a 0%
+      const { error: progressError } = await supabase
         .from('general_cleaning_progress')
         .upsert({
           assignee: newAssignee,
           completion_percentage: 0,
           last_updated: new Date().toISOString()
-        })
-        .select();
+        });
 
       if (progressError) {
         console.error('Error resetting progress:', progressError);
         toast.error("Error al actualizar el progreso");
         return;
       }
-      console.log('Progreso reseteado:', progressData);
 
-      // 3. Obtener IDs de todas las tareas completadas
-      const { data: completedTasks, error: completedError } = await supabase
+      // 2. Resetear todas las tareas completadas
+      const { error: tasksError } = await supabase
         .from('cleaning_task_states')
-        .select('task_id')
+        .update({ 
+          completed: false,
+          updated_at: new Date().toISOString()
+        })
         .eq('completed', true);
 
-      if (completedError) {
-        console.error('Error getting completed tasks:', completedError);
+      if (tasksError) {
+        console.error('Error resetting tasks:', tasksError);
+        toast.error("Error al reiniciar las tareas");
         return;
       }
 
-      if (completedTasks && completedTasks.length > 0) {
-        // 4. Resetear solo las tareas que estaban completadas
-        const taskIds = completedTasks.map(task => task.task_id);
-        const { error: tasksError } = await supabase
-          .from('cleaning_task_states')
-          .update({ 
-            completed: false,
-            updated_at: new Date().toISOString()
-          })
-          .in('task_id', taskIds);
-
-        if (tasksError) {
-          console.error('Error resetting tasks:', tasksError);
-          toast.error("Error al reiniciar las tareas");
-          return;
-        }
-      }
-
-      // 5. Verificar estado después del reseteo
-      const { data: finalTasks, error: finalCheckError } = await supabase
-        .from('cleaning_task_states')
-        .select('*');
-
-      if (finalCheckError) {
-        console.error('Error checking final state:', finalCheckError);
-      } else {
-        console.log('Estado final de las tareas:', finalTasks);
-      }
-
-      // 6. Notificar al nuevo responsable por correo
+      // 3. Notificar al nuevo responsable por correo
       const assigneeProfile = profiles.find(p => p.name === newAssignee);
       if (assigneeProfile?.email) {
         try {
@@ -106,7 +70,7 @@ const AssigneeSelector = ({ currentAssignee, onAssigneeChange, completionPercent
         }
       }
 
-      // 7. Actualizar el estado en la UI y mostrar notificación
+      // 4. Actualizar el estado en la UI y mostrar notificación
       onAssigneeChange(newAssignee);
       toast.success(`Se ha asignado el aseo general a ${newAssignee}`);
       

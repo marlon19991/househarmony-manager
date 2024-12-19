@@ -36,6 +36,27 @@ const TaskList = ({
     onTaskComplete(currentPercentage);
   }, [tasks, onTaskComplete]);
 
+  // Reset tasks when assignee changes
+  useEffect(() => {
+    const resetTasks = async () => {
+      const { data, error } = await supabase
+        .from('cleaning_task_states')
+        .select('*')
+        .order('created_at', { ascending: true });
+
+      if (error) {
+        console.error('Error fetching tasks:', error);
+        return;
+      }
+
+      if (data) {
+        setTasks(tasks.map(task => ({ ...task, completed: false })));
+      }
+    };
+
+    resetTasks();
+  }, [currentAssignee]);
+
   const handleTaskToggle = async (taskId: number) => {
     if (isDisabled) return;
 
