@@ -12,7 +12,7 @@ import {
 import { GroupForm } from "./GroupForm";
 import { GroupCard } from "./GroupCard";
 import useGroupStore from "@/stores/useGroupStore";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 interface Group {
   id: number;
@@ -22,9 +22,16 @@ interface Group {
 }
 
 export const GroupsSection = () => {
-  const { groups, loading, addGroup, updateGroup: updateGroupInStore, deleteGroup: deleteGroupFromStore } = useGroupStore();
+  const { groups, loading, addGroup, updateGroup: updateGroupInStore, deleteGroup: deleteGroupFromStore, fetchGroups } = useGroupStore();
   const [newGroup, setNewGroup] = useState({ name: "", description: "", members: [] });
   const [editingGroup, setEditingGroup] = useState<Group | null>(null);
+
+  useEffect(() => {
+    fetchGroups().catch(error => {
+      console.error('Error al cargar grupos:', error);
+      toast.error("Error al cargar los grupos");
+    });
+  }, [fetchGroups]);
 
   const handleAddGroup = async () => {
     if (!newGroup.name) {

@@ -79,7 +79,12 @@ const useGroupStore = create<GroupStore>((set, get) => ({
           description: group.description || '',
           members: []
         };
-        set((state) => ({ groups: [...state.groups, newGroup] }));
+        
+        // Actualizar el estado local después de guardar en la base de datos
+        const currentGroups = get().groups;
+        set({ groups: [...currentGroups, newGroup] });
+        
+        return;
       }
     } catch (error) {
       console.error('Error adding group:', error);
@@ -98,15 +103,17 @@ const useGroupStore = create<GroupStore>((set, get) => ({
 
       if (error) throw error;
 
-      set((state) => ({
-        groups: state.groups.map((group) =>
+      // Actualizar el estado local después de actualizar en la base de datos
+      const currentGroups = get().groups;
+      set({
+        groups: currentGroups.map((group) =>
           group.id === updatedGroup.id ? updatedGroup : group
         ),
         selectedGroup:
-          state.selectedGroup?.id === updatedGroup.id
+          get().selectedGroup?.id === updatedGroup.id
             ? updatedGroup
-            : state.selectedGroup,
-      }));
+            : get().selectedGroup,
+      });
     } catch (error) {
       console.error('Error updating group:', error);
       throw error;
@@ -121,11 +128,13 @@ const useGroupStore = create<GroupStore>((set, get) => ({
 
       if (error) throw error;
 
-      set((state) => ({
-        groups: state.groups.filter((group) => group.id !== groupId),
+      // Actualizar el estado local después de eliminar de la base de datos
+      const currentGroups = get().groups;
+      set({
+        groups: currentGroups.filter((group) => group.id !== groupId),
         selectedGroup:
-          state.selectedGroup?.id === groupId ? null : state.selectedGroup,
-      }));
+          get().selectedGroup?.id === groupId ? null : get().selectedGroup,
+      });
     } catch (error) {
       console.error('Error deleting group:', error);
       throw error;
