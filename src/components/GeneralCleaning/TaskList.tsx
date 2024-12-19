@@ -7,6 +7,7 @@ import { Plus } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import useProfiles from "@/hooks/useProfiles";
 import { useTaskState } from "./hooks/useTaskState";
+import { sendTaskAssignmentEmail } from "@/utils/emailUtils";
 import {
   Sheet,
   SheetContent,
@@ -47,11 +48,6 @@ const TaskList = ({ currentAssignee, onTaskComplete, onAssigneeChange }: TaskLis
   }, [currentAssignee, profiles, tasks]);
 
   const handleTaskToggle = async (taskId: number) => {
-    if (currentAssignee === "Sin asignar") {
-      toast.error("Debe asignar un responsable antes de marcar tareas");
-      return;
-    }
-
     const taskToUpdate = tasks.find(t => t.id === taskId);
     if (!taskToUpdate) return;
 
@@ -89,10 +85,29 @@ const TaskList = ({ currentAssignee, onTaskComplete, onAssigneeChange }: TaskLis
       if (percentage >= 75) {
         toast.success("¡Has completado suficientes tareas para finalizar el aseo general!");
       }
+
+      // Notify assignee about task status change
+      if (currentAssignee !== "Sin asignar") {
+        const assignee = profiles.find(p => p.name === currentAssignee);
+        if (assignee?.email) {
+          try {
+            await sendTaskAssignmentEmail(
+              assignee.email,
+              currentAssignee,
+              `La tarea "${taskToUpdate.description}" ha sido marcada como ${newCompleted ? 'completada' : 'pendiente'}`,
+              "cleaning"
+            );
+            console.log("Email notification sent successfully");
+          } catch (error) {
+            console.error("Error sending email notification:", error);
+            toast.error("Error al enviar la notificación por correo");
+          }
+        }
+      }
     }
   };
 
-  const handleAddTask = (e: React.FormEvent) => {
+  const handleAddTask = async (e: React.FormEvent) => {
     e.preventDefault();
     const task = {
       id: Date.now(),
@@ -103,10 +118,30 @@ const TaskList = ({ currentAssignee, onTaskComplete, onAssigneeChange }: TaskLis
 
     setTasks([...tasks, task]);
     setNewTask({ title: "", comment: "" });
+
+    // Notify assignee about new task
+    if (currentAssignee !== "Sin asignar") {
+      const assignee = profiles.find(p => p.name === currentAssignee);
+      if (assignee?.email) {
+        try {
+          await sendTaskAssignmentEmail(
+            assignee.email,
+            currentAssignee,
+            `Se te ha asignado una nueva tarea: ${task.description}`,
+            "cleaning"
+          );
+          console.log("Email notification sent successfully");
+        } catch (error) {
+          console.error("Error sending email notification:", error);
+          toast.error("Error al enviar la notificación por correo");
+        }
+      }
+    }
+
     toast.success("Tarea agregada exitosamente");
   };
 
-  const handleUpdateTask = (taskId: number, newDescription: string, newComment: string) => {
+  const handleUpdateTask = async (taskId: number, newDescription: string, newComment: string) => {
     if (!newDescription) {
       toast.error("La descripción de la tarea no puede estar vacía");
       return;
@@ -118,11 +153,52 @@ const TaskList = ({ currentAssignee, onTaskComplete, onAssigneeChange }: TaskLis
         : task
     ));
     setEditingTask(null);
+
+    // Notify assignee about task update
+    if (currentAssignee !== "Sin asignar") {
+      const assignee = profiles.find(p => p.name === currentAssignee);
+      if (assignee?.email) {
+        try {
+          await sendTaskAssignmentEmail(
+            assignee.email,
+            currentAssignee,
+            `La tarea "${newDescription}" ha sido actualizada`,
+            "cleaning"
+          );
+          console.log("Email notification sent successfully");
+        } catch (error) {
+          console.error("Error sending email notification:", error);
+          toast.error("Error al enviar la notificación por correo");
+        }
+      }
+    }
+
     toast.success("Tarea actualizada exitosamente");
   };
 
-  const handleDeleteTask = (taskId: number) => {
+  const handleDeleteTask = async (taskId: number) => {
+    const taskToDelete = tasks.find(t => t.id === taskId);
     setTasks(tasks.filter(task => task.id !== taskId));
+
+    // Notify assignee about task deletion
+    if (currentAssignee !== "Sin asignar" && taskToDelete) {
+      const assignee = profiles.find(p => p.name === currentAssignee);
+      if (assignee?.email) {
+        try {
+          await sendTaskAssignmentEmail(
+            assignee.email,
+            currentAssignee,
+            `La tarea "${taskToDelete.description}" ha sido eliminada`,
+            "cleaning"
+          );
+          console.log("Email notification sent successfully");
+        } catch (error) {
+          console.error("Error sending email notification:", error);
+          toast.error("Error al enviar la notificación por correo");
+        }
+      }
+    }
+
     toast.success("Tarea eliminada exitosamente");
   };
 
@@ -134,7 +210,7 @@ const TaskList = ({ currentAssignee, onTaskComplete, onAssigneeChange }: TaskLis
         </div>
         <Sheet>
           <SheetTrigger asChild>
-            <Button size="sm" disabled={currentAssignee === "Sin asignar"}>
+            <Button size="sm">
               <Plus className="w-4 h-4 mr-2" />
               Agregar Tarea
             </Button>
@@ -169,7 +245,6 @@ const TaskList = ({ currentAssignee, onTaskComplete, onAssigneeChange }: TaskLis
             setEditingTask={setEditingTask}
             setTasks={setTasks}
             tasks={tasks}
-            disabled={currentAssignee === "Sin asignar"}
           />
         ))}
       </div>

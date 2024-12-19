@@ -1,9 +1,8 @@
-import { useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import TaskEditForm from "./TaskEditForm";
-import { ensureTaskExists, loadTaskState, handleTaskToggle, Task } from "./utils/taskOperations";
+import { Task } from "./types/Task";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -25,7 +24,6 @@ interface TaskItemProps {
   setEditingTask: (taskId: number | null) => void;
   setTasks: React.Dispatch<React.SetStateAction<Task[]>>;
   tasks: Task[];
-  disabled?: boolean;
 }
 
 const TaskItem = ({
@@ -37,19 +35,7 @@ const TaskItem = ({
   setEditingTask,
   setTasks,
   tasks,
-  disabled = false,
 }: TaskItemProps) => {
-  useEffect(() => {
-    const initializeTask = async () => {
-      const taskCreated = await ensureTaskExists(task);
-      if (taskCreated) {
-        await loadTaskState(task.id, setTasks);
-      }
-    };
-
-    initializeTask();
-  }, [task.id]);
-
   return (
     <Card key={task.id} className="p-4">
       {editingTask === task.id ? (
@@ -65,14 +51,13 @@ const TaskItem = ({
           <div className="flex items-center space-x-3">
             <Checkbox
               checked={task.completed}
-              onCheckedChange={() => handleTaskToggle(task.id, task, onTaskToggle)}
+              onCheckedChange={() => onTaskToggle(task.id)}
               id={`task-${task.id}`}
-              disabled={disabled}
             />
             <div>
               <label
                 htmlFor={`task-${task.id}`}
-                className={`text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 ${disabled ? 'opacity-50' : ''}`}
+                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
               >
                 {task.description}
               </label>
@@ -86,7 +71,6 @@ const TaskItem = ({
               variant="ghost"
               size="sm"
               onClick={() => setEditingTask(task.id)}
-              disabled={disabled}
             >
               Editar
             </Button>
@@ -96,7 +80,6 @@ const TaskItem = ({
                   variant="ghost"
                   size="sm"
                   className="text-red-500"
-                  disabled={disabled}
                 >
                   Eliminar
                 </Button>
