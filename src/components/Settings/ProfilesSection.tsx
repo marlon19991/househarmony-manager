@@ -41,18 +41,12 @@ interface Profile {
   email?: string;
 }
 
-const iconOptions = [
-  { src: "/placeholder.svg", label: "Default" },
-  { src: "https://github.com/shadcn.png", label: "Avatar 1" },
-  { src: "https://api.dicebear.com/7.x/avataaars/svg", label: "Avatar 2" },
-];
-
 export const ProfilesSection = () => {
   const { profiles, loading, fetchProfiles, addProfile, updateProfile, deleteProfile } = useProfiles();
   const [editingProfile, setEditingProfile] = useState<Profile | null>(null);
   const [newProfile, setNewProfile] = useState<Omit<Profile, "id">>({ 
     name: "", 
-    icon: "/placeholder.svg", 
+    icon: "/placeholder.svg",
     whatsapp_number: "",
     email: "" 
   });
@@ -107,9 +101,13 @@ export const ProfilesSection = () => {
             </SheetHeader>
             <ProfileForm
               profile={newProfile}
-              setProfile={setNewProfile}
+              setProfile={setNewProfile as (profile: Omit<Profile, "id">) => void}
               onSubmit={handleAddProfile}
-              iconOptions={iconOptions}
+              iconOptions={[
+                { src: "/placeholder.svg", label: "Default" },
+                { src: "https://github.com/shadcn.png", label: "Avatar 1" },
+                { src: "https://api.dicebear.com/7.x/avataaars/svg", label: "Avatar 2" },
+              ]}
             />
           </SheetContent>
         </Sheet>
@@ -183,9 +181,13 @@ export const ProfilesSection = () => {
           {editingProfile && (
             <ProfileForm
               profile={editingProfile}
-              setProfile={setEditingProfile}
+              setProfile={setEditingProfile as unknown as (profile: Profile) => void}
               onSubmit={handleUpdateProfile}
-              iconOptions={iconOptions}
+              iconOptions={[
+                { src: "/placeholder.svg", label: "Default" },
+                { src: "https://github.com/shadcn.png", label: "Avatar 1" },
+                { src: "https://api.dicebear.com/7.x/avataaars/svg", label: "Avatar 2" },
+              ]}
             />
           )}
         </DialogContent>
