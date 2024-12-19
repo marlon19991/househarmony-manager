@@ -6,32 +6,41 @@ import { BillStatus } from "./BillStatus";
 import { BillDates } from "./BillDates";
 import { BillAmount } from "./BillAmount";
 import { BillActions } from "./BillActions";
+import { sendBillDueEmail } from "@/utils/emailUtils";
+import useProfiles from "@/hooks/useProfiles";
+import { differenceInDays, format } from "date-fns";
+import { es } from "date-fns/locale";
 
-interface Bill {
-  id: number;
-  title: string;
-  amount: number;
-  dueDate: string;
-  paymentDueDate: Date;
-  status: "pending" | "paid";
-  splitBetween: number;
-  selectedProfiles: string[];
-}
-
-interface BillItemProps {
-  bill: Bill;
-  onUpdate: (bill: Bill) => void;
-  onDelete: (id: number) => void;
-  onToggleStatus: (id: number) => void;
-}
-
-export const BillItem = ({ 
-  bill, 
-  onUpdate, 
-  onDelete, 
-  onToggleStatus,
-}: BillItemProps) => {
+export const BillItem = ({ bill, onUpdate, onDelete, onToggleStatus }: BillItemProps) => {
   const [isEditing, setIsEditing] = useState(false);
+  const { profiles } = useProfiles();
+
+  useEffect(() => {
+    const checkDueDate = async () => {
+      const daysUntilDue = differenceInDays(bill.paymentDueDate, new Date());
+      
+      // Send email if bill is due in 5 days or less
+      if (daysUntilDue <= 5 && daysUntilDue >= 0 && bill.status === "pending") {
+        const formattedDate = format(bill.paymentDueDate, "dd 'de' MMMM, yyyy", { locale: es });
+        
+        // Send email to each selected profile
+        for (const profileName of bill.selectedProfiles) {
+          const profile = profiles.find(p => p.name === profileName);
+          if (profile?.email) {
+            await sendBillDueEmail(
+              profile.email,
+              profile.name,
+              bill.title,
+              formattedDate,
+              bill.amount
+            );
+          }
+        }
+      }
+    };
+
+    checkDueDate();
+  }, [bill, profiles]);
 
   const getBorderColor = () => {
     if (bill.status === "paid") return "border-green-500";
