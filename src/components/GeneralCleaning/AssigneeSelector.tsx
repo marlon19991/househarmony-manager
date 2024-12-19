@@ -4,6 +4,8 @@ import { User } from "lucide-react";
 import { toast } from "sonner";
 import useProfiles from "@/hooks/useProfiles";
 import { sendTaskAssignmentEmail } from "@/utils/emailUtils";
+import { useTaskPersistence } from "./hooks/useTaskPersistence";
+import { useAssigneeReset } from "./hooks/useAssigneeReset";
 
 interface AssigneeSelectorProps {
   currentAssignee: string;
@@ -13,13 +15,13 @@ interface AssigneeSelectorProps {
 
 const AssigneeSelector = ({ currentAssignee, onAssigneeChange, completionPercentage }: AssigneeSelectorProps) => {
   const { profiles } = useProfiles();
+  const { tasks, setTasks } = useTaskPersistence(currentAssignee);
+  const { resetTaskStates, resetProgress } = useAssigneeReset();
 
   const handleAssigneeChange = async (newAssignee: string) => {
     try {
-      // Find the new assignee's profile to get their email
+      // Notificar al nuevo responsable por correo electrónico
       const assigneeProfile = profiles.find(p => p.name === newAssignee);
-      
-      // Only attempt to send email if the profile has an email address
       if (assigneeProfile?.email) {
         try {
           await sendTaskAssignmentEmail(
@@ -35,6 +37,23 @@ const AssigneeSelector = ({ currentAssignee, onAssigneeChange, completionPercent
         }
       }
 
+      // Resetear estados de las tareas
+      const taskResetSuccess = await resetTaskStates(tasks);
+      if (!taskResetSuccess) {
+        toast.error("Error al reiniciar las tareas");
+        return;
+      }
+
+      // Resetear el progreso
+      const progressResetSuccess = await resetProgress(newAssignee);
+      if (!progressResetSuccess) {
+        toast.error("Error al actualizar el progreso");
+        return;
+      }
+
+      // Actualizar el estado local de las tareas
+      setTasks(tasks.map(task => ({ ...task, completed: false })));
+      
       onAssigneeChange(newAssignee);
       toast.success(`Se ha asignado el aseo general a ${newAssignee}`);
     } catch (error) {
@@ -51,7 +70,7 @@ const AssigneeSelector = ({ currentAssignee, onAssigneeChange, completionPercent
           <SelectValue placeholder="Seleccionar responsable" />
         </SelectTrigger>
         <SelectContent>
-          {profiles.map((profile) => (
+          {profiles.filter(profile => profile.name !== "Sin asignar").map((profile) => (
             <SelectItem key={profile.id} value={profile.name}>
               <div className="flex items-center gap-2">
                 <Avatar className="h-6 w-6">
