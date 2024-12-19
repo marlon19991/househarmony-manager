@@ -3,14 +3,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useEffect } from 'react';
 import { ProfileFormData } from '@/components/Settings/ProfileForm';
+import { Database } from '@/integrations/supabase/types';
 
-interface Profile {
-  id: number;
-  name: string;
-  icon: string;
-  email?: string;
-  whatsapp_number?: string;
-}
+type Profile = Database['public']['Tables']['profiles']['Row'];
 
 interface ProfileStore {
   profiles: Profile[];
@@ -53,7 +48,7 @@ const useProfiles = create<ProfileStore>()((set) => ({
           icon: profile.icon,
           email: profile.email,
           whatsapp_number: profile.whatsapp_number
-        }] as any)
+        }])
         .select()
         .single();
 
@@ -61,7 +56,7 @@ const useProfiles = create<ProfileStore>()((set) => ({
       if (!data) throw new Error('No data returned from insert');
       
       set((state) => ({
-        profiles: [...state.profiles, data as Profile],
+        profiles: [...state.profiles, data],
       }));
       
       toast.success('Perfil creado exitosamente');
@@ -80,7 +75,7 @@ const useProfiles = create<ProfileStore>()((set) => ({
           icon: profile.icon,
           email: profile.email,
           whatsapp_number: profile.whatsapp_number 
-        } as any)
+        })
         .eq('id', profile.id);
 
       if (error) throw error;
