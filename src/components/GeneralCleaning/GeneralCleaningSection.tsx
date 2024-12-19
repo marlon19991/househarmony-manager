@@ -12,8 +12,9 @@ const GeneralCleaningSection = () => {
   const [completionPercentage, setCompletionPercentage] = useState(0);
   const { profiles } = useProfiles();
 
+  // Load saved assignee and progress from database
   useEffect(() => {
-    const loadSavedAssignee = async () => {
+    const loadSavedProgress = async () => {
       try {
         const { data: progressData, error } = await supabase
           .from('general_cleaning_progress')
@@ -29,6 +30,7 @@ const GeneralCleaningSection = () => {
         }
 
         if (progressData) {
+          // Verify if the assignee exists in profiles or is "Sin asignar"
           const assigneeExists = progressData.assignee === "Sin asignar" || 
                                profiles.some(profile => profile.name === progressData.assignee);
           
@@ -42,12 +44,12 @@ const GeneralCleaningSection = () => {
           setCompletionPercentage(progressData.completion_percentage || 0);
         }
       } catch (error) {
-        console.error('Error in loadSavedAssignee:', error);
+        console.error('Error in loadSavedProgress:', error);
         toast.error("Error al cargar el progreso guardado");
       }
     };
 
-    loadSavedAssignee();
+    loadSavedProgress();
   }, [profiles]);
 
   const handleAssigneeChange = async (newAssignee: string) => {
