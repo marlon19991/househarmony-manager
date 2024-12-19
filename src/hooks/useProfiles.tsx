@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useEffect } from 'react';
+import { ProfileFormData } from '@/components/Settings/ProfileForm';
 
 interface Profile {
   id: number;
@@ -15,8 +16,8 @@ interface ProfileStore {
   profiles: Profile[];
   loading: boolean;
   fetchProfiles: () => Promise<void>;
-  addProfile: (profile: Omit<Profile, "id">) => Promise<void>;
-  updateProfile: (profile: Profile) => Promise<void>;
+  addProfile: (profile: Omit<ProfileFormData, "id">) => Promise<void>;
+  updateProfile: (profile: ProfileFormData) => Promise<void>;
   deleteProfile: (id: number) => Promise<void>;
 }
 
@@ -79,7 +80,7 @@ const useProfiles = create<ProfileStore>()((set) => ({
 
       set((state) => ({
         profiles: state.profiles.map((p) =>
-          p.id === profile.id ? profile : p
+          p.id === profile.id ? { ...p, ...profile } : p
         ),
       }));
       
