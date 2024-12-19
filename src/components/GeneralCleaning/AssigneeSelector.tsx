@@ -4,9 +4,6 @@ import { User } from "lucide-react";
 import { toast } from "sonner";
 import useProfiles from "@/hooks/useProfiles";
 import { sendTaskAssignmentEmail } from "@/utils/emailUtils";
-import { useTaskPersistence } from "./hooks/useTaskPersistence";
-import { resetTasksAndProgress } from "./utils/taskResetOperations";
-import { supabase } from "@/integrations/supabase/client";
 
 interface AssigneeSelectorProps {
   currentAssignee: string;
@@ -16,7 +13,6 @@ interface AssigneeSelectorProps {
 
 const AssigneeSelector = ({ currentAssignee, onAssigneeChange, completionPercentage }: AssigneeSelectorProps) => {
   const { profiles } = useProfiles();
-  const { tasks, setTasks } = useTaskPersistence(currentAssignee);
 
   const handleAssigneeChange = async (newAssignee: string) => {
     try {
@@ -36,31 +32,7 @@ const AssigneeSelector = ({ currentAssignee, onAssigneeChange, completionPercent
           toast.success(`Se ha notificado a ${newAssignee} por correo electrónico`);
         } catch (emailError) {
           console.error("Error sending email notification:", emailError);
-          // Don't show error toast for email failure
         }
-      }
-
-      // Reset all tasks and their states in the database
-      const resetSuccess = await resetTasksAndProgress(tasks, setTasks);
-      
-      if (!resetSuccess) {
-        toast.error("Error al reiniciar las tareas");
-        return;
-      }
-
-      // Update progress in database to 0%
-      const { error: progressError } = await supabase
-        .from('general_cleaning_progress')
-        .upsert({
-          assignee: newAssignee,
-          completion_percentage: 0,
-          last_updated: new Date().toISOString()
-        });
-
-      if (progressError) {
-        console.error('Error updating progress:', progressError);
-        toast.error("Error al actualizar el progreso");
-        return;
       }
 
       onAssigneeChange(newAssignee);
