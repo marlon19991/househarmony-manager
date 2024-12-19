@@ -1,4 +1,4 @@
-import { Settings as SettingsIcon, Moon, Users } from "lucide-react";
+import { Settings as SettingsIcon, Moon } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import {
@@ -11,15 +11,13 @@ import {
   SidebarMenuButton,
 } from "@/components/ui/sidebar";
 import { ProfilesSection } from "@/components/Settings/ProfilesSection";
-import { GroupsSection } from "@/components/Settings/GroupsSection";
 import { useState } from "react";
 
 const Settings = () => {
-  const [currentSection, setCurrentSection] = useState<"profiles" | "appearance" | "groups">("profiles");
+  const [currentSection, setCurrentSection] = useState<"profiles" | "appearance">("profiles");
 
   const menuItems = [
     { id: "profiles" as const, label: "Perfiles", icon: SettingsIcon },
-    { id: "groups" as const, label: "Grupos", icon: Users },
     { id: "appearance" as const, label: "Apariencia", icon: Moon },
   ];
 
@@ -51,7 +49,6 @@ const Settings = () => {
           <main className="flex-1 p-6 relative z-0">
             <Card className="p-6">
               {currentSection === "profiles" && <ProfilesSection />}
-              {currentSection === "groups" && <GroupsSection />}
               {currentSection === "appearance" && (
                 <div className="space-y-4">
                   <h3 className="text-lg font-semibold">Tema</h3>
