@@ -27,7 +27,9 @@ export const ProfileForm = ({ profile, setProfile, onSubmit, iconOptions }: Prof
   const handleSubmit = async () => {
     if (profile.email) {
       try {
-        const { error } = await supabase.functions.invoke('send-email', {
+        console.log("Attempting to send welcome email to:", profile.email);
+        
+        const { data, error } = await supabase.functions.invoke('send-email', {
           body: {
             to: [profile.email],
             subject: "Bienvenido a Roomies",
@@ -39,11 +41,16 @@ export const ProfileForm = ({ profile, setProfile, onSubmit, iconOptions }: Prof
           },
         });
 
-        if (error) throw error;
+        if (error) {
+          console.error("Error response from send-email function:", error);
+          throw error;
+        }
+
+        console.log("Email function response:", data);
         toast.success("Correo de bienvenida enviado");
       } catch (error) {
         console.error("Error sending welcome email:", error);
-        toast.error("Error al enviar el correo de bienvenida");
+        toast.error("Error al enviar el correo de bienvenida. Por favor, verifica que el correo sea válido.");
       }
     }
     onSubmit();

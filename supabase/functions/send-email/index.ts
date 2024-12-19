@@ -8,12 +8,6 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type",
 };
 
-interface EmailRequest {
-  to: string[];
-  subject: string;
-  html: string;
-}
-
 const handler = async (req: Request): Promise<Response> => {
   // Handle CORS preflight requests
   if (req.method === "OPTIONS") {
@@ -21,8 +15,10 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
-    const emailRequest: EmailRequest = await req.json();
-    console.log("Sending email to:", emailRequest.to);
+    const { to, subject, html } = await req.json();
+    console.log("Sending email to:", to);
+    console.log("Subject:", subject);
+    console.log("HTML content:", html);
     
     const res = await fetch("https://api.resend.com/emails", {
       method: "POST",
@@ -31,24 +27,24 @@ const handler = async (req: Request): Promise<Response> => {
         Authorization: `Bearer ${RESEND_API_KEY}`,
       },
       body: JSON.stringify({
-        from: "Roomies App <onboarding@resend.dev>",
-        to: emailRequest.to,
-        subject: emailRequest.subject,
-        html: emailRequest.html,
+        from: "Roomies <onboarding@resend.dev>",
+        to,
+        subject,
+        html,
       }),
     });
 
+    const data = await res.json();
+    console.log("Resend API response:", data);
+
     if (res.ok) {
-      const data = await res.json();
-      console.log("Email sent successfully:", data);
       return new Response(JSON.stringify(data), {
         status: 200,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     } else {
-      const error = await res.text();
-      console.error("Error sending email:", error);
-      return new Response(JSON.stringify({ error }), {
+      console.error("Error from Resend API:", data);
+      return new Response(JSON.stringify({ error: data }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
