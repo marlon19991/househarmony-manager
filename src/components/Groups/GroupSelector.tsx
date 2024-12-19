@@ -2,7 +2,7 @@ import { Card } from "@/components/ui/card";
 import { Users } from "lucide-react";
 import useGroupStore from "@/stores/useGroupStore";
 import { Button } from "@/components/ui/button";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import {
   Select,
   SelectContent,
@@ -13,10 +13,15 @@ import {
 
 export const GroupSelector = () => {
   const { selectedGroup, groups, setSelectedGroup } = useGroupStore();
+  const navigate = useNavigate();
 
   const handleGroupChange = (groupId: string) => {
     const group = groups.find((g) => g.id === parseInt(groupId));
     setSelectedGroup(group || null);
+  };
+
+  const handleManageGroups = () => {
+    navigate("/settings", { state: { section: "groups" } });
   };
 
   return (
@@ -59,11 +64,9 @@ export const GroupSelector = () => {
           </Select>
         </div>
 
-        <Link to="/settings">
-          <Button variant="ghost" size="sm" className="text-xs">
-            Administrar
-          </Button>
-        </Link>
+        <Button variant="ghost" size="sm" className="text-xs" onClick={handleManageGroups}>
+          Administrar
+        </Button>
       </div>
     </Card>
   );

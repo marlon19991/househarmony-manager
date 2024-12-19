@@ -15,14 +15,14 @@ interface GroupStore {
   loading: boolean;
   setSelectedGroup: (group: Group | null) => void;
   fetchGroups: () => Promise<void>;
-  addGroup: (group: Group) => void;
-  updateGroup: (group: Group) => void;
-  deleteGroup: (groupId: number) => void;
+  addGroup: (group: Omit<Group, "id">) => Promise<void>;
+  updateGroup: (group: Group) => Promise<void>;
+  deleteGroup: (groupId: number) => Promise<void>;
 }
 
 const useGroupStore = create<GroupStore>()(
   persist(
-    (set) => ({
+    (set, get) => ({
       selectedGroup: null,
       groups: [],
       loading: false,
@@ -59,23 +59,75 @@ const useGroupStore = create<GroupStore>()(
           set({ loading: false });
         }
       },
-      addGroup: (group) => set((state) => ({ groups: [...state.groups, group] })),
-      updateGroup: (updatedGroup) =>
-        set((state) => ({
-          groups: state.groups.map((group) =>
-            group.id === updatedGroup.id ? updatedGroup : group
-          ),
-          selectedGroup:
-            state.selectedGroup?.id === updatedGroup.id
-              ? updatedGroup
-              : state.selectedGroup,
-        })),
-      deleteGroup: (groupId) =>
-        set((state) => ({
-          groups: state.groups.filter((group) => group.id !== groupId),
-          selectedGroup:
-            state.selectedGroup?.id === groupId ? null : state.selectedGroup,
-        })),
+      addGroup: async (groupData) => {
+        try {
+          const { data: group, error } = await supabase
+            .from('groups')
+            .insert([{ name: groupData.name, description: groupData.description }])
+            .select()
+            .single();
+
+          if (error) throw error;
+
+          if (group) {
+            const newGroup = {
+              id: group.id,
+              name: group.name,
+              description: group.description || '',
+              members: []
+            };
+            set((state) => ({ groups: [...state.groups, newGroup] }));
+          }
+        } catch (error) {
+          console.error('Error adding group:', error);
+          throw error;
+        }
+      },
+      updateGroup: async (updatedGroup) => {
+        try {
+          const { error } = await supabase
+            .from('groups')
+            .update({ 
+              name: updatedGroup.name, 
+              description: updatedGroup.description 
+            })
+            .eq('id', updatedGroup.id);
+
+          if (error) throw error;
+
+          set((state) => ({
+            groups: state.groups.map((group) =>
+              group.id === updatedGroup.id ? updatedGroup : group
+            ),
+            selectedGroup:
+              state.selectedGroup?.id === updatedGroup.id
+                ? updatedGroup
+                : state.selectedGroup,
+          }));
+        } catch (error) {
+          console.error('Error updating group:', error);
+          throw error;
+        }
+      },
+      deleteGroup: async (groupId) => {
+        try {
+          const { error } = await supabase
+            .from('groups')
+            .delete()
+            .eq('id', groupId);
+
+          if (error) throw error;
+
+          set((state) => ({
+            groups: state.groups.filter((group) => group.id !== groupId),
+            selectedGroup:
+              state.selectedGroup?.id === groupId ? null : state.selectedGroup,
+          }));
+        } catch (error) {
+          console.error('Error deleting group:', error);
+          throw error;
+        }
+      },
     }),
     {
       name: 'group-storage',

@@ -12,10 +12,18 @@ import {
 } from "@/components/ui/sidebar";
 import { ProfilesSection } from "@/components/Settings/ProfilesSection";
 import { GroupsSection } from "@/components/Settings/GroupsSection";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useLocation } from "react-router-dom";
 
 const Settings = () => {
   const [currentSection, setCurrentSection] = useState<"profiles" | "appearance" | "groups">("profiles");
+  const location = useLocation();
+
+  useEffect(() => {
+    if (location.state?.section) {
+      setCurrentSection(location.state.section);
+    }
+  }, [location.state]);
 
   const menuItems = [
     { id: "profiles" as const, label: "Perfiles", icon: SettingsIcon },
