@@ -84,6 +84,7 @@ export type Database = {
           icon: string
           id: number
           name: string
+          whatsapp_number: string | null
         }
         Insert: {
           created_at?: string
@@ -91,6 +92,7 @@ export type Database = {
           icon: string
           id?: never
           name: string
+          whatsapp_number?: string | null
         }
         Update: {
           created_at?: string
@@ -98,6 +100,7 @@ export type Database = {
           icon?: string
           id?: never
           name?: string
+          whatsapp_number?: string | null
         }
         Relationships: []
       }

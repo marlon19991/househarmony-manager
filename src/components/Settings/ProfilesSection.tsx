@@ -2,8 +2,6 @@ import { useEffect, useState } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { User, UserPlus, UserX, Settings } from "lucide-react";
 import {
@@ -33,17 +31,25 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import useProfiles from "@/hooks/useProfiles";
+import { ProfileForm } from "./ProfileForm";
 
 interface Profile {
   id: number;
   name: string;
   icon: string;
+  whatsapp_number?: string;
 }
+
+const iconOptions = [
+  { src: "/placeholder.svg", label: "Default" },
+  { src: "https://github.com/shadcn.png", label: "Avatar 1" },
+  { src: "https://api.dicebear.com/7.x/avataaars/svg", label: "Avatar 2" },
+];
 
 export const ProfilesSection = () => {
   const { profiles, loading, fetchProfiles, addProfile, updateProfile, deleteProfile } = useProfiles();
   const [editingProfile, setEditingProfile] = useState<Profile | null>(null);
-  const [newProfile, setNewProfile] = useState({ name: "", icon: "/placeholder.svg" });
+  const [newProfile, setNewProfile] = useState({ name: "", icon: "/placeholder.svg", whatsapp_number: "" });
   const [showEditDialog, setShowEditDialog] = useState(false);
 
   useEffect(() => {
@@ -57,7 +63,7 @@ export const ProfilesSection = () => {
     }
 
     await addProfile(newProfile);
-    setNewProfile({ name: "", icon: "/placeholder.svg" });
+    setNewProfile({ name: "", icon: "/placeholder.svg", whatsapp_number: "" });
   };
 
   const handleUpdateProfile = async () => {
@@ -71,12 +77,6 @@ export const ProfilesSection = () => {
   const handleDeleteProfile = async (id: number) => {
     await deleteProfile(id);
   };
-
-  const iconOptions = [
-    { src: "/placeholder.svg", label: "Default" },
-    { src: "https://github.com/shadcn.png", label: "Avatar 1" },
-    { src: "https://api.dicebear.com/7.x/avataaars/svg", label: "Avatar 2" },
-  ];
 
   if (loading) {
     return <div>Cargando perfiles...</div>;
@@ -99,39 +99,12 @@ export const ProfilesSection = () => {
                 Agrega un nuevo perfil para gestionar tareas y responsabilidades.
               </SheetDescription>
             </SheetHeader>
-            <div className="space-y-4 mt-6">
-              <div>
-                <Label htmlFor="name">Nombre</Label>
-                <Input
-                  id="name"
-                  value={newProfile.name}
-                  onChange={(e) => setNewProfile({ ...newProfile, name: e.target.value })}
-                  placeholder="Nombre del perfil"
-                />
-              </div>
-              <div>
-                <Label>Ícono</Label>
-                <div className="flex gap-2 mt-2">
-                  {iconOptions.map((icon) => (
-                    <button
-                      key={icon.src}
-                      onClick={() => setNewProfile({ ...newProfile, icon: icon.src })}
-                      className={`p-1 rounded-full ${
-                        newProfile.icon === icon.src ? "ring-2 ring-primary" : ""
-                      }`}
-                    >
-                      <Avatar>
-                        <AvatarImage src={icon.src} alt={icon.label} />
-                        <AvatarFallback><User /></AvatarFallback>
-                      </Avatar>
-                    </button>
-                  ))}
-                </div>
-              </div>
-              <Button onClick={handleAddProfile} className="w-full">
-                Crear Perfil
-              </Button>
-            </div>
+            <ProfileForm
+              profile={newProfile}
+              setProfile={setNewProfile}
+              onSubmit={handleAddProfile}
+              iconOptions={iconOptions}
+            />
           </SheetContent>
         </Sheet>
       </div>
@@ -145,7 +118,12 @@ export const ProfilesSection = () => {
                   <AvatarImage src={profile.icon} alt={profile.name} />
                   <AvatarFallback><User /></AvatarFallback>
                 </Avatar>
-                <span className="font-medium">{profile.name}</span>
+                <div className="space-y-1">
+                  <span className="font-medium">{profile.name}</span>
+                  {profile.whatsapp_number && (
+                    <p className="text-sm text-muted-foreground">{profile.whatsapp_number}</p>
+                  )}
+                </div>
               </div>
               <div className="flex gap-2">
                 <Button
@@ -194,45 +172,12 @@ export const ProfilesSection = () => {
             </DialogDescription>
           </DialogHeader>
           {editingProfile && (
-            <div className="space-y-4">
-              <div>
-                <Label htmlFor="edit-name">Nombre</Label>
-                <Input
-                  id="edit-name"
-                  value={editingProfile.name}
-                  onChange={(e) =>
-                    setEditingProfile({ ...editingProfile, name: e.target.value })
-                  }
-                />
-              </div>
-              <div>
-                <Label>Ícono</Label>
-                <div className="flex gap-2 mt-2">
-                  {iconOptions.map((icon) => (
-                    <button
-                      key={icon.src}
-                      onClick={() => setEditingProfile({ ...editingProfile, icon: icon.src })}
-                      className={`p-1 rounded-full ${
-                        editingProfile.icon === icon.src ? "ring-2 ring-primary" : ""
-                      }`}
-                    >
-                      <Avatar>
-                        <AvatarImage src={icon.src} alt={icon.label} />
-                        <AvatarFallback><User /></AvatarFallback>
-                      </Avatar>
-                    </button>
-                  ))}
-                </div>
-              </div>
-              <div className="flex justify-end gap-2">
-                <Button variant="outline" onClick={() => setShowEditDialog(false)}>
-                  Cancelar
-                </Button>
-                <Button onClick={handleUpdateProfile}>
-                  Guardar Cambios
-                </Button>
-              </div>
-            </div>
+            <ProfileForm
+              profile={editingProfile}
+              setProfile={setEditingProfile}
+              onSubmit={handleUpdateProfile}
+              iconOptions={iconOptions}
+            />
           )}
         </DialogContent>
       </Dialog>
