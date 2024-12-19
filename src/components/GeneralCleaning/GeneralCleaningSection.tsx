@@ -29,20 +29,25 @@ const GeneralCleaningSection = () => {
 
         setCurrentAssignee(savedAssignee);
         
-        // Cargar el progreso desde la base de datos
-        const { data: progressData, error } = await supabase
-          .from('general_cleaning_progress')
-          .select('completion_percentage')
-          .eq('assignee', savedAssignee)
-          .maybeSingle();
+        try {
+          // Cargar el progreso desde la base de datos
+          const { data: progressData, error } = await supabase
+            .from('general_cleaning_progress')
+            .select('completion_percentage')
+            .eq('assignee', savedAssignee)
+            .maybeSingle();
 
-        if (error) {
-          console.error('Error loading progress:', error);
-          toast.error("Error al cargar el progreso");
-          return;
+          if (error) {
+            console.error('Error loading progress:', error);
+            toast.error("Error al cargar el progreso");
+            return;
+          }
+
+          setCompletionPercentage(progressData?.completion_percentage ?? 0);
+        } catch (error) {
+          console.error('Error in loadSavedAssignee:', error);
+          toast.error("Error al cargar el progreso guardado");
         }
-
-        setCompletionPercentage(progressData?.completion_percentage ?? 0);
       }
     };
 
@@ -55,36 +60,38 @@ const GeneralCleaningSection = () => {
     
     if (newAssignee === "Sin asignar") {
       setCompletionPercentage(0);
-      // Reset progress in database
-      const { error } = await supabase
-        .from('general_cleaning_progress')
-        .upsert({
-          assignee: newAssignee,
-          completion_percentage: 0,
-          last_updated: new Date().toISOString()
-        });
+      try {
+        // Reset progress in database
+        const { error } = await supabase
+          .from('general_cleaning_progress')
+          .upsert({
+            assignee: newAssignee,
+            completion_percentage: 0,
+            last_updated: new Date().toISOString()
+          });
 
-      if (error) {
+        if (error) throw error;
+      } catch (error) {
         console.error('Error resetting progress:', error);
         toast.error("Error al reiniciar el progreso");
-        return;
       }
     } else {
-      // Load existing progress for the new assignee
-      const { data: progressData, error } = await supabase
-        .from('general_cleaning_progress')
-        .select('completion_percentage')
-        .eq('assignee', newAssignee)
-        .maybeSingle();
+      try {
+        // Load existing progress for the new assignee
+        const { data: progressData, error } = await supabase
+          .from('general_cleaning_progress')
+          .select('completion_percentage')
+          .eq('assignee', newAssignee)
+          .maybeSingle();
 
-      if (error) {
+        if (error) throw error;
+
+        const percentage = Math.round(progressData?.completion_percentage ?? 0);
+        setCompletionPercentage(percentage);
+      } catch (error) {
         console.error('Error loading progress:', error);
         toast.error("Error al cargar el progreso");
-        return;
       }
-
-      const roundedPercentage = Math.round(progressData?.completion_percentage ?? 0);
-      setCompletionPercentage(roundedPercentage);
     }
   };
 
