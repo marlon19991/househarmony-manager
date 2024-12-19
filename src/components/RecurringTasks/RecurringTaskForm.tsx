@@ -29,29 +29,33 @@ export const RecurringTaskForm = ({ onSubmit, onCancel, initialData }: Recurring
     e.preventDefault();
     
     try {
-      const { data, error } = await supabase.from('recurring_tasks').upsert({
-        title,
-        assignees: selectedAssignees,
-        recurrence_type: initialData?.recurrence_type || 'weekly',
-        selected_days: initialData?.selected_days || [],
-        specific_day: initialData?.specific_day,
-        time: initialData?.time,
-        icon: initialData?.icon || '📋'
-      });
+      const { data, error } = await supabase
+        .from('recurring_tasks')
+        .upsert({
+          title,
+          assignees: selectedAssignees,
+          recurrence_type: initialData?.recurrence_type || 'weekly',
+          selected_days: initialData?.selected_days || [],
+          specific_day: initialData?.specific_day,
+          time: initialData?.time,
+          icon: initialData?.icon || '📋'
+        } as any)
+        .select()
+        .single();
 
       if (error) throw error;
 
       // Send email to each assignee
       for (const assigneeName of selectedAssignees) {
-        const { data: profiles } = await supabase
+        const { data: profile } = await supabase
           .from('profiles')
           .select('email')
           .eq('name', assigneeName)
-          .single();
+          .maybeSingle();
 
-        if (profiles?.email) {
+        if (profile?.email) {
           await sendTaskAssignmentEmail(
-            profiles.email,
+            profile.email,
             assigneeName,
             title,
             "recurring"

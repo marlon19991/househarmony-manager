@@ -21,6 +21,7 @@ export const fetchBills = async () => {
       .order('payment_due_date', { ascending: true });
 
     if (error) throw error;
+    if (!data) return [];
 
     return data.map(bill => ({
       id: bill.id,
@@ -39,13 +40,13 @@ export const fetchBills = async () => {
   }
 };
 
-export const createBill = async (newBill: any) => {
+export const createBill = async (newBill: Omit<Bill, 'id' | 'dueDate' | 'paymentDueDate' | 'status'>) => {
   try {
     const { data, error } = await supabase
       .from('bills')
       .insert({
         title: newBill.title,
-        amount: parseFloat(newBill.amount),
+        amount: newBill.amount,
         payment_due_date: new Date(newBill.paymentDueDate).toISOString(),
         status: 'pending',
         split_between: newBill.selectedProfiles.length || 1,
@@ -55,6 +56,7 @@ export const createBill = async (newBill: any) => {
       .single();
 
     if (error) throw error;
+    if (!data) throw new Error('No data returned from insert');
 
     return {
       id: data.id,
@@ -83,7 +85,7 @@ export const updateBill = async (updatedBill: Bill) => {
         payment_due_date: updatedBill.paymentDueDate.toISOString(),
         split_between: updatedBill.splitBetween,
         selected_profiles: updatedBill.selectedProfiles
-      })
+      } as any)
       .eq('id', updatedBill.id);
 
     if (error) throw error;
@@ -124,11 +126,12 @@ export const createNextMonthBill = async (currentBill: Bill) => {
         status: 'pending',
         split_between: currentBill.splitBetween,
         selected_profiles: currentBill.selectedProfiles
-      })
+      } as any)
       .select()
       .single();
 
     if (error) throw error;
+    if (!data) throw new Error('No data returned from insert');
 
     return {
       id: data.id,
@@ -153,12 +156,11 @@ export const toggleBillStatus = async (bill: Bill) => {
   try {
     const { error } = await supabase
       .from('bills')
-      .update({ status: newStatus })
+      .update({ status: newStatus } as any)
       .eq('id', bill.id);
 
     if (error) throw error;
 
-    // Si la factura se está marcando como pagada, crear la del próximo mes
     let nextMonthBill = null;
     if (newStatus === "paid") {
       nextMonthBill = await createNextMonthBill(bill);

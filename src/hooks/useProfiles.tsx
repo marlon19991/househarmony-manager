@@ -34,6 +34,7 @@ const useProfiles = create<ProfileStore>()((set) => ({
         .order('created_at', { ascending: true });
 
       if (error) throw error;
+      
       set({ profiles: data || [] });
     } catch (error) {
       console.error('Error fetching profiles:', error);
@@ -47,14 +48,20 @@ const useProfiles = create<ProfileStore>()((set) => ({
     try {
       const { data, error } = await supabase
         .from('profiles')
-        .insert([profile])
+        .insert([{
+          name: profile.name,
+          icon: profile.icon,
+          email: profile.email,
+          whatsapp_number: profile.whatsapp_number
+        }] as any)
         .select()
         .single();
 
       if (error) throw error;
+      if (!data) throw new Error('No data returned from insert');
       
       set((state) => ({
-        profiles: [...state.profiles, data],
+        profiles: [...state.profiles, data as Profile],
       }));
       
       toast.success('Perfil creado exitosamente');
@@ -73,7 +80,7 @@ const useProfiles = create<ProfileStore>()((set) => ({
           icon: profile.icon,
           email: profile.email,
           whatsapp_number: profile.whatsapp_number 
-        })
+        } as any)
         .eq('id', profile.id);
 
       if (error) throw error;
