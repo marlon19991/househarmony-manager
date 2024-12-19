@@ -5,15 +5,13 @@ import { sendTaskAssignmentEmail } from "@/utils/emailUtils";
 import { AssigneeField } from "./FormFields/AssigneeField";
 import { WeekdaySelector } from "./FormFields/WeekdaySelector";
 import { RecurrenceTypeField } from "./FormFields/RecurrenceTypeField";
+import { TimeField } from "./FormFields/TimeField";
+import { SpecificDateField } from "./FormFields/SpecificDateField";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Calendar } from "@/components/ui/calendar";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { CalendarIcon, Clock } from "lucide-react";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
-import { cn } from "@/lib/utils";
 
 interface RecurringTaskFormProps {
   onSubmit: () => void;
@@ -49,7 +47,6 @@ export const RecurringTaskForm = ({ onSubmit, onCancel, initialData }: Recurring
   const handleRecurrenceTypeChange = (type: string) => {
     setRecurrenceType(type);
     if (type === "workdays") {
-      // Set Monday to Friday to true, weekends to false
       setWeekdays([false, true, true, true, true, true, false]);
     }
   };
@@ -159,49 +156,20 @@ export const RecurringTaskForm = ({ onSubmit, onCancel, initialData }: Recurring
       />
 
       {recurrenceType === "specific" && (
-        <div className="space-y-2">
-          <Label>Fecha específica</Label>
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button
-                variant="outline"
-                className={cn(
-                  "w-full justify-start text-left font-normal",
-                  !specificDate && "text-muted-foreground"
-                )}
-              >
-                <CalendarIcon className="mr-2 h-4 w-4" />
-                {specificDate ? format(specificDate, "PPP", { locale: es }) : "Seleccionar fecha"}
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-auto p-0" align="start">
-              <Calendar
-                mode="single"
-                selected={specificDate}
-                onSelect={setSpecificDate}
-                initialFocus
-              />
-            </PopoverContent>
-          </Popover>
-        </div>
+        <SpecificDateField
+          value={specificDate}
+          onChange={setSpecificDate}
+        />
       )}
 
       {recurrenceType === "weekly" && (
         <WeekdaySelector weekdays={weekdays} onChange={setWeekdays} />
       )}
 
-      <div className="space-y-2">
-        <Label htmlFor="notificationTime">Hora de notificación</Label>
-        <div className="flex items-center space-x-2">
-          <Clock className="h-4 w-4 text-muted-foreground" />
-          <Input
-            id="notificationTime"
-            type="time"
-            value={notificationTime}
-            onChange={(e) => setNotificationTime(e.target.value)}
-          />
-        </div>
-      </div>
+      <TimeField
+        value={notificationTime}
+        onChange={setNotificationTime}
+      />
 
       <div className="flex justify-end gap-2">
         <Button type="button" variant="outline" onClick={onCancel}>
