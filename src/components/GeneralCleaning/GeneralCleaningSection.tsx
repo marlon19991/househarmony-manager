@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { Progress } from "@/components/ui/progress";
 import { Card } from "@/components/ui/card";
+import { toast } from "sonner";
 import TaskList from "./TaskList";
 import AssigneeSelector from "./AssigneeSelector";
 import { supabase } from "@/integrations/supabase/client";
@@ -25,6 +26,7 @@ const GeneralCleaningSection = () => {
 
         if (error) {
           console.error('Error loading progress:', error);
+          toast.error("Error al cargar el progreso");
           return;
         }
 
@@ -43,22 +45,35 @@ const GeneralCleaningSection = () => {
     if (newAssignee === "Sin asignar") {
       setCompletionPercentage(0);
       // Reset progress in database
-      await supabase
+      const { error } = await supabase
         .from('general_cleaning_progress')
         .upsert({
           assignee: newAssignee,
           completion_percentage: 0,
           last_updated: new Date().toISOString()
         });
+
+      if (error) {
+        console.error('Error resetting progress:', error);
+        toast.error("Error al reiniciar el progreso");
+        return;
+      }
     } else {
       // Load existing progress for the new assignee
-      const { data: progressData } = await supabase
+      const { data: progressData, error } = await supabase
         .from('general_cleaning_progress')
         .select('completion_percentage')
         .eq('assignee', newAssignee)
         .maybeSingle();
 
-      setCompletionPercentage(progressData?.completion_percentage ?? 0);
+      if (error) {
+        console.error('Error loading progress:', error);
+        toast.error("Error al cargar el progreso");
+        return;
+      }
+
+      const roundedPercentage = Math.round(progressData?.completion_percentage ?? 0);
+      setCompletionPercentage(roundedPercentage);
     }
   };
 
@@ -75,7 +90,10 @@ const GeneralCleaningSection = () => {
       <div className="grid gap-6 md:grid-cols-[2fr_1fr]">
         <TaskList
           currentAssignee={currentAssignee}
-          onTaskComplete={setCompletionPercentage}
+          onTaskComplete={(percentage) => {
+            const roundedPercentage = Math.round(percentage);
+            setCompletionPercentage(roundedPercentage);
+          }}
           onAssigneeChange={handleAssigneeChange}
         />
         <AssigneeSelector
