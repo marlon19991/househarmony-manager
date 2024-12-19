@@ -30,7 +30,7 @@ const useGroupStore = create<GroupStore>()(
       fetchGroups: async () => {
         set({ loading: true });
         try {
-          const { data: groups } = await supabase
+          const { data: groups, error } = await supabase
             .from('groups')
             .select(`
               id,
@@ -42,6 +42,8 @@ const useGroupStore = create<GroupStore>()(
                 )
               )
             `);
+
+          if (error) throw error;
 
           if (groups) {
             const formattedGroups = groups.map(group => ({
@@ -55,6 +57,7 @@ const useGroupStore = create<GroupStore>()(
           }
         } catch (error) {
           console.error('Error fetching groups:', error);
+          throw error;
         } finally {
           set({ loading: false });
         }
@@ -63,7 +66,10 @@ const useGroupStore = create<GroupStore>()(
         try {
           const { data: group, error } = await supabase
             .from('groups')
-            .insert([{ name: groupData.name, description: groupData.description }])
+            .insert([{ 
+              name: groupData.name, 
+              description: groupData.description 
+            }])
             .select()
             .single();
 

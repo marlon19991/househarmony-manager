@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
@@ -10,20 +10,11 @@ interface Profile {
   whatsapp_number?: string;
 }
 
-interface UseProfilesReturn {
-  profiles: Profile[];
-  loading: boolean;
-  fetchProfiles: () => Promise<void>;
-  addProfile: (profile: Omit<Profile, "id">) => Promise<void>;
-  updateProfile: (profile: Profile) => Promise<void>;
-  deleteProfile: (id: number) => Promise<void>;
-}
-
-const useProfiles = (): UseProfilesReturn => {
+const useProfiles = () => {
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const fetchProfiles = async () => {
+  const fetchProfiles = useCallback(async () => {
     try {
       setLoading(true);
       const { data, error } = await supabase
@@ -42,7 +33,7 @@ const useProfiles = (): UseProfilesReturn => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   const addProfile = async (profile: Omit<Profile, "id">) => {
     try {
@@ -111,10 +102,6 @@ const useProfiles = (): UseProfilesReturn => {
       throw error;
     }
   };
-
-  useEffect(() => {
-    fetchProfiles();
-  }, []);
 
   return {
     profiles,
