@@ -21,33 +21,24 @@ interface TaskListProps {
   currentAssignee: string;
   onTaskComplete: (completionPercentage: number) => void;
   onAssigneeChange: (newAssignee: string) => void;
+  isDisabled: boolean;
 }
 
-const TaskList = ({ currentAssignee, onTaskComplete, onAssigneeChange }: TaskListProps) => {
+const TaskList = ({ currentAssignee, onTaskComplete, onAssigneeChange, isDisabled }: TaskListProps) => {
   const [editingTask, setEditingTask] = useState<number | null>(null);
   const [newTask, setNewTask] = useState({ title: "", comment: "" });
   const { profiles } = useProfiles();
   const { tasks, setTasks, updateTaskState } = useTaskState(currentAssignee);
 
   useEffect(() => {
-    // Verificar si el asignado actual existe en los perfiles
-    const assigneeExists = currentAssignee === "Sin asignar" || 
-                         profiles.some(profile => profile.name === currentAssignee);
-
-    if (!assigneeExists) {
-      // Si el asignado no existe, resetear a "Sin asignar"
-      onAssigneeChange("Sin asignar");
-      setTasks(tasks.map(task => ({ ...task, completed: false })));
-      onTaskComplete(0);
-    }
-
-    // Actualizar el progreso basado en las tareas completadas
     const completedTasks = tasks.filter(task => task.completed).length;
-    const percentage = Math.round((completedTasks / tasks.length) * 100);
+    const percentage = tasks.length > 0 ? Math.round((completedTasks / tasks.length) * 100) : 0;
     onTaskComplete(percentage);
   }, [currentAssignee, profiles, tasks]);
 
   const handleTaskToggle = async (taskId: number) => {
+    if (isDisabled) return;
+
     const taskToUpdate = tasks.find(t => t.id === taskId);
     if (!taskToUpdate) return;
 
@@ -245,6 +236,7 @@ const TaskList = ({ currentAssignee, onTaskComplete, onAssigneeChange }: TaskLis
             setEditingTask={setEditingTask}
             setTasks={setTasks}
             tasks={tasks}
+            isDisabled={isDisabled}
           />
         ))}
       </div>

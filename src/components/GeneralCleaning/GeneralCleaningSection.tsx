@@ -14,40 +14,38 @@ const GeneralCleaningSection = () => {
 
   useEffect(() => {
     const loadSavedAssignee = async () => {
-      const savedAssignee = localStorage.getItem("currentCleaningAssignee");
-      
-      if (savedAssignee) {
-        // Verificar si el asignado guardado aún existe en los perfiles
-        const assigneeExists = profiles.some(profile => profile.name === savedAssignee);
-        
-        if (!assigneeExists) {
-          setCurrentAssignee("Sin asignar");
-          localStorage.setItem("currentCleaningAssignee", "Sin asignar");
-          setCompletionPercentage(0);
+      try {
+        // Cargar el último asignado y su progreso desde la base de datos
+        const { data: progressData, error } = await supabase
+          .from('general_cleaning_progress')
+          .select('*')
+          .order('last_updated', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+
+        if (error) {
+          console.error('Error loading progress:', error);
+          toast.error("Error al cargar el progreso");
           return;
         }
 
-        setCurrentAssignee(savedAssignee);
-        
-        try {
-          // Cargar el progreso desde la base de datos
-          const { data: progressData, error } = await supabase
-            .from('general_cleaning_progress')
-            .select('completion_percentage')
-            .eq('assignee', savedAssignee)
-            .maybeSingle();
-
-          if (error) {
-            console.error('Error loading progress:', error);
-            toast.error("Error al cargar el progreso");
+        if (progressData) {
+          // Verificar si el asignado guardado aún existe en los perfiles
+          const assigneeExists = progressData.assignee === "Sin asignar" || 
+                               profiles.some(profile => profile.name === progressData.assignee);
+          
+          if (!assigneeExists) {
+            setCurrentAssignee("Sin asignar");
+            setCompletionPercentage(0);
             return;
           }
 
-          setCompletionPercentage(progressData?.completion_percentage ?? 0);
-        } catch (error) {
-          console.error('Error in loadSavedAssignee:', error);
-          toast.error("Error al cargar el progreso guardado");
+          setCurrentAssignee(progressData.assignee);
+          setCompletionPercentage(progressData.completion_percentage || 0);
         }
+      } catch (error) {
+        console.error('Error in loadSavedAssignee:', error);
+        toast.error("Error al cargar el progreso guardado");
       }
     };
 
@@ -56,42 +54,37 @@ const GeneralCleaningSection = () => {
 
   const handleAssigneeChange = async (newAssignee: string) => {
     setCurrentAssignee(newAssignee);
-    localStorage.setItem("currentCleaningAssignee", newAssignee);
     
-    if (newAssignee === "Sin asignar") {
-      setCompletionPercentage(0);
-      try {
-        // Reset progress in database
-        const { error } = await supabase
-          .from('general_cleaning_progress')
-          .upsert({
-            assignee: newAssignee,
-            completion_percentage: 0,
-            last_updated: new Date().toISOString()
-          });
+    try {
+      // Update progress in database
+      const { error } = await supabase
+        .from('general_cleaning_progress')
+        .upsert({
+          assignee: newAssignee,
+          completion_percentage: newAssignee === "Sin asignar" ? 0 : completionPercentage,
+          last_updated: new Date().toISOString()
+        });
 
-        if (error) throw error;
-      } catch (error) {
-        console.error('Error resetting progress:', error);
-        toast.error("Error al reiniciar el progreso");
-      }
-    } else {
-      try {
+      if (error) throw error;
+
+      if (newAssignee === "Sin asignar") {
+        setCompletionPercentage(0);
+      } else {
         // Load existing progress for the new assignee
-        const { data: progressData, error } = await supabase
+        const { data: progressData, error: progressError } = await supabase
           .from('general_cleaning_progress')
           .select('completion_percentage')
           .eq('assignee', newAssignee)
           .maybeSingle();
 
-        if (error) throw error;
+        if (progressError) throw progressError;
 
         const percentage = Math.round(progressData?.completion_percentage ?? 0);
         setCompletionPercentage(percentage);
-      } catch (error) {
-        console.error('Error loading progress:', error);
-        toast.error("Error al cargar el progreso");
       }
+    } catch (error) {
+      console.error('Error updating assignee:', error);
+      toast.error("Error al actualizar el responsable");
     }
   };
 
@@ -113,6 +106,7 @@ const GeneralCleaningSection = () => {
             setCompletionPercentage(roundedPercentage);
           }}
           onAssigneeChange={handleAssigneeChange}
+          isDisabled={currentAssignee === "Sin asignar"}
         />
         <AssigneeSelector
           currentAssignee={currentAssignee}
