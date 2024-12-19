@@ -29,33 +29,62 @@ const TaskList = ({
   // Use the notifications hook
   useTaskNotifications({ tasks, currentAssignee });
   
+  // Load task states from database
+  useEffect(() => {
+    const loadTaskStates = async () => {
+      try {
+        const { data: taskStates, error } = await supabase
+          .from('cleaning_task_states')
+          .select('*')
+          .order('created_at', { ascending: true });
+
+        if (error) {
+          console.error('Error loading task states:', error);
+          toast.error("Error al cargar el estado de las tareas");
+          return;
+        }
+
+        if (taskStates) {
+          setTasks(prevTasks => 
+            prevTasks.map(task => {
+              const taskState = taskStates.find(state => state.task_id === task.id);
+              return taskState ? { ...task, completed: taskState.completed } : task;
+            })
+          );
+        }
+      } catch (error) {
+        console.error('Error in loadTaskStates:', error);
+        toast.error("Error al cargar el estado de las tareas");
+      }
+    };
+
+    loadTaskStates();
+  }, []);
+
   // Update completion percentage whenever tasks change
   useEffect(() => {
     const completedTasks = tasks.filter(task => task.completed).length;
     const currentPercentage = tasks.length > 0 ? Math.round((completedTasks / tasks.length) * 100) : 0;
-    onTaskComplete(currentPercentage);
-  }, [tasks, onTaskComplete]);
-
-  // Reset tasks when assignee changes
-  useEffect(() => {
-    const resetTasks = async () => {
-      const { data, error } = await supabase
-        .from('cleaning_task_states')
-        .select('*')
-        .order('created_at', { ascending: true });
+    
+    // Update progress in database
+    const updateProgress = async () => {
+      const { error } = await supabase
+        .from('general_cleaning_progress')
+        .upsert({
+          assignee: currentAssignee,
+          completion_percentage: currentPercentage,
+          last_updated: new Date().toISOString()
+        });
 
       if (error) {
-        console.error('Error fetching tasks:', error);
-        return;
-      }
-
-      if (data) {
-        setTasks(tasks.map(task => ({ ...task, completed: false })));
+        console.error('Error updating progress:', error);
+        toast.error("Error al actualizar el progreso");
       }
     };
 
-    resetTasks();
-  }, [currentAssignee]);
+    updateProgress();
+    onTaskComplete(currentPercentage);
+  }, [tasks, onTaskComplete, currentAssignee]);
 
   const handleTaskToggle = async (taskId: number) => {
     if (isDisabled) return;

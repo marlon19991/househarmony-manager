@@ -21,7 +21,8 @@ export const useTaskPersistence = (currentAssignee: string) => {
       try {
         const { data: taskStates, error } = await supabase
           .from('cleaning_task_states')
-          .select('task_id, completed');
+          .select('task_id, completed')
+          .order('created_at', { ascending: true });
 
         if (error) {
           console.error('Error loading task states:', error);
@@ -42,7 +43,7 @@ export const useTaskPersistence = (currentAssignee: string) => {
     };
 
     loadTaskStates();
-  }, []);
+  }, [currentAssignee]);
 
   const updateTaskState = async (taskId: number, completed: boolean) => {
     try {
