@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 interface Group {
   id: number;
@@ -14,7 +15,7 @@ interface GroupStore {
   loading: boolean;
   setSelectedGroup: (group: Group | null) => void;
   fetchGroups: () => Promise<void>;
-  addGroup: (group: Omit<Group, "id">) => Promise<void>;
+  addGroup: (groupData: { name: string; description: string }) => Promise<void>;
   updateGroup: (group: Group) => Promise<void>;
   deleteGroup: (groupId: number) => Promise<void>;
 }
@@ -28,7 +29,7 @@ const useGroupStore = create<GroupStore>((set, get) => ({
   fetchGroups: async () => {
     set({ loading: true });
     try {
-      const { data: groups, error } = await supabase
+      const { data, error } = await supabase
         .from('groups')
         .select(`
           id,
@@ -36,26 +37,28 @@ const useGroupStore = create<GroupStore>((set, get) => ({
           description,
           group_profiles (
             profiles (
+              id,
               name
             )
           )
-        `);
+        `)
+        .order('created_at', { ascending: true });
 
-      if (error) throw error;
-
-      if (groups) {
-        const formattedGroups = groups.map(group => ({
-          id: group.id,
-          name: group.name,
-          description: group.description || '',
-          members: group.group_profiles?.map((gp: any) => gp.profiles.name) || []
-        }));
-
-        set({ groups: formattedGroups });
+      if (error) {
+        throw error;
       }
+
+      const formattedGroups = data.map(group => ({
+        id: group.id,
+        name: group.name,
+        description: group.description || '',
+        members: group.group_profiles?.map((gp: any) => gp.profiles.name) || []
+      }));
+
+      set({ groups: formattedGroups });
     } catch (error) {
       console.error('Error fetching groups:', error);
-      throw error;
+      toast.error('Error al cargar los grupos');
     } finally {
       set({ loading: false });
     }
@@ -83,9 +86,11 @@ const useGroupStore = create<GroupStore>((set, get) => ({
         };
         
         set({ groups: [...get().groups, formattedGroup] });
+        toast.success('Grupo creado exitosamente');
       }
     } catch (error) {
       console.error('Error adding group:', error);
+      toast.error('Error al crear el grupo');
       throw error;
     }
   },
@@ -95,8 +100,8 @@ const useGroupStore = create<GroupStore>((set, get) => ({
       const { error } = await supabase
         .from('groups')
         .update({ 
-          name: updatedGroup.name, 
-          description: updatedGroup.description 
+          name: updatedGroup.name,
+          description: updatedGroup.description
         })
         .eq('id', updatedGroup.id);
 
@@ -107,13 +112,12 @@ const useGroupStore = create<GroupStore>((set, get) => ({
         groups: currentGroups.map((group) =>
           group.id === updatedGroup.id ? updatedGroup : group
         ),
-        selectedGroup:
-          get().selectedGroup?.id === updatedGroup.id
-            ? updatedGroup
-            : get().selectedGroup,
       });
+      
+      toast.success('Grupo actualizado exitosamente');
     } catch (error) {
       console.error('Error updating group:', error);
+      toast.error('Error al actualizar el grupo');
       throw error;
     }
   },
@@ -130,11 +134,13 @@ const useGroupStore = create<GroupStore>((set, get) => ({
       const currentGroups = get().groups;
       set({
         groups: currentGroups.filter((group) => group.id !== groupId),
-        selectedGroup:
-          get().selectedGroup?.id === groupId ? null : get().selectedGroup,
+        selectedGroup: get().selectedGroup?.id === groupId ? null : get().selectedGroup
       });
+      
+      toast.success('Grupo eliminado exitosamente');
     } catch (error) {
       console.error('Error deleting group:', error);
+      toast.error('Error al eliminar el grupo');
       throw error;
     }
   },
