@@ -8,7 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import useProfiles from "@/hooks/useProfiles";
 
 const GeneralCleaningSection = () => {
-  const [currentAssignee, setCurrentAssignee] = useState("Sin asignar");
+  const [currentAssignee, setCurrentAssignee] = useState<string | null>(null);
   const [completionPercentage, setCompletionPercentage] = useState(0);
   const { profiles } = useProfiles();
 
@@ -57,8 +57,11 @@ const GeneralCleaningSection = () => {
       }
     };
 
-    loadSavedProgress();
-  }, [profiles]);
+    // Solo cargar si profiles está disponible y currentAssignee es null
+    if (profiles.length > 0 && currentAssignee === null) {
+      loadSavedProgress();
+    }
+  }, [profiles, currentAssignee]);
 
   const handleAssigneeChange = async (newAssignee: string) => {
     try {
@@ -83,6 +86,15 @@ const GeneralCleaningSection = () => {
       toast.error("Error al actualizar el responsable");
     }
   };
+
+  // Si currentAssignee es null, mostrar un estado de carga
+  if (currentAssignee === null) {
+    return (
+      <Card className="p-6 space-y-6">
+        <div>Cargando...</div>
+      </Card>
+    );
+  }
 
   return (
     <Card className="p-6 space-y-6">
