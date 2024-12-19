@@ -12,15 +12,15 @@ export const handleDueDateNotification = async (
   profiles: any[]
 ) => {
   try {
-    const { data: existingNotification, error } = await supabase
+    const { data: existingNotification, error: checkError } = await supabase
       .from('bill_notifications')
       .select()
       .eq('bill_id', billId)
       .eq('notification_type', 'due_date')
       .maybeSingle();
 
-    if (error) {
-      console.error('Error checking due date notification:', error);
+    if (checkError) {
+      console.error('Error checking due date notification:', checkError);
       return;
     }
 
@@ -41,16 +41,18 @@ export const handleDueDateNotification = async (
         }
       }
 
-      // Record the notification
-      const { error: insertError } = await supabase
+      // Use upsert instead of insert to handle duplicates
+      const { error: upsertError } = await supabase
         .from('bill_notifications')
-        .insert({
+        .upsert({
           bill_id: billId,
           notification_type: 'due_date'
+        }, {
+          onConflict: 'bill_id,notification_type'
         });
 
-      if (insertError) {
-        console.error('Error recording due date notification:', insertError);
+      if (upsertError) {
+        console.error('Error recording due date notification:', upsertError);
       }
     }
   } catch (error) {
@@ -67,15 +69,15 @@ export const handleOverdueNotification = async (
   profiles: any[]
 ) => {
   try {
-    const { data: existingNotification, error } = await supabase
+    const { data: existingNotification, error: checkError } = await supabase
       .from('bill_notifications')
       .select()
       .eq('bill_id', billId)
       .eq('notification_type', 'overdue')
       .maybeSingle();
 
-    if (error) {
-      console.error('Error checking overdue notification:', error);
+    if (checkError) {
+      console.error('Error checking overdue notification:', checkError);
       return;
     }
 
@@ -97,16 +99,18 @@ export const handleOverdueNotification = async (
         }
       }
 
-      // Record the notification
-      const { error: insertError } = await supabase
+      // Use upsert instead of insert to handle duplicates
+      const { error: upsertError } = await supabase
         .from('bill_notifications')
-        .insert({
+        .upsert({
           bill_id: billId,
           notification_type: 'overdue'
+        }, {
+          onConflict: 'bill_id,notification_type'
         });
 
-      if (insertError) {
-        console.error('Error recording overdue notification:', insertError);
+      if (upsertError) {
+        console.error('Error recording overdue notification:', upsertError);
       }
     }
   } catch (error) {
