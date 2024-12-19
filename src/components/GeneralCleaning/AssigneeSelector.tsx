@@ -18,6 +18,12 @@ const AssigneeSelector = ({ currentAssignee, onAssigneeChange, completionPercent
   const handleAssigneeChange = async (newAssignee: string) => {
     if (newAssignee === currentAssignee) return;
 
+    // Validar que el porcentaje de completitud sea al menos 75%
+    if (completionPercentage < 75) {
+      toast.error("Debes completar al menos el 75% de las tareas antes de cambiar el responsable");
+      return;
+    }
+
     console.log('Iniciando cambio de responsable:', { 
       anteriorResponsable: currentAssignee, 
       nuevoResponsable: newAssignee 
