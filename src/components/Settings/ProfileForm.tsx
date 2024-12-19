@@ -9,8 +9,14 @@ interface ProfileFormProps {
     name: string;
     icon: string;
     whatsapp_number?: string;
+    email?: string;
   };
-  setProfile: (profile: { name: string; icon: string; whatsapp_number?: string; }) => void;
+  setProfile: (profile: { 
+    name: string; 
+    icon: string; 
+    whatsapp_number?: string;
+    email?: string;
+  }) => void;
   onSubmit: () => void;
   iconOptions: Array<{ src: string; label: string; }>;
 }
@@ -28,13 +34,13 @@ export const ProfileForm = ({ profile, setProfile, onSubmit, iconOptions }: Prof
         />
       </div>
       <div>
-        <Label htmlFor="whatsapp">Número de WhatsApp</Label>
+        <Label htmlFor="email">Correo Electrónico</Label>
         <Input
-          id="whatsapp"
-          value={profile.whatsapp_number || ''}
-          onChange={(e) => setProfile({ ...profile, whatsapp_number: e.target.value })}
-          placeholder="+573001234567"
-          type="tel"
+          id="email"
+          type="email"
+          value={profile.email || ''}
+          onChange={(e) => setProfile({ ...profile, email: e.target.value })}
+          placeholder="correo@ejemplo.com"
         />
       </div>
       <div>

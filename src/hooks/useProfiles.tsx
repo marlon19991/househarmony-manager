@@ -1,5 +1,4 @@
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useEffect } from 'react';
@@ -8,6 +7,8 @@ interface Profile {
   id: number;
   name: string;
   icon: string;
+  email?: string;
+  whatsapp_number?: string;
 }
 
 interface ProfileStore {
@@ -66,7 +67,12 @@ const useProfiles = create<ProfileStore>()((set) => ({
     try {
       const { error } = await supabase
         .from('profiles')
-        .update({ name: profile.name, icon: profile.icon })
+        .update({ 
+          name: profile.name, 
+          icon: profile.icon,
+          email: profile.email,
+          whatsapp_number: profile.whatsapp_number 
+        })
         .eq('id', profile.id);
 
       if (error) throw error;
@@ -106,7 +112,6 @@ const useProfiles = create<ProfileStore>()((set) => ({
   },
 }));
 
-// Custom hook to initialize profiles
 export const useInitializeProfiles = () => {
   const fetchProfiles = useProfiles((state) => state.fetchProfiles);
 
