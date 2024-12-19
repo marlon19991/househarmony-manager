@@ -106,12 +106,9 @@ const AssigneeSelector = ({ currentAssignee, onAssigneeChange, completionPercent
         }
       }
 
-      // 7. Actualizar el estado en la UI
+      // 7. Actualizar el estado en la UI y mostrar notificación
       onAssigneeChange(newAssignee);
       toast.success(`Se ha asignado el aseo general a ${newAssignee}`);
-      
-      // 8. Forzar recarga de la página para asegurar actualización de UI
-      window.location.reload();
       
     } catch (error) {
       console.error("Error updating assignee:", error);
