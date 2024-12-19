@@ -48,12 +48,24 @@ export const RecurringTasksSection = () => {
     }
   };
 
-  const handleAddTask = async (newTask: any) => {
+  const handleAddTask = () => {
     setIsAddingTask(false);
   };
 
   const handleUpdateTask = async (taskId: number, updatedTask: any) => {
-    // The update is handled in the form component
+    try {
+      const { error } = await supabase
+        .from('recurring_tasks')
+        .update(updatedTask)
+        .eq('id', taskId);
+
+      if (error) throw error;
+      toast.success("Tarea actualizada exitosamente");
+      fetchTasks();
+    } catch (error) {
+      console.error('Error updating task:', error);
+      toast.error("Error al actualizar la tarea");
+    }
   };
 
   const handleDeleteTask = async (taskId: number) => {

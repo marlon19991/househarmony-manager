@@ -22,7 +22,7 @@ export const AssigneeField = ({ selectedAssignees, onChange }: AssigneeFieldProp
     );
   };
 
-  const allSelected = selectedAssignees.length === profiles.length;
+  const allSelected = profiles.length > 0 && selectedAssignees.length === profiles.length;
 
   return (
     <div className="space-y-4">
@@ -34,7 +34,9 @@ export const AssigneeField = ({ selectedAssignees, onChange }: AssigneeFieldProp
             checked={allSelected}
             onCheckedChange={handleToggleAll}
           />
-          <Label htmlFor="all">Todos</Label>
+          <Label htmlFor="all" className="text-sm font-normal">
+            Todos
+          </Label>
         </div>
         {profiles.map((profile) => (
           <div key={profile.id} className="flex items-center space-x-2">
@@ -43,7 +45,14 @@ export const AssigneeField = ({ selectedAssignees, onChange }: AssigneeFieldProp
               checked={selectedAssignees.includes(profile.name)}
               onCheckedChange={(checked) => handleToggleAssignee(profile.name, checked as boolean)}
             />
-            <Label htmlFor={`assignee-${profile.id}`}>{profile.name}</Label>
+            <Label htmlFor={`assignee-${profile.id}`} className="text-sm font-normal">
+              {profile.name}
+              {profile.email && (
+                <span className="text-xs text-muted-foreground ml-2">
+                  ({profile.email})
+                </span>
+              )}
+            </Label>
           </div>
         ))}
       </div>

@@ -18,7 +18,16 @@ import { es } from "date-fns/locale";
 import { RecurringTaskForm } from "./RecurringTaskForm";
 
 interface RecurringTaskItemProps {
-  task: any;
+  task: {
+    id: number;
+    title: string;
+    recurrence_type: string;
+    selected_days?: string[];
+    specific_day?: string;
+    time?: string;
+    assignees?: string[];
+    icon?: string;
+  };
   onDelete: (id: number) => void;
   onUpdate: (id: number, task: any) => void;
 }
@@ -26,8 +35,7 @@ interface RecurringTaskItemProps {
 export const RecurringTaskItem = ({ task, onDelete, onUpdate }: RecurringTaskItemProps) => {
   const [isEditing, setIsEditing] = useState(false);
 
-  const handleUpdate = (updatedTask: any) => {
-    onUpdate(task.id, updatedTask);
+  const handleUpdate = () => {
     setIsEditing(false);
   };
 
@@ -86,7 +94,15 @@ export const RecurringTaskItem = ({ task, onDelete, onUpdate }: RecurringTaskIte
     return (
       <Card className="p-4">
         <RecurringTaskForm
-          initialTask={task}
+          initialData={{
+            title: task.title,
+            selectedAssignees: task.assignees || [],
+            recurrence_type: task.recurrence_type,
+            selected_days: task.selected_days,
+            specific_day: task.specific_day,
+            time: task.time,
+            icon: task.icon
+          }}
           onSubmit={handleUpdate}
           onCancel={() => setIsEditing(false)}
         />

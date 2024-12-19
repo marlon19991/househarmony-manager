@@ -2,7 +2,10 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { sendTaskAssignmentEmail } from "@/utils/emailUtils";
-import useProfiles from "@/hooks/useProfiles";
+import { AssigneeField } from "./FormFields/AssigneeField";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 
 interface RecurringTaskFormProps {
   onSubmit: () => void;
@@ -10,32 +13,45 @@ interface RecurringTaskFormProps {
   initialData?: {
     title: string;
     selectedAssignees: string[];
+    recurrence_type: string;
+    selected_days?: string[];
+    specific_day?: string;
+    time?: string;
+    icon?: string;
   };
 }
 
 export const RecurringTaskForm = ({ onSubmit, onCancel, initialData }: RecurringTaskFormProps) => {
   const [title, setTitle] = useState(initialData?.title || "");
   const [selectedAssignees, setSelectedAssignees] = useState(initialData?.selectedAssignees || []);
-  const { profiles } = useProfiles();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     try {
-      // Logic to create or update the recurring task in the database
       const { data, error } = await supabase.from('recurring_tasks').upsert({
         title,
         assignees: selectedAssignees,
+        recurrence_type: initialData?.recurrence_type || 'weekly',
+        selected_days: initialData?.selected_days || [],
+        specific_day: initialData?.specific_day,
+        time: initialData?.time,
+        icon: initialData?.icon || '📋'
       });
 
       if (error) throw error;
 
       // Send email to each assignee
       for (const assigneeName of selectedAssignees) {
-        const assignee = profiles.find(p => p.name === assigneeName);
-        if (assignee?.email) {
+        const { data: profiles } = await supabase
+          .from('profiles')
+          .select('email')
+          .eq('name', assigneeName)
+          .single();
+
+        if (profiles?.email) {
           await sendTaskAssignmentEmail(
-            assignee.email,
+            profiles.email,
             assigneeName,
             title,
             "recurring"
@@ -54,36 +70,27 @@ export const RecurringTaskForm = ({ onSubmit, onCancel, initialData }: Recurring
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <div>
-        <label htmlFor="taskTitle" className="block text-sm font-medium">Título de la tarea</label>
-        <input
+        <Label htmlFor="taskTitle">Título de la tarea</Label>
+        <Input
           id="taskTitle"
           value={title}
           onChange={(e) => setTitle(e.target.value)}
           placeholder="Título de la tarea"
-          className="mt-1 block w-full border border-gray-300 rounded-md p-2"
         />
       </div>
-      <div>
-        <label className="block text-sm font-medium">Asignar a</label>
-        <select
-          multiple
-          value={selectedAssignees}
-          onChange={(e) => {
-            const options = Array.from(e.target.selectedOptions, option => option.value);
-            setSelectedAssignees(options);
-          }}
-          className="mt-1 block w-full border border-gray-300 rounded-md p-2"
-        >
-          {profiles.map(profile => (
-            <option key={profile.id} value={profile.name}>
-              {profile.name}
-            </option>
-          ))}
-        </select>
-      </div>
-      <div className="flex justify-end">
-        <button type="button" onClick={onCancel} className="mr-2 bg-gray-300 text-white rounded-md px-4 py-2">Cancelar</button>
-        <button type="submit" className="bg-blue-500 text-white rounded-md px-4 py-2">Guardar</button>
+      
+      <AssigneeField
+        selectedAssignees={selectedAssignees}
+        onChange={setSelectedAssignees}
+      />
+
+      <div className="flex justify-end gap-2">
+        <Button type="button" variant="outline" onClick={onCancel}>
+          Cancelar
+        </Button>
+        <Button type="submit">
+          {initialData ? "Actualizar" : "Crear"}
+        </Button>
       </div>
     </form>
   );
