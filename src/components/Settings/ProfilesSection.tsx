@@ -31,15 +31,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import useProfiles from "@/hooks/useProfiles";
-import { ProfileForm } from "./ProfileForm";
-
-interface Profile {
-  id: number;
-  name: string;
-  icon: string;
-  whatsapp_number?: string;
-  email?: string;
-}
+import { ProfileForm, ProfileFormData } from "./ProfileForm";
 
 const iconOptions = [
   { src: "/placeholder.svg", label: "Default" },
@@ -49,8 +41,8 @@ const iconOptions = [
 
 export const ProfilesSection = () => {
   const { profiles, loading, fetchProfiles, addProfile, updateProfile, deleteProfile } = useProfiles();
-  const [editingProfile, setEditingProfile] = useState<Profile | null>(null);
-  const [newProfile, setNewProfile] = useState<Omit<Profile, "id">>({ 
+  const [editingProfile, setEditingProfile] = useState<ProfileFormData | null>(null);
+  const [newProfile, setNewProfile] = useState<Omit<ProfileFormData, "id">>({ 
     name: "", 
     icon: "/placeholder.svg", 
     whatsapp_number: "",
@@ -73,7 +65,7 @@ export const ProfilesSection = () => {
   };
 
   const handleUpdateProfile = async () => {
-    if (!editingProfile) return;
+    if (!editingProfile?.id) return;
     await updateProfile(editingProfile);
     setEditingProfile(null);
     setShowEditDialog(false);
