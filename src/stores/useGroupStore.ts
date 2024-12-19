@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { supabase } from '@/integrations/supabase/client';
+import { useCallback } from 'react';
 
 interface Group {
   id: number;
@@ -27,7 +28,7 @@ const useGroupStore = create<GroupStore>()(
       groups: [],
       loading: false,
       setSelectedGroup: (group) => set({ selectedGroup: group }),
-      fetchGroups: async () => {
+      fetchGroups: useCallback(async () => {
         set({ loading: true });
         try {
           const { data: groups } = await supabase
@@ -58,7 +59,7 @@ const useGroupStore = create<GroupStore>()(
         } finally {
           set({ loading: false });
         }
-      },
+      }, []),
       addGroup: async (groupData) => {
         try {
           const { data: group, error } = await supabase

@@ -3,13 +3,19 @@ import useGroupStore from "@/stores/useGroupStore";
 import useProfiles from "./useProfiles";
 
 export const useInitializeApp = () => {
-  const { fetchGroups } = useGroupStore();
-  const { fetchProfiles } = useProfiles();
+  const fetchGroups = useGroupStore(state => state.fetchGroups);
+  const fetchProfiles = useProfiles().fetchProfiles;
 
   useEffect(() => {
-    fetchGroups();
-    fetchProfiles();
-  }, [fetchGroups, fetchProfiles]);
+    const initialize = async () => {
+      await Promise.all([
+        fetchGroups(),
+        fetchProfiles()
+      ]);
+    };
+    
+    initialize();
+  }, []); // Empty dependency array since we only want to run this once
 };
 
 export default useInitializeApp;
