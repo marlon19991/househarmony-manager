@@ -6,6 +6,7 @@ import useProfiles from "@/hooks/useProfiles";
 import { sendTaskAssignmentEmail } from "@/utils/emailUtils";
 import { useTaskPersistence } from "./hooks/useTaskPersistence";
 import { resetTasksAndProgress } from "./utils/taskResetOperations";
+import { supabase } from "@/integrations/supabase/client";
 
 interface AssigneeSelectorProps {
   currentAssignee: string;
@@ -84,6 +85,14 @@ const AssigneeSelector = ({ currentAssignee, onAssigneeChange, completionPercent
           <SelectValue placeholder="Seleccionar responsable" />
         </SelectTrigger>
         <SelectContent>
+          <SelectItem value="Sin asignar">
+            <div className="flex items-center gap-2">
+              <Avatar className="h-6 w-6">
+                <AvatarFallback><User className="h-4 w-4" /></AvatarFallback>
+              </Avatar>
+              Sin asignar
+            </div>
+          </SelectItem>
           {profiles.map((profile) => (
             <SelectItem key={profile.id} value={profile.name}>
               <div className="flex items-center gap-2">
