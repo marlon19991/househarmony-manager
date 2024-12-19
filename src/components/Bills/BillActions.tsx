@@ -1,5 +1,6 @@
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Pencil, Trash2, CheckCircle } from "lucide-react";
+import { CheckCircle, Pencil, Trash2 } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -10,7 +11,6 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { useState } from "react";
 
 interface BillActionsProps {
   status: "pending" | "paid";
@@ -28,11 +28,7 @@ export const BillActions = ({
   title,
 }: BillActionsProps) => {
   const [showPayConfirmation, setShowPayConfirmation] = useState(false);
-
-  const handleConfirmPay = () => {
-    setShowPayConfirmation(false);
-    onToggleStatus();
-  };
+  const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false);
 
   if (status === "paid") return null;
 
@@ -50,15 +46,22 @@ export const BillActions = ({
         </Button>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>¿Marcar como pagada?</AlertDialogTitle>
+            <AlertDialogTitle>¿Confirmar pago?</AlertDialogTitle>
             <AlertDialogDescription>
-              ¿Estás seguro que deseas marcar la factura "{title}" como pagada?
+              ¿Estás seguro de que deseas marcar como pagada la factura "{title}"?
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction onClick={handleConfirmPay}>
-              Confirmar
+            <AlertDialogCancel onClick={() => setShowPayConfirmation(false)}>
+              Cancelar
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                onToggleStatus();
+                setShowPayConfirmation(false);
+              }}
+            >
+              Confirmar Pago
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -74,15 +77,38 @@ export const BillActions = ({
         Editar
       </Button>
 
-      <Button
-        variant="outline"
-        size="sm"
-        className="text-red-600 hover:text-red-700 hover:bg-red-50 w-full sm:w-auto"
-        onClick={onDelete}
-      >
-        <Trash2 className="mr-2 h-4 w-4" />
-        Eliminar
-      </Button>
+      <AlertDialog open={showDeleteConfirmation} onOpenChange={setShowDeleteConfirmation}>
+        <Button
+          variant="outline"
+          size="sm"
+          className="text-red-600 hover:text-red-700 hover:bg-red-50 w-full sm:w-auto"
+          onClick={() => setShowDeleteConfirmation(true)}
+        >
+          <Trash2 className="mr-2 h-4 w-4" />
+          Eliminar
+        </Button>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>¿Eliminar factura?</AlertDialogTitle>
+            <AlertDialogDescription>
+              ¿Estás seguro de que deseas eliminar la factura "{title}"? Esta acción no se puede deshacer.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setShowDeleteConfirmation(false)}>
+              Cancelar
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                onDelete();
+                setShowDeleteConfirmation(false);
+              }}
+            >
+              Eliminar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

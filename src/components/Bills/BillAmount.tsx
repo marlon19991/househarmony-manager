@@ -3,6 +3,10 @@ interface BillAmountProps {
   selectedProfiles: string[];
 }
 
+const formatAmount = (amount: number) => {
+  return new Intl.NumberFormat('es-ES').format(amount);
+};
+
 export const BillAmount = ({ amount, selectedProfiles }: BillAmountProps) => {
   const amountPerPerson = selectedProfiles.length > 0 
     ? amount / selectedProfiles.length 
@@ -11,11 +15,11 @@ export const BillAmount = ({ amount, selectedProfiles }: BillAmountProps) => {
   return (
     <>
       <p className="text-lg font-semibold text-primary">
-        ${amount.toFixed(2)}
+        ${formatAmount(amount)}
       </p>
       {selectedProfiles.length > 1 && (
         <p className="text-sm text-muted-foreground">
-          ${amountPerPerson.toFixed(2)} por persona
+          ${formatAmount(amountPerPerson)} por persona
         </p>
       )}
       {selectedProfiles.length > 0 && (
