@@ -2,7 +2,7 @@ import { Card } from "@/components/ui/card";
 import { Users } from "lucide-react";
 import useGroupStore from "@/stores/useGroupStore";
 import { Button } from "@/components/ui/button";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import {
   Select,
   SelectContent,
