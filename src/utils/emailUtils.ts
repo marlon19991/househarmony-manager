@@ -25,13 +25,32 @@ export const sendTaskAssignmentEmail = async (
   taskTitle: string,
   taskType: "recurring" | "cleaning"
 ) => {
-  const subject = `Nueva tarea asignada: ${taskTitle}`;
-  const html = `
+  const subject = taskType === "cleaning" ? 
+    "¡Es tu turno para el Aseo General!" : 
+    `Nueva tarea asignada: ${taskTitle}`;
+
+  const cleaningHtml = `
+    <h1>¡Hola ${assigneeName}!</h1>
+    <p>Es tu turno para realizar el aseo general de la casa. 🏠✨</p>
+    <p>Tu participación es muy importante para mantener un ambiente agradable y una buena convivencia entre todos.</p>
+    <h2>¿Por qué es importante?</h2>
+    <ul>
+      <li>Mantenemos un espacio limpio y ordenado para todos</li>
+      <li>Contribuimos a una mejor convivencia</li>
+      <li>Creamos un ambiente más saludable y agradable</li>
+    </ul>
+    <p>Por favor, revisa la aplicación para ver la lista de tareas pendientes.</p>
+    <p>¡Gracias por tu colaboración en mantener nuestro hogar en las mejores condiciones! 🙌</p>
+  `;
+
+  const regularHtml = `
     <h1>Hola ${assigneeName},</h1>
-    <p>Se te ha asignado una nueva tarea ${taskType === "recurring" ? "periódica" : "de aseo"}:</p>
+    <p>Se te ha asignado una nueva tarea:</p>
     <h2>${taskTitle}</h2>
     <p>Por favor, revisa la aplicación para más detalles.</p>
   `;
+
+  const html = taskType === "cleaning" ? cleaningHtml : regularHtml;
 
   return sendEmail(email, subject, html);
 };

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Progress } from "@/components/ui/progress";
 import { Card } from "@/components/ui/card";
 import TaskList from "./TaskList";
@@ -8,8 +8,18 @@ const GeneralCleaningSection = () => {
   const [currentAssignee, setCurrentAssignee] = useState("Sin asignar");
   const [completionPercentage, setCompletionPercentage] = useState(0);
 
+  useEffect(() => {
+    // Load saved assignee from localStorage
+    const savedAssignee = localStorage.getItem("currentCleaningAssignee");
+    if (savedAssignee) {
+      setCurrentAssignee(savedAssignee);
+    }
+  }, []);
+
   const handleAssigneeChange = (newAssignee: string) => {
     setCurrentAssignee(newAssignee);
+    // Save to localStorage
+    localStorage.setItem("currentCleaningAssignee", newAssignee);
     setCompletionPercentage(0); // Reset completion when assignee changes
   };
 
