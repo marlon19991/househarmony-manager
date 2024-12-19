@@ -46,18 +46,39 @@ const TaskItem = ({
 }: TaskItemProps) => {
   useEffect(() => {
     const loadTaskState = async () => {
-      const { data: taskState } = await supabase
-        .from('cleaning_task_states')
-        .select('completed')
-        .eq('task_id', task.id)
-        .single();
+      try {
+        const { data: taskState, error } = await supabase
+          .from('cleaning_task_states')
+          .select('completed')
+          .eq('task_id', task.id)
+          .maybeSingle();
 
-      if (taskState) {
-        setTasks(prevTasks => 
-          prevTasks.map(t => 
-            t.id === task.id ? { ...t, completed: taskState.completed } : t
-          )
-        );
+        if (error) {
+          console.error('Error loading task state:', error);
+          return;
+        }
+
+        if (taskState) {
+          setTasks(prevTasks => 
+            prevTasks.map(t => 
+              t.id === task.id ? { ...t, completed: taskState.completed } : t
+            )
+          );
+        } else {
+          // If no task state exists, create one with default values
+          const { error: insertError } = await supabase
+            .from('cleaning_task_states')
+            .insert({
+              task_id: task.id,
+              completed: false
+            });
+
+          if (insertError) {
+            console.error('Error creating task state:', insertError);
+          }
+        }
+      } catch (error) {
+        console.error('Error in loadTaskState:', error);
       }
     };
 
@@ -65,25 +86,48 @@ const TaskItem = ({
   }, [task.id]);
 
   const handleTaskToggle = async (taskId: number) => {
-    onTaskToggle(taskId);
-    
-    const newCompleted = !task.completed;
-    
-    const { data: existingState } = await supabase
-      .from('cleaning_task_states')
-      .select()
-      .eq('task_id', taskId)
-      .single();
+    try {
+      onTaskToggle(taskId);
+      
+      const newCompleted = !task.completed;
+      
+      const { data: existingState, error: checkError } = await supabase
+        .from('cleaning_task_states')
+        .select()
+        .eq('task_id', taskId)
+        .maybeSingle();
 
-    if (existingState) {
-      await supabase
-        .from('cleaning_task_states')
-        .update({ completed: newCompleted, updated_at: new Date().toISOString() })
-        .eq('task_id', taskId);
-    } else {
-      await supabase
-        .from('cleaning_task_states')
-        .insert({ task_id: taskId, completed: newCompleted });
+      if (checkError) {
+        console.error('Error checking task state:', checkError);
+        return;
+      }
+
+      if (existingState) {
+        const { error: updateError } = await supabase
+          .from('cleaning_task_states')
+          .update({ 
+            completed: newCompleted, 
+            updated_at: new Date().toISOString() 
+          })
+          .eq('task_id', taskId);
+
+        if (updateError) {
+          console.error('Error updating task state:', updateError);
+        }
+      } else {
+        const { error: insertError } = await supabase
+          .from('cleaning_task_states')
+          .insert({ 
+            task_id: taskId, 
+            completed: newCompleted 
+          });
+
+        if (insertError) {
+          console.error('Error creating task state:', insertError);
+        }
+      }
+    } catch (error) {
+      console.error('Error in handleTaskToggle:', error);
     }
   };
 
