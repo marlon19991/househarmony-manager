@@ -3,6 +3,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { User } from "lucide-react";
 import { toast } from "sonner";
 import useProfiles from "@/hooks/useProfiles";
+import { sendTaskAssignmentEmail } from "@/utils/emailUtils";
 
 interface AssigneeSelectorProps {
   currentAssignee: string;
@@ -13,14 +14,39 @@ interface AssigneeSelectorProps {
 const AssigneeSelector = ({ currentAssignee, onAssigneeChange, completionPercentage }: AssigneeSelectorProps) => {
   const { profiles } = useProfiles();
 
-  const handleAssigneeChange = (newAssignee: string) => {
+  const handleAssigneeChange = async (newAssignee: string) => {
     // Skip validation if current assignee is "Sin asignar"
     if (currentAssignee !== "Sin asignar" && completionPercentage < 75) {
       toast.error("Debe completar al menos el 75% de las tareas antes de cambiar el responsable");
       return;
     }
-    onAssigneeChange(newAssignee);
-    toast.success(`Se ha asignado el aseo general a ${newAssignee}`);
+
+    try {
+      // Find the new assignee's profile to get their email
+      const assigneeProfile = profiles.find(p => p.name === newAssignee);
+      
+      if (assigneeProfile?.email) {
+        console.log("Sending email notification to:", assigneeProfile.email);
+        await sendTaskAssignmentEmail(
+          assigneeProfile.email,
+          newAssignee,
+          "Aseo General",
+          "cleaning"
+        );
+        console.log("Email notification sent successfully");
+        toast.success(`Se ha notificado a ${newAssignee} por correo electrónico`);
+      } else {
+        console.log("No email found for assignee:", newAssignee);
+      }
+
+      onAssigneeChange(newAssignee);
+      toast.success(`Se ha asignado el aseo general a ${newAssignee}`);
+    } catch (error) {
+      console.error("Error sending email notification:", error);
+      toast.error("Error al enviar la notificación por correo electrónico");
+      // Still update the assignee even if email fails
+      onAssigneeChange(newAssignee);
+    }
   };
 
   return (
