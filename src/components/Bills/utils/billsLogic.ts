@@ -40,7 +40,7 @@ export const fetchBills = async () => {
   }
 };
 
-export const createBill = async (newBill: Omit<Bill, 'id' | 'dueDate' | 'paymentDueDate' | 'status'>) => {
+export const createBill = async (newBill: any) => {
   try {
     const { data, error } = await supabase
       .from('bills')
