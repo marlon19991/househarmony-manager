@@ -31,14 +31,17 @@ const TaskList = ({ currentAssignee, onTaskComplete, onAssigneeChange, isDisable
   const { profiles } = useProfiles();
   const { tasks, setTasks, updateTaskState } = useTaskState(currentAssignee);
   const [previousPercentage, setPreviousPercentage] = useState(0);
+  const [lastCompletionMessageTime, setLastCompletionMessageTime] = useState(0);
 
   useEffect(() => {
     const completedTasks = tasks.filter(task => task.completed).length;
     const percentage = tasks.length > 0 ? Math.round((completedTasks / tasks.length) * 100) : 0;
     
-    // Only show completion message when crossing 75% threshold upwards
-    if (percentage >= 75 && previousPercentage < 75) {
+    // Only show completion message when crossing 75% threshold upwards and if it hasn't been shown in the last minute
+    const currentTime = Date.now();
+    if (percentage >= 75 && previousPercentage < 75 && (currentTime - lastCompletionMessageTime) > 60000) {
       toast.success("¡Has completado suficientes tareas para finalizar el aseo general!");
+      setLastCompletionMessageTime(currentTime);
     }
     
     setPreviousPercentage(percentage);
@@ -73,7 +76,7 @@ const TaskList = ({ currentAssignee, onTaskComplete, onAssigneeChange, isDisable
       const completedTasks = updatedTasks.filter(task => task.completed).length;
       const percentage = Math.round((completedTasks / updatedTasks.length) * 100);
       
-      // Actualizar el progreso en la base de datos
+      // Update progress in database
       const { error: progressError } = await supabase
         .from('general_cleaning_progress')
         .upsert({
