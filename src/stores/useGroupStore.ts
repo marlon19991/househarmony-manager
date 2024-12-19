@@ -24,6 +24,7 @@ const useGroupStore = create<GroupStore>((set, get) => ({
   groups: [],
   loading: false,
   setSelectedGroup: (group) => set({ selectedGroup: group }),
+  
   fetchGroups: async () => {
     set({ loading: true });
     try {
@@ -59,9 +60,10 @@ const useGroupStore = create<GroupStore>((set, get) => ({
       set({ loading: false });
     }
   },
+
   addGroup: async (groupData) => {
     try {
-      const { data: group, error } = await supabase
+      const { data: newGroup, error } = await supabase
         .from('groups')
         .insert([{ 
           name: groupData.name, 
@@ -72,25 +74,22 @@ const useGroupStore = create<GroupStore>((set, get) => ({
 
       if (error) throw error;
 
-      if (group) {
-        const newGroup = {
-          id: group.id,
-          name: group.name,
-          description: group.description || '',
+      if (newGroup) {
+        const formattedGroup = {
+          id: newGroup.id,
+          name: newGroup.name,
+          description: newGroup.description || '',
           members: []
         };
         
-        // Actualizar el estado local después de guardar en la base de datos
-        const currentGroups = get().groups;
-        set({ groups: [...currentGroups, newGroup] });
-        
-        return;
+        set({ groups: [...get().groups, formattedGroup] });
       }
     } catch (error) {
       console.error('Error adding group:', error);
       throw error;
     }
   },
+
   updateGroup: async (updatedGroup) => {
     try {
       const { error } = await supabase
@@ -103,7 +102,6 @@ const useGroupStore = create<GroupStore>((set, get) => ({
 
       if (error) throw error;
 
-      // Actualizar el estado local después de actualizar en la base de datos
       const currentGroups = get().groups;
       set({
         groups: currentGroups.map((group) =>
@@ -119,6 +117,7 @@ const useGroupStore = create<GroupStore>((set, get) => ({
       throw error;
     }
   },
+
   deleteGroup: async (groupId) => {
     try {
       const { error } = await supabase
@@ -128,7 +127,6 @@ const useGroupStore = create<GroupStore>((set, get) => ({
 
       if (error) throw error;
 
-      // Actualizar el estado local después de eliminar de la base de datos
       const currentGroups = get().groups;
       set({
         groups: currentGroups.filter((group) => group.id !== groupId),

@@ -11,9 +11,10 @@ interface GroupFormProps {
   };
   setGroup: (group: { name: string; description: string; members: string[] }) => void;
   onSubmit: () => void;
+  isSubmitting?: boolean;
 }
 
-export const GroupForm = ({ group, setGroup, onSubmit }: GroupFormProps) => {
+export const GroupForm = ({ group, setGroup, onSubmit, isSubmitting = false }: GroupFormProps) => {
   return (
     <div className="space-y-4">
       <div>
@@ -23,6 +24,7 @@ export const GroupForm = ({ group, setGroup, onSubmit }: GroupFormProps) => {
           value={group.name}
           onChange={(e) => setGroup({ ...group, name: e.target.value })}
           placeholder="Nombre del grupo"
+          disabled={isSubmitting}
         />
       </div>
       <div>
@@ -32,10 +34,15 @@ export const GroupForm = ({ group, setGroup, onSubmit }: GroupFormProps) => {
           value={group.description}
           onChange={(e) => setGroup({ ...group, description: e.target.value })}
           placeholder="Descripción del grupo"
+          disabled={isSubmitting}
         />
       </div>
-      <Button onClick={onSubmit} className="w-full">
-        Guardar
+      <Button 
+        onClick={onSubmit} 
+        className="w-full"
+        disabled={isSubmitting}
+      >
+        {isSubmitting ? 'Guardando...' : 'Guardar'}
       </Button>
     </div>
   );

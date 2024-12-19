@@ -25,6 +25,7 @@ export const GroupsSection = () => {
   const { groups, loading, addGroup, updateGroup: updateGroupInStore, deleteGroup: deleteGroupFromStore, fetchGroups } = useGroupStore();
   const [newGroup, setNewGroup] = useState({ name: "", description: "", members: [] });
   const [editingGroup, setEditingGroup] = useState<Group | null>(null);
+  const [isCreating, setIsCreating] = useState(false);
 
   useEffect(() => {
     fetchGroups().catch(error => {
@@ -39,6 +40,7 @@ export const GroupsSection = () => {
       return;
     }
 
+    setIsCreating(true);
     try {
       await addGroup({
         name: newGroup.name,
@@ -50,6 +52,8 @@ export const GroupsSection = () => {
     } catch (error) {
       console.error('Error al crear grupo:', error);
       toast.error("Error al crear el grupo");
+    } finally {
+      setIsCreating(false);
     }
   };
 
@@ -86,9 +90,9 @@ export const GroupsSection = () => {
         <h2 className="text-2xl font-bold">Grupos</h2>
         <Sheet>
           <SheetTrigger asChild>
-            <Button>
+            <Button disabled={isCreating}>
               <Users className="h-4 w-4 mr-2" />
-              Nuevo Grupo
+              {isCreating ? 'Creando...' : 'Nuevo Grupo'}
             </Button>
           </SheetTrigger>
           <SheetContent>
@@ -103,6 +107,7 @@ export const GroupsSection = () => {
                 group={newGroup}
                 setGroup={setNewGroup}
                 onSubmit={handleAddGroup}
+                isSubmitting={isCreating}
               />
             </div>
           </SheetContent>
