@@ -1,9 +1,8 @@
 import { Card } from "@/components/ui/card";
-import { Users, Brush, CheckSquare, DollarSign } from "lucide-react";
+import { Brush, CheckSquare, DollarSign } from "lucide-react";
 import { Link } from "react-router-dom";
 import useProfiles from "@/hooks/useProfiles";
 import { Progress } from "@/components/ui/progress";
-import { GroupSelector } from "@/components/Groups/GroupSelector";
 
 const Index = () => {
   const { profiles } = useProfiles();
@@ -43,8 +42,6 @@ const Index = () => {
           </p>
         </div>
       </div>
-
-      <GroupSelector />
 
       <div className="grid gap-4 md:grid-cols-3">
         {features.map((feature) => {

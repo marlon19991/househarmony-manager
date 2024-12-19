@@ -3,59 +3,28 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { User } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
-import { toast } from "sonner";
+
+interface IconOption {
+  src: string;
+  label: string;
+}
+
+export interface ProfileFormData {
+  id?: number;
+  name: string;
+  icon: string;
+  whatsapp_number?: string;
+  email?: string;
+}
 
 interface ProfileFormProps {
-  profile: {
-    name: string;
-    icon: string;
-    whatsapp_number?: string;
-    email?: string;
-  };
-  setProfile: (profile: {
-    name: string;
-    icon: string;
-    whatsapp_number?: string;
-    email?: string;
-  }) => void;
+  profile: ProfileFormData;
+  setProfile: (profile: ProfileFormData) => void;
   onSubmit: () => void;
-  iconOptions: Array<{ src: string; label: string }>;
+  iconOptions: IconOption[];
 }
 
 export const ProfileForm = ({ profile, setProfile, onSubmit, iconOptions }: ProfileFormProps) => {
-  const handleSubmit = async () => {
-    if (profile.email) {
-      try {
-        console.log("Attempting to send welcome email to:", profile.email);
-        
-        const { data, error } = await supabase.functions.invoke('send-email', {
-          body: {
-            to: [profile.email],
-            subject: "Bienvenido a Roomies",
-            html: `
-              <h1>¡Hola ${profile.name}!</h1>
-              <p>Tu perfil ha sido creado exitosamente en Roomies.</p>
-              <p>Recibirás notificaciones importantes en este correo electrónico.</p>
-            `,
-          },
-        });
-
-        if (error) {
-          console.error("Error response from send-email function:", error);
-          throw error;
-        }
-
-        console.log("Email function response:", data);
-        toast.success("Correo de bienvenida enviado");
-      } catch (error) {
-        console.error("Error sending welcome email:", error);
-        toast.error("Error al enviar el correo de bienvenida. Por favor, verifica que el correo sea válido.");
-      }
-    }
-    onSubmit();
-  };
-
   return (
     <div className="space-y-4 mt-6">
       <div>
@@ -68,13 +37,22 @@ export const ProfileForm = ({ profile, setProfile, onSubmit, iconOptions }: Prof
         />
       </div>
       <div>
-        <Label htmlFor="email">Correo Electrónico</Label>
+        <Label htmlFor="email">Email</Label>
         <Input
           id="email"
           type="email"
-          value={profile.email || ''}
+          value={profile.email || ""}
           onChange={(e) => setProfile({ ...profile, email: e.target.value })}
-          placeholder="correo@ejemplo.com"
+          placeholder="Email (opcional)"
+        />
+      </div>
+      <div>
+        <Label htmlFor="whatsapp">WhatsApp</Label>
+        <Input
+          id="whatsapp"
+          value={profile.whatsapp_number || ""}
+          onChange={(e) => setProfile({ ...profile, whatsapp_number: e.target.value })}
+          placeholder="Número de WhatsApp (opcional)"
         />
       </div>
       <div>
@@ -83,6 +61,7 @@ export const ProfileForm = ({ profile, setProfile, onSubmit, iconOptions }: Prof
           {iconOptions.map((icon) => (
             <button
               key={icon.src}
+              type="button"
               onClick={() => setProfile({ ...profile, icon: icon.src })}
               className={`p-1 rounded-full ${
                 profile.icon === icon.src ? "ring-2 ring-primary" : ""
@@ -96,7 +75,7 @@ export const ProfileForm = ({ profile, setProfile, onSubmit, iconOptions }: Prof
           ))}
         </div>
       </div>
-      <Button onClick={handleSubmit} className="w-full">
+      <Button onClick={onSubmit} className="w-full">
         Guardar
       </Button>
     </div>
