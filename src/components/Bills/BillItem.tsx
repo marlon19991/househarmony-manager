@@ -31,12 +31,17 @@ export const BillItem = ({ bill, onUpdate, onDelete, onToggleStatus }: BillItemP
       // Send email if bill is due in 5 days or less
       if (daysUntilDue <= 5 && daysUntilDue >= 0 && bill.status === "pending") {
         // Check if notification was already sent
-        const { data: existingNotification } = await supabase
+        const { data: existingNotification, error } = await supabase
           .from('bill_notifications')
           .select()
           .eq('bill_id', bill.id)
           .eq('notification_type', 'due_date')
-          .single();
+          .maybeSingle();
+
+        if (error) {
+          console.error('Error checking bill notification:', error);
+          return;
+        }
 
         if (!existingNotification) {
           const formattedDate = format(bill.paymentDueDate, "dd 'de' MMMM, yyyy", { locale: es });
@@ -56,12 +61,16 @@ export const BillItem = ({ bill, onUpdate, onDelete, onToggleStatus }: BillItemP
           }
 
           // Record the notification
-          await supabase
+          const { error: insertError } = await supabase
             .from('bill_notifications')
             .insert({
               bill_id: bill.id,
               notification_type: 'due_date'
             });
+
+          if (insertError) {
+            console.error('Error recording bill notification:', insertError);
+          }
         }
       }
     };
