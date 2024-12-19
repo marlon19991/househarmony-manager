@@ -1,22 +1,71 @@
 import { supabase } from "@/integrations/supabase/client";
 
-export const sendEmail = async (to: string, subject: string, html: string) => {
-  try {
-    const { data, error } = await supabase.functions.invoke('send-email', {
-      body: { to, subject, html }
-    });
+// Implement rate limiting using a simple queue
+const queue: Array<() => Promise<any>> = [];
+let processing = false;
 
-    if (error) {
-      console.error('Error sending email:', error);
+const processQueue = async () => {
+  if (processing || queue.length === 0) return;
+  
+  processing = true;
+  const task = queue.shift();
+  
+  if (task) {
+    try {
+      await task();
+    } catch (error) {
+      console.error('Error processing email task:', error);
+    }
+    
+    // Add delay between requests to respect rate limit
+    setTimeout(() => {
+      processing = false;
+      processQueue();
+    }, 500); // 500ms delay between requests
+  } else {
+    processing = false;
+  }
+};
+
+const addToQueue = (task: () => Promise<any>) => {
+  return new Promise((resolve, reject) => {
+    queue.push(async () => {
+      try {
+        const result = await task();
+        resolve(result);
+      } catch (error) {
+        reject(error);
+      }
+    });
+    processQueue();
+  });
+};
+
+export const sendEmail = async (to: string, subject: string, html: string) => {
+  const task = async () => {
+    try {
+      const { data, error } = await supabase.functions.invoke('send-email', {
+        body: { to, subject, html }
+      });
+
+      if (error) {
+        console.error('Error sending email:', error);
+        throw error;
+      }
+
+      console.log('Email sent successfully:', data);
+      return data;
+    } catch (error: any) {
+      if (error?.message?.includes('rate_limit_exceeded')) {
+        // If rate limited, retry after a delay
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        return task(); // Retry the task
+      }
       throw error;
     }
+  };
 
-    console.log('Email sent successfully:', data);
-    return data;
-  } catch (error) {
-    console.error('Error in sendEmail:', error);
-    throw error;
-  }
+  return addToQueue(task);
 };
 
 export const sendTaskAssignmentEmail = async (
