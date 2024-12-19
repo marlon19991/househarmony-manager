@@ -159,6 +159,7 @@ export type Database = {
           end_date: string | null
           icon: string
           id: number
+          notification_time: string | null
           recurrence_type: string
           selected_days: string[] | null
           specific_day: string | null
@@ -173,6 +174,7 @@ export type Database = {
           end_date?: string | null
           icon: string
           id?: number
+          notification_time?: string | null
           recurrence_type: string
           selected_days?: string[] | null
           specific_day?: string | null
@@ -187,6 +189,7 @@ export type Database = {
           end_date?: string | null
           icon?: string
           id?: number
+          notification_time?: string | null
           recurrence_type?: string
           selected_days?: string[] | null
           specific_day?: string | null

@@ -26,6 +26,8 @@ interface RecurringTaskItemProps {
     end_date?: string;
     assignees?: string[];
     icon?: string;
+    recurrence_type?: string;
+    notification_time?: string;
   };
   onDelete: (id: number) => void;
   onUpdate: (id: number, task: any) => void;
@@ -38,33 +40,32 @@ export const RecurringTaskItem = ({ task, onDelete, onUpdate }: RecurringTaskIte
     setIsEditing(false);
   };
 
-  const getScheduleText = () => {
+  const getWeekdaysText = (weekdays: boolean[]) => {
     const days = ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
-    const selectedDays = task.weekdays?.map((selected, index) => selected ? days[index] : null).filter(Boolean);
+    const selectedDays = weekdays
+      .map((selected, index) => selected ? days[index] : null)
+      .filter(Boolean);
     
-    let scheduleText = "";
+    if (selectedDays.length === 0) return "";
+    if (selectedDays.length === 1) return `Cada ${selectedDays[0]}`;
     
-    if (task.start_date) {
-      const startDate = new Date(task.start_date);
-      scheduleText += `Desde ${format(startDate, "PPP", { locale: es })}`;
-      
-      if (task.end_date) {
-        const endDate = new Date(task.end_date);
-        scheduleText += ` hasta ${format(endDate, "PPP", { locale: es })}`;
-      }
-    }
+    const lastDay = selectedDays.pop();
+    return `Cada ${selectedDays.join(", ")} y ${lastDay}`;
+  };
 
-    if (selectedDays && selectedDays.length > 0) {
-      if (scheduleText) scheduleText += " - ";
-      
-      if (selectedDays.length === 7) {
-        scheduleText += "Todos los días";
-      } else {
-        scheduleText += selectedDays.join(", ");
-      }
-    }
+  const getScheduleText = () => {
+    if (!task.recurrence_type) return "Sin programación";
 
-    return scheduleText || "Sin programación";
+    switch (task.recurrence_type) {
+      case "specific":
+        return task.start_date ? format(new Date(task.start_date), "PPP", { locale: es }) : "Fecha no especificada";
+      case "workdays":
+        return "De lunes a viernes";
+      case "weekly":
+        return task.weekdays ? getWeekdaysText(task.weekdays) : "Sin días seleccionados";
+      default:
+        return "Sin programación";
+    }
   };
 
   const getAssigneesText = () => {
@@ -86,7 +87,9 @@ export const RecurringTaskItem = ({ task, onDelete, onUpdate }: RecurringTaskIte
             weekdays: task.weekdays,
             start_date: task.start_date ? new Date(task.start_date) : undefined,
             end_date: task.end_date ? new Date(task.end_date) : undefined,
-            icon: task.icon
+            icon: task.icon,
+            recurrence_type: task.recurrence_type,
+            notification_time: task.notification_time
           }}
           onSubmit={handleUpdate}
           onCancel={() => setIsEditing(false)}
@@ -104,6 +107,12 @@ export const RecurringTaskItem = ({ task, onDelete, onUpdate }: RecurringTaskIte
             <h3 className="font-medium">{task.title}</h3>
             <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2 text-sm text-muted-foreground">
               <span>{getScheduleText()}</span>
+              {task.notification_time && (
+                <span className="flex items-center">
+                  <Clock className="h-3 w-3 mr-1" />
+                  {task.notification_time}
+                </span>
+              )}
               {task.assignees && task.assignees.length > 0 && (
                 <span className="flex items-center">
                   <Users className="h-3 w-3 mr-1" />

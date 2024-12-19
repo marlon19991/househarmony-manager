@@ -72,7 +72,9 @@ export const sendTaskAssignmentEmail = async (
   email: string, 
   assigneeName: string, 
   taskTitle: string,
-  taskType: "recurring" | "cleaning"
+  taskType: "recurring" | "cleaning",
+  scheduleText?: string,
+  notificationTime?: string
 ) => {
   const subject = taskType === "cleaning" ? 
     "¡Es tu turno para el Aseo General!" : 
@@ -96,6 +98,8 @@ export const sendTaskAssignmentEmail = async (
     <h1>Hola ${assigneeName},</h1>
     <p>Se te ha asignado una nueva tarea:</p>
     <h2>${taskTitle}</h2>
+    ${scheduleText ? `<p>Programación: ${scheduleText}</p>` : ''}
+    ${notificationTime ? `<p>Hora de notificación: ${notificationTime}</p>` : ''}
     <p>Por favor, revisa la aplicación para más detalles.</p>
   `;
 

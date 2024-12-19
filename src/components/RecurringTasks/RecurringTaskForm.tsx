@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { CalendarIcon } from "lucide-react";
+import { CalendarIcon, Clock } from "lucide-react";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { cn } from "@/lib/utils";
@@ -26,6 +26,7 @@ interface RecurringTaskFormProps {
     end_date?: Date;
     icon?: string;
     recurrence_type?: string;
+    notification_time?: string;
   };
 }
 
@@ -41,6 +42,9 @@ export const RecurringTaskForm = ({ onSubmit, onCancel, initialData }: Recurring
   const [recurrenceType, setRecurrenceType] = useState<string>(
     initialData?.recurrence_type || "weekly"
   );
+  const [notificationTime, setNotificationTime] = useState<string>(
+    initialData?.notification_time || "09:00"
+  );
 
   const handleRecurrenceTypeChange = (type: string) => {
     setRecurrenceType(type);
@@ -48,6 +52,19 @@ export const RecurringTaskForm = ({ onSubmit, onCancel, initialData }: Recurring
       // Set Monday to Friday to true, weekends to false
       setWeekdays([false, true, true, true, true, true, false]);
     }
+  };
+
+  const getWeekdaysText = (weekdays: boolean[]) => {
+    const days = ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
+    const selectedDays = weekdays
+      .map((selected, index) => selected ? days[index] : null)
+      .filter(Boolean);
+    
+    if (selectedDays.length === 0) return "";
+    if (selectedDays.length === 1) return `Cada ${selectedDays[0]}`;
+    
+    const lastDay = selectedDays.pop();
+    return `Cada ${selectedDays.join(", ")} y ${lastDay}`;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -77,7 +94,8 @@ export const RecurringTaskForm = ({ onSubmit, onCancel, initialData }: Recurring
           weekdays: recurrenceType === "weekly" || recurrenceType === "workdays" ? weekdays : new Array(7).fill(false),
           start_date: recurrenceType === "specific" ? specificDate?.toISOString() : null,
           icon: initialData?.icon || '📋',
-          recurrence_type: recurrenceType
+          recurrence_type: recurrenceType,
+          notification_time: notificationTime
         })
         .select()
         .single();
@@ -93,11 +111,19 @@ export const RecurringTaskForm = ({ onSubmit, onCancel, initialData }: Recurring
           .maybeSingle();
 
         if (profile?.email) {
+          const scheduleText = recurrenceType === "specific" 
+            ? format(specificDate!, "PPP", { locale: es })
+            : recurrenceType === "workdays"
+              ? "de lunes a viernes"
+              : getWeekdaysText(weekdays);
+
           await sendTaskAssignmentEmail(
             profile.email,
             assigneeName,
             title,
-            "recurring"
+            "recurring",
+            scheduleText,
+            notificationTime
           );
         }
       }
@@ -163,6 +189,19 @@ export const RecurringTaskForm = ({ onSubmit, onCancel, initialData }: Recurring
       {recurrenceType === "weekly" && (
         <WeekdaySelector weekdays={weekdays} onChange={setWeekdays} />
       )}
+
+      <div className="space-y-2">
+        <Label htmlFor="notificationTime">Hora de notificación</Label>
+        <div className="flex items-center space-x-2">
+          <Clock className="h-4 w-4 text-muted-foreground" />
+          <Input
+            id="notificationTime"
+            type="time"
+            value={notificationTime}
+            onChange={(e) => setNotificationTime(e.target.value)}
+          />
+        </div>
+      </div>
 
       <div className="flex justify-end gap-2">
         <Button type="button" variant="outline" onClick={onCancel}>
