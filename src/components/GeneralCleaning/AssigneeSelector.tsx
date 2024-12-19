@@ -4,8 +4,7 @@ import { User } from "lucide-react";
 import { toast } from "sonner";
 import useProfiles from "@/hooks/useProfiles";
 import { sendTaskAssignmentEmail } from "@/utils/emailUtils";
-import { useTaskPersistence } from "./hooks/useTaskPersistence";
-import { useAssigneeReset } from "./hooks/useAssigneeReset";
+import { supabase } from "@/integrations/supabase/client";
 
 interface AssigneeSelectorProps {
   currentAssignee: string;
@@ -15,12 +14,40 @@ interface AssigneeSelectorProps {
 
 const AssigneeSelector = ({ currentAssignee, onAssigneeChange, completionPercentage }: AssigneeSelectorProps) => {
   const { profiles } = useProfiles();
-  const { tasks, setTasks } = useTaskPersistence(currentAssignee);
-  const { resetTaskStates, resetProgress } = useAssigneeReset();
 
   const handleAssigneeChange = async (newAssignee: string) => {
     try {
-      // Notificar al nuevo responsable por correo electrónico
+      // 1. Resetear el progreso a 0%
+      const { error: progressError } = await supabase
+        .from('general_cleaning_progress')
+        .upsert({
+          assignee: newAssignee,
+          completion_percentage: 0,
+          last_updated: new Date().toISOString()
+        });
+
+      if (progressError) {
+        console.error('Error resetting progress:', progressError);
+        toast.error("Error al actualizar el progreso");
+        return;
+      }
+
+      // 2. Resetear todas las tareas a no completadas
+      const { error: tasksError } = await supabase
+        .from('cleaning_task_states')
+        .update({ 
+          completed: false,
+          updated_at: new Date().toISOString()
+        })
+        .neq('completed', false);
+
+      if (tasksError) {
+        console.error('Error resetting tasks:', tasksError);
+        toast.error("Error al reiniciar las tareas");
+        return;
+      }
+
+      // 3. Notificar al nuevo responsable por correo
       const assigneeProfile = profiles.find(p => p.name === newAssignee);
       if (assigneeProfile?.email) {
         try {
@@ -31,31 +58,16 @@ const AssigneeSelector = ({ currentAssignee, onAssigneeChange, completionPercent
             "cleaning"
           );
           console.log("Email notification sent successfully");
-          toast.success(`Se ha notificado a ${newAssignee} por correo electrónico`);
         } catch (emailError) {
           console.error("Error sending email notification:", emailError);
+          // No retornamos aquí porque el email no es crítico
         }
       }
 
-      // Resetear estados de las tareas
-      const taskResetSuccess = await resetTaskStates(tasks);
-      if (!taskResetSuccess) {
-        toast.error("Error al reiniciar las tareas");
-        return;
-      }
-
-      // Resetear el progreso
-      const progressResetSuccess = await resetProgress(newAssignee);
-      if (!progressResetSuccess) {
-        toast.error("Error al actualizar el progreso");
-        return;
-      }
-
-      // Actualizar el estado local de las tareas
-      setTasks(tasks.map(task => ({ ...task, completed: false })));
-      
+      // 4. Actualizar el estado en la UI
       onAssigneeChange(newAssignee);
       toast.success(`Se ha asignado el aseo general a ${newAssignee}`);
+      
     } catch (error) {
       console.error("Error updating assignee:", error);
       toast.error("Error al actualizar el responsable");
