@@ -12,11 +12,17 @@ export const resetTasksAndProgress = async (tasks: Task[], setTasks: React.Dispa
     for (const task of tasks) {
       const { error: updateError } = await supabase
         .from('cleaning_task_states')
-        .upsert({
-          task_id: task.id,
-          completed: false,
-          updated_at: new Date().toISOString()
-        });
+        .upsert(
+          {
+            task_id: task.id,
+            completed: false,
+            updated_at: new Date().toISOString()
+          },
+          { 
+            onConflict: 'task_id',
+            ignoreDuplicates: false 
+          }
+        );
 
       if (updateError) {
         console.error('Error updating task state:', updateError);
