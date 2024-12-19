@@ -29,10 +29,18 @@ const TaskList = ({ currentAssignee, onTaskComplete, onAssigneeChange, isDisable
   const [newTask, setNewTask] = useState({ title: "", comment: "" });
   const { profiles } = useProfiles();
   const { tasks, setTasks, updateTaskState } = useTaskState(currentAssignee);
+  const [previousPercentage, setPreviousPercentage] = useState(0);
 
   useEffect(() => {
     const completedTasks = tasks.filter(task => task.completed).length;
     const percentage = tasks.length > 0 ? Math.round((completedTasks / tasks.length) * 100) : 0;
+    
+    // Only show completion message when crossing 75% threshold upwards
+    if (percentage >= 75 && previousPercentage < 75) {
+      toast.success("¡Has completado suficientes tareas para finalizar el aseo general!");
+    }
+    
+    setPreviousPercentage(percentage);
     onTaskComplete(percentage);
   }, [currentAssignee, profiles, tasks]);
 
@@ -72,10 +80,6 @@ const TaskList = ({ currentAssignee, onTaskComplete, onAssigneeChange, isDisable
       }
       
       onTaskComplete(percentage);
-      
-      if (percentage >= 75) {
-        toast.success("¡Has completado suficientes tareas para finalizar el aseo general!");
-      }
 
       // Notify assignee about task status change
       if (currentAssignee !== "Sin asignar") {
