@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useCallback } from "react";
 import useGroupStore from "@/stores/useGroupStore";
 import useProfiles from "./useProfiles";
 
@@ -6,16 +6,17 @@ export const useInitializeApp = () => {
   const fetchGroups = useGroupStore(state => state.fetchGroups);
   const fetchProfiles = useProfiles().fetchProfiles;
 
+  // Memoize the initialization function
+  const initialize = useCallback(async () => {
+    await Promise.all([
+      fetchGroups(),
+      fetchProfiles()
+    ]);
+  }, [fetchGroups, fetchProfiles]);
+
   useEffect(() => {
-    const initialize = async () => {
-      await Promise.all([
-        fetchGroups(),
-        fetchProfiles()
-      ]);
-    };
-    
     initialize();
-  }, []); // Empty dependency array since we only want to run this once
+  }, [initialize]); // Dependencies array includes the memoized initialize function
 };
 
 export default useInitializeApp;
