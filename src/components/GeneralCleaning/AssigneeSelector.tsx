@@ -50,23 +50,36 @@ const AssigneeSelector = ({ currentAssignee, onAssigneeChange, completionPercent
       }
       console.log('Progreso reseteado:', progressData);
 
-      // 3. Resetear todas las tareas a no completadas
-      const { data: updatedTasks, error: tasksError } = await supabase
+      // 3. Obtener IDs de todas las tareas completadas
+      const { data: completedTasks, error: completedError } = await supabase
         .from('cleaning_task_states')
-        .update({ 
-          completed: false,
-          updated_at: new Date().toISOString()
-        })
-        .select();
+        .select('task_id')
+        .eq('completed', true);
 
-      if (tasksError) {
-        console.error('Error resetting tasks:', tasksError);
-        toast.error("Error al reiniciar las tareas");
+      if (completedError) {
+        console.error('Error getting completed tasks:', completedError);
         return;
       }
-      console.log('Tareas actualizadas:', updatedTasks);
 
-      // 4. Verificar estado después del reseteo
+      if (completedTasks && completedTasks.length > 0) {
+        // 4. Resetear solo las tareas que estaban completadas
+        const taskIds = completedTasks.map(task => task.task_id);
+        const { error: tasksError } = await supabase
+          .from('cleaning_task_states')
+          .update({ 
+            completed: false,
+            updated_at: new Date().toISOString()
+          })
+          .in('task_id', taskIds);
+
+        if (tasksError) {
+          console.error('Error resetting tasks:', tasksError);
+          toast.error("Error al reiniciar las tareas");
+          return;
+        }
+      }
+
+      // 5. Verificar estado después del reseteo
       const { data: finalTasks, error: finalCheckError } = await supabase
         .from('cleaning_task_states')
         .select('*');
@@ -77,7 +90,7 @@ const AssigneeSelector = ({ currentAssignee, onAssigneeChange, completionPercent
         console.log('Estado final de las tareas:', finalTasks);
       }
 
-      // 5. Notificar al nuevo responsable por correo
+      // 6. Notificar al nuevo responsable por correo
       const assigneeProfile = profiles.find(p => p.name === newAssignee);
       if (assigneeProfile?.email) {
         try {
@@ -93,11 +106,11 @@ const AssigneeSelector = ({ currentAssignee, onAssigneeChange, completionPercent
         }
       }
 
-      // 6. Actualizar el estado en la UI
+      // 7. Actualizar el estado en la UI
       onAssigneeChange(newAssignee);
       toast.success(`Se ha asignado el aseo general a ${newAssignee}`);
       
-      // 7. Forzar recarga de la página para asegurar actualización de UI
+      // 8. Forzar recarga de la página para asegurar actualización de UI
       window.location.reload();
       
     } catch (error) {
