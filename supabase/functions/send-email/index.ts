@@ -16,10 +16,14 @@ const handler = async (req: Request): Promise<Response> => {
 
   try {
     const { to, subject, html } = await req.json();
-    console.log("Sending email to:", to);
-    console.log("Subject:", subject);
-    console.log("HTML content:", html);
+    console.log("Received request with:", { to, subject });
     
+    if (!RESEND_API_KEY) {
+      console.error("RESEND_API_KEY is not set");
+      throw new Error("RESEND_API_KEY is not configured");
+    }
+
+    console.log("Attempting to send email via Resend API");
     const res = await fetch("https://api.resend.com/emails", {
       method: "POST",
       headers: {
