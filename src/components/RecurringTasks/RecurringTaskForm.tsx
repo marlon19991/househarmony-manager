@@ -35,15 +35,20 @@ export const RecurringTaskForm = ({ onSubmit, onCancel, initialData }: Recurring
   const [weekdays, setWeekdays] = useState<boolean[]>(
     initialData?.weekdays || new Array(7).fill(false)
   );
-  const [startDate, setStartDate] = useState<Date | undefined>(
+  const [specificDate, setSpecificDate] = useState<Date | undefined>(
     initialData?.start_date ? new Date(initialData.start_date) : undefined
-  );
-  const [endDate, setEndDate] = useState<Date | undefined>(
-    initialData?.end_date ? new Date(initialData.end_date) : undefined
   );
   const [recurrenceType, setRecurrenceType] = useState<string>(
     initialData?.recurrence_type || "weekly"
   );
+
+  const handleRecurrenceTypeChange = (type: string) => {
+    setRecurrenceType(type);
+    if (type === "workdays") {
+      // Set Monday to Friday to true, weekends to false
+      setWeekdays([false, true, true, true, true, true, false]);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -53,8 +58,13 @@ export const RecurringTaskForm = ({ onSubmit, onCancel, initialData }: Recurring
       return;
     }
 
-    if (!weekdays.some(day => day) && !startDate) {
-      toast.error("Debes seleccionar al menos un día de la semana o una fecha específica");
+    if (recurrenceType === "specific" && !specificDate) {
+      toast.error("Debes seleccionar una fecha específica");
+      return;
+    }
+
+    if (recurrenceType === "weekly" && !weekdays.some(day => day)) {
+      toast.error("Debes seleccionar al menos un día de la semana");
       return;
     }
 
@@ -64,9 +74,8 @@ export const RecurringTaskForm = ({ onSubmit, onCancel, initialData }: Recurring
         .upsert({
           title,
           assignees: selectedAssignees,
-          weekdays,
-          start_date: startDate?.toISOString(),
-          end_date: endDate?.toISOString(),
+          weekdays: recurrenceType === "weekly" || recurrenceType === "workdays" ? weekdays : new Array(7).fill(false),
+          start_date: recurrenceType === "specific" ? specificDate?.toISOString() : null,
           icon: initialData?.icon || '📋',
           recurrence_type: recurrenceType
         })
@@ -120,65 +129,40 @@ export const RecurringTaskForm = ({ onSubmit, onCancel, initialData }: Recurring
 
       <RecurrenceTypeField
         value={recurrenceType}
-        onChange={setRecurrenceType}
+        onChange={handleRecurrenceTypeChange}
       />
 
-      <div className="grid gap-4 sm:grid-cols-2">
+      {recurrenceType === "specific" && (
         <div className="space-y-2">
-          <Label>Fecha de inicio</Label>
+          <Label>Fecha específica</Label>
           <Popover>
             <PopoverTrigger asChild>
               <Button
                 variant="outline"
                 className={cn(
                   "w-full justify-start text-left font-normal",
-                  !startDate && "text-muted-foreground"
+                  !specificDate && "text-muted-foreground"
                 )}
               >
                 <CalendarIcon className="mr-2 h-4 w-4" />
-                {startDate ? format(startDate, "PPP", { locale: es }) : "Seleccionar fecha"}
+                {specificDate ? format(specificDate, "PPP", { locale: es }) : "Seleccionar fecha"}
               </Button>
             </PopoverTrigger>
             <PopoverContent className="w-auto p-0" align="start">
               <Calendar
                 mode="single"
-                selected={startDate}
-                onSelect={setStartDate}
+                selected={specificDate}
+                onSelect={setSpecificDate}
                 initialFocus
               />
             </PopoverContent>
           </Popover>
         </div>
+      )}
 
-        <div className="space-y-2">
-          <Label>Fecha de fin (opcional)</Label>
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button
-                variant="outline"
-                className={cn(
-                  "w-full justify-start text-left font-normal",
-                  !endDate && "text-muted-foreground"
-                )}
-              >
-                <CalendarIcon className="mr-2 h-4 w-4" />
-                {endDate ? format(endDate, "PPP", { locale: es }) : "Seleccionar fecha"}
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-auto p-0" align="start">
-              <Calendar
-                mode="single"
-                selected={endDate}
-                onSelect={setEndDate}
-                initialFocus
-                disabled={(date) => startDate ? date < startDate : false}
-              />
-            </PopoverContent>
-          </Popover>
-        </div>
-      </div>
-
-      <WeekdaySelector weekdays={weekdays} onChange={setWeekdays} />
+      {recurrenceType === "weekly" && (
+        <WeekdaySelector weekdays={weekdays} onChange={setWeekdays} />
+      )}
 
       <div className="flex justify-end gap-2">
         <Button type="button" variant="outline" onClick={onCancel}>
