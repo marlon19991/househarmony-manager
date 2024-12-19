@@ -6,6 +6,7 @@ import TaskList from "./TaskList";
 import AssigneeSelector from "./AssigneeSelector";
 import { supabase } from "@/integrations/supabase/client";
 import useProfiles from "@/hooks/useProfiles";
+import { resetTasksAndProgress } from "./utils/taskResetOperations";
 
 const GeneralCleaningSection = () => {
   const [currentAssignee, setCurrentAssignee] = useState("Sin asignar");
@@ -15,7 +16,6 @@ const GeneralCleaningSection = () => {
   useEffect(() => {
     const loadSavedAssignee = async () => {
       try {
-        // Cargar el último asignado y su progreso desde la base de datos
         const { data: progressData, error } = await supabase
           .from('general_cleaning_progress')
           .select('*')
@@ -30,7 +30,6 @@ const GeneralCleaningSection = () => {
         }
 
         if (progressData) {
-          // Verificar si el asignado guardado aún existe en los perfiles
           const assigneeExists = progressData.assignee === "Sin asignar" || 
                                profiles.some(profile => profile.name === progressData.assignee);
           
@@ -53,35 +52,21 @@ const GeneralCleaningSection = () => {
   }, [profiles]);
 
   const handleAssigneeChange = async (newAssignee: string) => {
-    setCurrentAssignee(newAssignee);
-    
     try {
       // Update progress in database
       const { error } = await supabase
         .from('general_cleaning_progress')
         .upsert({
           assignee: newAssignee,
-          completion_percentage: newAssignee === "Sin asignar" ? 0 : completionPercentage,
+          completion_percentage: 0, // Reset to 0 when changing assignee
           last_updated: new Date().toISOString()
         });
 
       if (error) throw error;
 
-      if (newAssignee === "Sin asignar") {
-        setCompletionPercentage(0);
-      } else {
-        // Load existing progress for the new assignee
-        const { data: progressData, error: progressError } = await supabase
-          .from('general_cleaning_progress')
-          .select('completion_percentage')
-          .eq('assignee', newAssignee)
-          .maybeSingle();
-
-        if (progressError) throw progressError;
-
-        const percentage = Math.round(progressData?.completion_percentage ?? 0);
-        setCompletionPercentage(percentage);
-      }
+      setCurrentAssignee(newAssignee);
+      setCompletionPercentage(0); // Reset completion percentage
+      
     } catch (error) {
       console.error('Error updating assignee:', error);
       toast.error("Error al actualizar el responsable");

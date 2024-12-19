@@ -8,6 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import useProfiles from "@/hooks/useProfiles";
 import { useTaskState } from "./hooks/useTaskState";
 import { sendTaskAssignmentEmail } from "@/utils/emailUtils";
+import { resetTasksAndProgress } from "./utils/taskResetOperations";
 import {
   Sheet,
   SheetContent,
@@ -43,6 +44,14 @@ const TaskList = ({ currentAssignee, onTaskComplete, onAssigneeChange, isDisable
     setPreviousPercentage(percentage);
     onTaskComplete(percentage);
   }, [currentAssignee, profiles, tasks]);
+
+  // Reset tasks when assignee changes
+  useEffect(() => {
+    const resetTasks = async () => {
+      await resetTasksAndProgress(tasks, setTasks);
+    };
+    resetTasks();
+  }, [currentAssignee]);
 
   const handleTaskToggle = async (taskId: number) => {
     if (isDisabled) return;
