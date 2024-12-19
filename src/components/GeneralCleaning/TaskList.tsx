@@ -1,8 +1,3 @@
-/**
- * Componente principal que gestiona la lista de tareas de limpieza.
- * Coordina la adición, edición, eliminación y actualización de tareas,
- * así como el cálculo del progreso general.
- */
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import TaskForm from "./TaskForm";
@@ -44,7 +39,7 @@ const TaskList = ({ currentAssignee, onTaskComplete, onAssigneeChange }: TaskLis
   ]);
 
   const [editingTask, setEditingTask] = useState<number | null>(null);
-  const [newTask, setNewTask] = useState({ description: "", comment: "" });
+  const [newTask, setNewTask] = useState({ title: "", comment: "" });
 
   // Reset tasks when assignee changes
   useEffect(() => {
@@ -80,7 +75,7 @@ const TaskList = ({ currentAssignee, onTaskComplete, onAssigneeChange }: TaskLis
     };
 
     setTasks([...tasks, task]);
-    setNewTask({ description: "", comment: "" });
+    setNewTask({ title: "", comment: "" });
     toast.success("Tarea agregada exitosamente");
   };
 
@@ -127,7 +122,7 @@ const TaskList = ({ currentAssignee, onTaskComplete, onAssigneeChange }: TaskLis
             <div className="mt-6">
               <TaskForm
                 newTask={newTask}
-                setNewTask={setNewTask}
+                setNewTask={(task: { title: string; comment: string }) => setNewTask(task)}
                 onAddTask={handleAddTask}
               />
             </div>

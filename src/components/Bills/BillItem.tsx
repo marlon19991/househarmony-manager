@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { BillForm } from "./BillForm";
@@ -10,6 +10,14 @@ import { sendBillDueEmail } from "@/utils/emailUtils";
 import useProfiles from "@/hooks/useProfiles";
 import { differenceInDays, format } from "date-fns";
 import { es } from "date-fns/locale";
+import type { Bill } from "./utils/billsLogic";
+
+interface BillItemProps {
+  bill: Bill;
+  onUpdate: (bill: Bill) => void;
+  onDelete: (id: number) => void;
+  onToggleStatus: (id: number) => void;
+}
 
 export const BillItem = ({ bill, onUpdate, onDelete, onToggleStatus }: BillItemProps) => {
   const [isEditing, setIsEditing] = useState(false);

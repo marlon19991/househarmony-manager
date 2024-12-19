@@ -5,6 +5,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { sendTaskAssignmentEmail } from "@/utils/emailUtils";
 import useProfiles from "@/hooks/useProfiles";
+import { toast } from "sonner";
 
 interface TaskFormProps {
   newTask: { title: string; comment: string };
@@ -66,6 +67,7 @@ const TaskForm = ({ newTask, setNewTask, onAddTask }: TaskFormProps) => {
           id="taskAssignee"
           value={currentAssignee}
           onChange={(e) => setCurrentAssignee(e.target.value)}
+          className="w-full border border-gray-300 rounded-md p-2"
         >
           <option value="">Seleccionar responsable</option>
           {profiles.map((profile) => (
