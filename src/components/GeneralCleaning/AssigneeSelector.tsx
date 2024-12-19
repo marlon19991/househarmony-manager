@@ -19,12 +19,6 @@ const AssigneeSelector = ({ currentAssignee, onAssigneeChange, completionPercent
   const { tasks, setTasks } = useTaskPersistence(currentAssignee);
 
   const handleAssigneeChange = async (newAssignee: string) => {
-    // Skip validation if current assignee is "Sin asignar"
-    if (currentAssignee !== "Sin asignar" && completionPercentage < 75) {
-      toast.error("Debe completar al menos el 75% de las tareas antes de cambiar el responsable");
-      return;
-    }
-
     try {
       // Find the new assignee's profile to get their email
       const assigneeProfile = profiles.find(p => p.name === newAssignee);
@@ -85,14 +79,6 @@ const AssigneeSelector = ({ currentAssignee, onAssigneeChange, completionPercent
           <SelectValue placeholder="Seleccionar responsable" />
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value="Sin asignar">
-            <div className="flex items-center gap-2">
-              <Avatar className="h-6 w-6">
-                <AvatarFallback><User className="h-4 w-4" /></AvatarFallback>
-              </Avatar>
-              Sin asignar
-            </div>
-          </SelectItem>
           {profiles.map((profile) => (
             <SelectItem key={profile.id} value={profile.name}>
               <div className="flex items-center gap-2">
