@@ -2,8 +2,8 @@ import { useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Input } from "@/components/ui/input";
-import { supabase } from "@/integrations/supabase/client";
+import TaskEditForm from "./TaskEditForm";
+import { ensureTaskExists, loadTaskState, handleTaskToggle, Task } from "./utils/taskOperations";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -15,13 +15,6 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-
-interface Task {
-  id: number;
-  description: string;
-  completed: boolean;
-  comment?: string;
-}
 
 interface TaskItemProps {
   task: Task;
@@ -45,137 +38,32 @@ const TaskItem = ({
   tasks,
 }: TaskItemProps) => {
   useEffect(() => {
-    const loadTaskState = async () => {
-      try {
-        const { data: taskState, error } = await supabase
-          .from('cleaning_task_states')
-          .select('completed')
-          .eq('task_id', task.id)
-          .maybeSingle();
-
-        if (error) {
-          console.error('Error loading task state:', error);
-          return;
-        }
-
-        if (taskState) {
-          setTasks(prevTasks => 
-            prevTasks.map(t => 
-              t.id === task.id ? { ...t, completed: taskState.completed } : t
-            )
-          );
-        } else {
-          // If no task state exists, create one with default values
-          const { error: insertError } = await supabase
-            .from('cleaning_task_states')
-            .insert({
-              task_id: task.id,
-              completed: false
-            });
-
-          if (insertError) {
-            console.error('Error creating task state:', insertError);
-          }
-        }
-      } catch (error) {
-        console.error('Error in loadTaskState:', error);
+    const initializeTask = async () => {
+      const taskCreated = await ensureTaskExists(task);
+      if (taskCreated) {
+        await loadTaskState(task.id, setTasks);
       }
     };
 
-    loadTaskState();
+    initializeTask();
   }, [task.id]);
-
-  const handleTaskToggle = async (taskId: number) => {
-    try {
-      onTaskToggle(taskId);
-      
-      const newCompleted = !task.completed;
-      
-      const { data: existingState, error: checkError } = await supabase
-        .from('cleaning_task_states')
-        .select()
-        .eq('task_id', taskId)
-        .maybeSingle();
-
-      if (checkError) {
-        console.error('Error checking task state:', checkError);
-        return;
-      }
-
-      if (existingState) {
-        const { error: updateError } = await supabase
-          .from('cleaning_task_states')
-          .update({ 
-            completed: newCompleted, 
-            updated_at: new Date().toISOString() 
-          })
-          .eq('task_id', taskId);
-
-        if (updateError) {
-          console.error('Error updating task state:', updateError);
-        }
-      } else {
-        const { error: insertError } = await supabase
-          .from('cleaning_task_states')
-          .insert({ 
-            task_id: taskId, 
-            completed: newCompleted 
-          });
-
-        if (insertError) {
-          console.error('Error creating task state:', insertError);
-        }
-      }
-    } catch (error) {
-      console.error('Error in handleTaskToggle:', error);
-    }
-  };
 
   return (
     <Card key={task.id} className="p-4">
       {editingTask === task.id ? (
-        <div className="space-y-2">
-          <Input
-            value={task.description}
-            onChange={(e) => {
-              const newDescription = e.target.value;
-              setTasks(tasks.map(t => 
-                t.id === task.id ? { ...t, description: newDescription } : t
-              ));
-            }}
-          />
-          <Input
-            value={task.comment || ""}
-            onChange={(e) => {
-              const newComment = e.target.value;
-              setTasks(tasks.map(t => 
-                t.id === task.id ? { ...t, comment: newComment } : t
-              ));
-            }}
-            placeholder="Agregar un comentario"
-          />
-          <div className="flex gap-2">
-            <Button 
-              onClick={() => onUpdateTask(task.id, task.description, task.comment || "")}
-              size="sm"
-            >
-              Guardar
-            </Button>
-            <Button 
-              variant="outline" 
-              size="sm"
-              onClick={() => setEditingTask(null)}
-            >
-              Cancelar
-            </Button>
-          </div>
-        </div>
+        <TaskEditForm
+          task={task}
+          setTasks={setTasks}
+          tasks={tasks}
+          onUpdateTask={onUpdateTask}
+          setEditingTask={setEditingTask}
+        />
       ) : (
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-3">
             <Checkbox
               checked={task.completed}
-              onCheckedChange={() => handleTaskToggle(task.id)}
+              onCheckedChange={() => handleTaskToggle(task.id, task, onTaskToggle)}
               id={`task-${task.id}`}
             />
             <div>
