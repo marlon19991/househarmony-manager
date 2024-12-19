@@ -6,7 +6,6 @@ import TaskList from "./TaskList";
 import AssigneeSelector from "./AssigneeSelector";
 import { supabase } from "@/integrations/supabase/client";
 import useProfiles from "@/hooks/useProfiles";
-import { resetTasksAndProgress } from "./utils/taskResetOperations";
 
 const GeneralCleaningSection = () => {
   const [currentAssignee, setCurrentAssignee] = useState("Sin asignar");
@@ -58,14 +57,14 @@ const GeneralCleaningSection = () => {
         .from('general_cleaning_progress')
         .upsert({
           assignee: newAssignee,
-          completion_percentage: 0, // Reset to 0 when changing assignee
+          completion_percentage: 0,
           last_updated: new Date().toISOString()
         });
 
       if (error) throw error;
 
       setCurrentAssignee(newAssignee);
-      setCompletionPercentage(0); // Reset completion percentage
+      setCompletionPercentage(0);
       
     } catch (error) {
       console.error('Error updating assignee:', error);

@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import useProfiles from "@/hooks/useProfiles";
 import { sendTaskAssignmentEmail } from "@/utils/emailUtils";
 import { useTaskPersistence } from "./hooks/useTaskPersistence";
+import { resetTasksAndProgress } from "./utils/taskResetOperations";
 
 interface AssigneeSelectorProps {
   currentAssignee: string;
@@ -27,30 +28,51 @@ const AssigneeSelector = ({ currentAssignee, onAssigneeChange, completionPercent
       // Find the new assignee's profile to get their email
       const assigneeProfile = profiles.find(p => p.name === newAssignee);
       
+      // Only attempt to send email if the profile has an email address
       if (assigneeProfile?.email) {
-        console.log("Sending email notification to:", assigneeProfile.email);
-        await sendTaskAssignmentEmail(
-          assigneeProfile.email,
-          newAssignee,
-          "Aseo General",
-          "cleaning"
-        );
-        console.log("Email notification sent successfully");
-        toast.success(`Se ha notificado a ${newAssignee} por correo electrónico`);
-      } else {
-        console.log("No email found for assignee:", newAssignee);
+        try {
+          await sendTaskAssignmentEmail(
+            assigneeProfile.email,
+            newAssignee,
+            "Aseo General",
+            "cleaning"
+          );
+          console.log("Email notification sent successfully");
+          toast.success(`Se ha notificado a ${newAssignee} por correo electrónico`);
+        } catch (emailError) {
+          console.error("Error sending email notification:", emailError);
+          // Don't show error toast for email failure
+        }
       }
 
-      // Reset all tasks when changing assignee
-      await resetTasksAndProgress(tasks, setTasks);
+      // Reset all tasks and their states in the database
+      const resetSuccess = await resetTasksAndProgress(tasks, setTasks);
       
+      if (!resetSuccess) {
+        toast.error("Error al reiniciar las tareas");
+        return;
+      }
+
+      // Update progress in database to 0%
+      const { error: progressError } = await supabase
+        .from('general_cleaning_progress')
+        .upsert({
+          assignee: newAssignee,
+          completion_percentage: 0,
+          last_updated: new Date().toISOString()
+        });
+
+      if (progressError) {
+        console.error('Error updating progress:', progressError);
+        toast.error("Error al actualizar el progreso");
+        return;
+      }
+
       onAssigneeChange(newAssignee);
       toast.success(`Se ha asignado el aseo general a ${newAssignee}`);
     } catch (error) {
-      console.error("Error sending email notification:", error);
-      toast.error("Error al enviar la notificación por correo electrónico");
-      // Still update the assignee even if email fails
-      onAssigneeChange(newAssignee);
+      console.error("Error updating assignee:", error);
+      toast.error("Error al actualizar el responsable");
     }
   };
 
