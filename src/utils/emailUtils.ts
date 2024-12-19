@@ -127,3 +127,23 @@ export const sendBillDueEmail = async (
 
   return sendEmail(email, subject, html);
 };
+
+export const sendBillOverdueEmail = async (
+  email: string,
+  userName: string,
+  billTitle: string,
+  dueDate: string,
+  amount: number
+) => {
+  const subject = `¡Factura vencida!: ${billTitle}`;
+  const html = `
+    <h1>Hola ${userName},</h1>
+    <p>La siguiente factura se encuentra vencida:</p>
+    <h2>${billTitle}</h2>
+    <p>Monto: $${amount}</p>
+    <p>Fecha de vencimiento: ${dueDate}</p>
+    <p>Por favor, realiza el pago lo antes posible para evitar recargos.</p>
+  `;
+
+  return sendEmail(email, subject, html);
+};

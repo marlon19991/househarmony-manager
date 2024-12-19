@@ -25,58 +25,124 @@ export const BillItem = ({ bill, onUpdate, onDelete, onToggleStatus }: BillItemP
   const { profiles } = useProfiles();
 
   useEffect(() => {
-    const checkDueDate = async () => {
-      const daysUntilDue = differenceInDays(bill.paymentDueDate, new Date());
+    const checkBillStatus = async () => {
+      const today = new Date();
+      const daysUntilDue = differenceInDays(bill.paymentDueDate, today);
       
-      // Send email if bill is due in 5 days or less
-      if (daysUntilDue <= 5 && daysUntilDue >= 0 && bill.status === "pending") {
-        // Check if notification was already sent
-        const { data: existingNotification, error } = await supabase
-          .from('bill_notifications')
-          .select()
-          .eq('bill_id', bill.id)
-          .eq('notification_type', 'due_date')
-          .maybeSingle();
+      // Only proceed for pending bills
+      if (bill.status !== "pending") return;
 
-        if (error) {
-          console.error('Error checking bill notification:', error);
-          return;
-        }
-
-        if (!existingNotification) {
-          const formattedDate = format(bill.paymentDueDate, "dd 'de' MMMM, yyyy", { locale: es });
-          
-          // Send email to each selected profile
-          for (const profileName of bill.selectedProfiles) {
-            const profile = profiles.find(p => p.name === profileName);
-            if (profile?.email) {
-              await sendBillDueEmail(
-                profile.email,
-                profile.name,
-                bill.title,
-                formattedDate,
-                bill.amount
-              );
-            }
-          }
-
-          // Record the notification
-          const { error: insertError } = await supabase
-            .from('bill_notifications')
-            .insert({
-              bill_id: bill.id,
-              notification_type: 'due_date'
-            });
-
-          if (insertError) {
-            console.error('Error recording bill notification:', insertError);
-          }
-        }
+      // Handle due date notifications (5 days before)
+      if (daysUntilDue <= 5 && daysUntilDue >= 0) {
+        await handleDueDateNotification(daysUntilDue);
+      }
+      
+      // Handle overdue notifications
+      if (daysUntilDue < 0) {
+        await handleOverdueNotification();
       }
     };
 
-    checkDueDate();
+    checkBillStatus();
   }, [bill, profiles]);
+
+  const handleDueDateNotification = async (daysUntilDue: number) => {
+    try {
+      // Check if due date notification was already sent
+      const { data: existingNotification, error } = await supabase
+        .from('bill_notifications')
+        .select()
+        .eq('bill_id', bill.id)
+        .eq('notification_type', 'due_date')
+        .maybeSingle();
+
+      if (error) {
+        console.error('Error checking due date notification:', error);
+        return;
+      }
+
+      if (!existingNotification) {
+        const formattedDate = format(bill.paymentDueDate, "dd 'de' MMMM, yyyy", { locale: es });
+        
+        // Send email to each selected profile
+        for (const profileName of bill.selectedProfiles) {
+          const profile = profiles.find(p => p.name === profileName);
+          if (profile?.email) {
+            await sendBillDueEmail(
+              profile.email,
+              profile.name,
+              bill.title,
+              formattedDate,
+              bill.amount
+            );
+          }
+        }
+
+        // Record the notification
+        const { error: insertError } = await supabase
+          .from('bill_notifications')
+          .insert({
+            bill_id: bill.id,
+            notification_type: 'due_date'
+          });
+
+        if (insertError) {
+          console.error('Error recording due date notification:', insertError);
+        }
+      }
+    } catch (error) {
+      console.error('Error handling due date notification:', error);
+    }
+  };
+
+  const handleOverdueNotification = async () => {
+    try {
+      // Check if overdue notification was already sent
+      const { data: existingNotification, error } = await supabase
+        .from('bill_notifications')
+        .select()
+        .eq('bill_id', bill.id)
+        .eq('notification_type', 'overdue')
+        .maybeSingle();
+
+      if (error) {
+        console.error('Error checking overdue notification:', error);
+        return;
+      }
+
+      if (!existingNotification) {
+        const formattedDate = format(bill.paymentDueDate, "dd 'de' MMMM, yyyy", { locale: es });
+        
+        // Send overdue notification to each selected profile
+        for (const profileName of bill.selectedProfiles) {
+          const profile = profiles.find(p => p.name === profileName);
+          if (profile?.email) {
+            await sendBillOverdueEmail(
+              profile.email,
+              profile.name,
+              bill.title,
+              formattedDate,
+              bill.amount
+            );
+          }
+        }
+
+        // Record the notification
+        const { error: insertError } = await supabase
+          .from('bill_notifications')
+          .insert({
+            bill_id: bill.id,
+            notification_type: 'overdue'
+          });
+
+        if (insertError) {
+          console.error('Error recording overdue notification:', insertError);
+        }
+      }
+    } catch (error) {
+      console.error('Error handling overdue notification:', error);
+    }
+  };
 
   const getBorderColor = () => {
     if (bill.status === "paid") return "border-green-500";
