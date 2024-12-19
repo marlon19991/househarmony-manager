@@ -37,22 +37,24 @@ const useGroupStore = create<GroupStore>((set, get) => ({
           description,
           group_profiles (
             profiles (
-              id,
               name
             )
           )
         `)
         .order('created_at', { ascending: true });
 
-      if (error) {
-        throw error;
+      if (error) throw error;
+
+      if (!data) {
+        set({ groups: [], loading: false });
+        return;
       }
 
       const formattedGroups = data.map(group => ({
         id: group.id,
         name: group.name,
         description: group.description || '',
-        members: group.group_profiles?.map((gp: any) => gp.profiles.name) || []
+        members: (group.group_profiles || []).map((gp: any) => gp.profiles?.name).filter(Boolean)
       }));
 
       set({ groups: formattedGroups });
@@ -72,7 +74,7 @@ const useGroupStore = create<GroupStore>((set, get) => ({
           name: groupData.name, 
           description: groupData.description 
         }])
-        .select()
+        .select('id, name, description')
         .single();
 
       if (error) throw error;
