@@ -5,6 +5,7 @@ import TaskItem from "./TaskItem";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import useProfiles from "@/hooks/useProfiles";
 import {
   Sheet,
   SheetContent,
@@ -41,18 +42,49 @@ const TaskList = ({ currentAssignee, onTaskComplete, onAssigneeChange }: TaskLis
 
   const [editingTask, setEditingTask] = useState<number | null>(null);
   const [newTask, setNewTask] = useState({ title: "", comment: "" });
+  const { profiles } = useProfiles();
 
   useEffect(() => {
-    if (currentAssignee === "Sin asignar") {
+    const loadTaskStates = async () => {
+      const { data: taskStates, error } = await supabase
+        .from('cleaning_task_states')
+        .select('task_id, completed');
+
+      if (error) {
+        console.error('Error loading task states:', error);
+        return;
+      }
+
+      if (taskStates) {
+        setTasks(prevTasks => 
+          prevTasks.map(task => {
+            const taskState = taskStates.find(state => state.task_id === task.id);
+            return taskState ? { ...task, completed: taskState.completed } : task;
+          })
+        );
+      }
+    };
+
+    loadTaskStates();
+  }, []);
+
+  useEffect(() => {
+    // Verificar si el asignado actual existe en los perfiles
+    const assigneeExists = currentAssignee === "Sin asignar" || 
+                         profiles.some(profile => profile.name === currentAssignee);
+
+    if (!assigneeExists) {
+      // Si el asignado no existe, resetear a "Sin asignar"
+      onAssigneeChange("Sin asignar");
       setTasks(tasks.map(task => ({ ...task, completed: false })));
       onTaskComplete(0);
     }
-  }, [currentAssignee]);
 
-  const calculateCompletionPercentage = () => {
+    // Actualizar el progreso basado en las tareas completadas
     const completedTasks = tasks.filter(task => task.completed).length;
-    return (completedTasks / tasks.length) * 100;
-  };
+    const percentage = (completedTasks / tasks.length) * 100;
+    onTaskComplete(percentage);
+  }, [currentAssignee, profiles, tasks]);
 
   const handleTaskToggle = async (taskId: number) => {
     if (currentAssignee === "Sin asignar") {
@@ -60,23 +92,48 @@ const TaskList = ({ currentAssignee, onTaskComplete, onAssigneeChange }: TaskLis
       return;
     }
 
-    setTasks(tasks.map(task => 
+    const updatedTasks = tasks.map(task => 
       task.id === taskId ? { ...task, completed: !task.completed } : task
-    ));
+    );
     
-    const completionPercentage = calculateCompletionPercentage();
-    onTaskComplete(completionPercentage);
+    setTasks(updatedTasks);
     
-    // Update progress in database
-    await supabase
+    const completedTasks = updatedTasks.filter(task => task.completed).length;
+    const percentage = (completedTasks / tasks.length) * 100;
+    
+    // Actualizar el estado de la tarea en la base de datos
+    const { error: taskError } = await supabase
+      .from('cleaning_task_states')
+      .upsert({
+        task_id: taskId,
+        completed: !tasks.find(t => t.id === taskId)?.completed,
+        updated_at: new Date().toISOString()
+      });
+
+    if (taskError) {
+      console.error('Error updating task state:', taskError);
+      toast.error("Error al actualizar el estado de la tarea");
+      return;
+    }
+
+    // Actualizar el progreso en la base de datos
+    const { error: progressError } = await supabase
       .from('general_cleaning_progress')
       .upsert({
         assignee: currentAssignee,
-        completion_percentage: completionPercentage,
+        completion_percentage: Math.round(percentage),
         last_updated: new Date().toISOString()
       });
+
+    if (progressError) {
+      console.error('Error updating progress:', progressError);
+      toast.error("Error al actualizar el progreso");
+      return;
+    }
     
-    if (completionPercentage >= 75) {
+    onTaskComplete(percentage);
+    
+    if (percentage >= 75) {
       toast.success("¡Has completado suficientes tareas para finalizar el aseo general!");
     }
   };

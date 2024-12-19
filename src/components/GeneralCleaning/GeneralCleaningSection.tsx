@@ -5,19 +5,31 @@ import { toast } from "sonner";
 import TaskList from "./TaskList";
 import AssigneeSelector from "./AssigneeSelector";
 import { supabase } from "@/integrations/supabase/client";
+import useProfiles from "@/hooks/useProfiles";
 
 const GeneralCleaningSection = () => {
   const [currentAssignee, setCurrentAssignee] = useState("Sin asignar");
   const [completionPercentage, setCompletionPercentage] = useState(0);
+  const { profiles } = useProfiles();
 
   useEffect(() => {
     const loadSavedAssignee = async () => {
-      // Load saved assignee from localStorage
       const savedAssignee = localStorage.getItem("currentCleaningAssignee");
+      
       if (savedAssignee) {
+        // Verificar si el asignado guardado aún existe en los perfiles
+        const assigneeExists = profiles.some(profile => profile.name === savedAssignee);
+        
+        if (!assigneeExists) {
+          setCurrentAssignee("Sin asignar");
+          localStorage.setItem("currentCleaningAssignee", "Sin asignar");
+          setCompletionPercentage(0);
+          return;
+        }
+
         setCurrentAssignee(savedAssignee);
         
-        // Load completion percentage from database
+        // Cargar el progreso desde la base de datos
         const { data: progressData, error } = await supabase
           .from('general_cleaning_progress')
           .select('completion_percentage')
@@ -30,13 +42,12 @@ const GeneralCleaningSection = () => {
           return;
         }
 
-        // Set completion percentage if data exists, otherwise default to 0
         setCompletionPercentage(progressData?.completion_percentage ?? 0);
       }
     };
 
     loadSavedAssignee();
-  }, []);
+  }, [profiles]);
 
   const handleAssigneeChange = async (newAssignee: string) => {
     setCurrentAssignee(newAssignee);
