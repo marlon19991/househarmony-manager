@@ -113,36 +113,28 @@ export const sendBillDueEmail = async (
   userName: string,
   billTitle: string,
   dueDate: string,
-  amount: number
+  amount: number,
+  isOverdue: boolean = false
 ) => {
-  const subject = `Factura próxima a vencer: ${billTitle}`;
+  const subject = isOverdue ? 
+    `¡Factura vencida!: ${billTitle}` : 
+    `Factura próxima a vencer: ${billTitle}`;
+
+  const message = isOverdue ?
+    "La siguiente factura se encuentra vencida:" :
+    "La siguiente factura está próxima a vencer:";
+
+  const actionMessage = isOverdue ?
+    "Por favor, realiza el pago lo antes posible para evitar recargos." :
+    "Por favor, asegúrate de realizar el pago antes de la fecha de vencimiento.";
+
   const html = `
     <h1>Hola ${userName},</h1>
-    <p>La siguiente factura está próxima a vencer:</p>
+    <p>${message}</p>
     <h2>${billTitle}</h2>
     <p>Monto: $${amount}</p>
     <p>Fecha de vencimiento: ${dueDate}</p>
-    <p>Por favor, asegúrate de realizar el pago antes de la fecha de vencimiento.</p>
-  `;
-
-  return sendEmail(email, subject, html);
-};
-
-export const sendBillOverdueEmail = async (
-  email: string,
-  userName: string,
-  billTitle: string,
-  dueDate: string,
-  amount: number
-) => {
-  const subject = `¡Factura vencida!: ${billTitle}`;
-  const html = `
-    <h1>Hola ${userName},</h1>
-    <p>La siguiente factura se encuentra vencida:</p>
-    <h2>${billTitle}</h2>
-    <p>Monto: $${amount}</p>
-    <p>Fecha de vencimiento: ${dueDate}</p>
-    <p>Por favor, realiza el pago lo antes posible para evitar recargos.</p>
+    <p>${actionMessage}</p>
   `;
 
   return sendEmail(email, subject, html);
