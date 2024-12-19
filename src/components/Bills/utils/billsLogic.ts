@@ -99,6 +99,15 @@ export const updateBill = async (updatedBill: Bill) => {
 
 export const deleteBill = async (billId: number) => {
   try {
+    // First, delete all associated notifications
+    const { error: notificationsError } = await supabase
+      .from('bill_notifications')
+      .delete()
+      .eq('bill_id', billId);
+
+    if (notificationsError) throw notificationsError;
+
+    // Then, delete the bill itself
     const { error } = await supabase
       .from('bills')
       .delete()
