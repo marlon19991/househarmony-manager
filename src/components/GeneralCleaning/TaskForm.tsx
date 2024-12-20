@@ -1,11 +1,7 @@
-import { useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { sendTaskAssignmentEmail } from "@/utils/emailUtils";
-import useProfiles from "@/hooks/useProfiles";
-import { toast } from "sonner";
 
 interface TaskFormProps {
   newTask: { title: string; comment: string };
@@ -14,40 +10,8 @@ interface TaskFormProps {
 }
 
 const TaskForm = ({ newTask, setNewTask, onAddTask }: TaskFormProps) => {
-  const { profiles } = useProfiles();
-  const [currentAssignee, setCurrentAssignee] = useState("");
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    try {
-      // Notify assignee if one is selected
-      if (currentAssignee) {
-        const assignee = profiles.find(p => p.name === currentAssignee);
-        if (assignee?.email) {
-          console.log("Sending email to:", assignee.email);
-          await sendTaskAssignmentEmail(
-            assignee.email,
-            currentAssignee,
-            newTask.title,
-            "cleaning"
-          );
-          console.log("Email sent successfully");
-          toast.success("Notificación enviada por correo electrónico");
-        } else {
-          console.log("No email found for assignee:", currentAssignee);
-        }
-      }
-
-      onAddTask(e);
-    } catch (error) {
-      console.error('Error:', error);
-      toast.error("Error al crear la tarea");
-    }
-  };
-
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
+    <form onSubmit={onAddTask} className="space-y-4">
       <div>
         <Label htmlFor="taskTitle">Nueva Tarea</Label>
         <Input
@@ -65,22 +29,6 @@ const TaskForm = ({ newTask, setNewTask, onAddTask }: TaskFormProps) => {
           onChange={(e) => setNewTask({ ...newTask, comment: e.target.value })}
           placeholder="Comentario sobre la tarea"
         />
-      </div>
-      <div>
-        <Label htmlFor="taskAssignee">Asignar a</Label>
-        <select
-          id="taskAssignee"
-          value={currentAssignee}
-          onChange={(e) => setCurrentAssignee(e.target.value)}
-          className="w-full border border-gray-300 rounded-md p-2"
-        >
-          <option value="">Seleccionar responsable</option>
-          {profiles.map((profile) => (
-            <option key={profile.id} value={profile.name}>
-              {profile.name}
-            </option>
-          ))}
-        </select>
       </div>
       <Button type="submit" className="w-full">
         Agregar Tarea

@@ -52,7 +52,7 @@ const AssigneeSelector = ({ currentAssignee, onAssigneeChange, completionPercent
           completed: false,
           updated_at: new Date().toISOString()
         })
-        .eq('completed', true);
+        .neq('completed', false); // Solo actualiza las tareas que están completadas
 
       if (tasksError) {
         console.error('Error resetting tasks:', tasksError);
