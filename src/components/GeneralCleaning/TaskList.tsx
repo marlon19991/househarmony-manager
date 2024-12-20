@@ -199,7 +199,7 @@ const TaskList = ({
           console.log("Email notification sent successfully");
         } catch (error) {
           console.error("Error sending email notification:", error);
-          toast.error("Error al enviar la notificación por correo");
+          toast.error("Error al enviar la notificación");
         }
       }
     }
@@ -257,40 +257,58 @@ const TaskList = ({
   };
 
   const handleDeleteTask = async (taskId: number) => {
-    const { error } = await supabase
-      .from('general_cleaning_tasks')
-      .delete()
-      .eq('id', taskId);
+    try {
+      // First delete the task states
+      const { error: stateError } = await supabase
+        .from('cleaning_task_states')
+        .delete()
+        .eq('task_id', taskId);
 
-    if (error) {
-      console.error('Error deleting task:', error);
-      toast.error("Error al eliminar la tarea");
-      return;
-    }
+      if (stateError) {
+        console.error('Error deleting task states:', stateError);
+        toast.error("Error al eliminar los estados de la tarea");
+        return;
+      }
 
-    const taskToDelete = tasks.find(t => t.id === taskId);
-    setTasks(tasks.filter(task => task.id !== taskId));
+      // Then delete the task itself
+      const { error: taskError } = await supabase
+        .from('general_cleaning_tasks')
+        .delete()
+        .eq('id', taskId);
 
-    // Notify assignee about task deletion
-    if (currentAssignee !== "Sin asignar" && taskToDelete) {
-      const assignee = profiles.find(p => p.name === currentAssignee);
-      if (assignee?.email) {
-        try {
-          await sendTaskAssignmentEmail(
-            assignee.email,
-            currentAssignee,
-            `La tarea "${taskToDelete.description}" ha sido eliminada`,
-            "cleaning"
-          );
-          console.log("Email notification sent successfully");
-        } catch (error) {
-          console.error("Error sending email notification:", error);
-          toast.error("Error al enviar la notificación por correo");
+      if (taskError) {
+        console.error('Error deleting task:', taskError);
+        toast.error("Error al eliminar la tarea");
+        return;
+      }
+
+      const taskToDelete = tasks.find(t => t.id === taskId);
+      setTasks(tasks.filter(task => task.id !== taskId));
+
+      // Notify assignee about task deletion
+      if (currentAssignee !== "Sin asignar" && taskToDelete) {
+        const assignee = profiles.find(p => p.name === currentAssignee);
+        if (assignee?.email) {
+          try {
+            await sendTaskAssignmentEmail(
+              assignee.email,
+              currentAssignee,
+              `La tarea "${taskToDelete.description}" ha sido eliminada`,
+              "cleaning"
+            );
+            console.log("Email notification sent successfully");
+          } catch (error) {
+            console.error("Error sending email notification:", error);
+            toast.error("Error al enviar la notificación por correo");
+          }
         }
       }
-    }
 
-    toast.success("Tarea eliminada exitosamente");
+      toast.success("Tarea eliminada exitosamente");
+    } catch (error) {
+      console.error('Error in handleDeleteTask:', error);
+      toast.error("Error al eliminar la tarea");
+    }
   };
 
   return (
