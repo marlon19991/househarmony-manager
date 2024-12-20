@@ -1,5 +1,4 @@
 import { supabase } from "@/integrations/supabase/client";
-import { toast } from "sonner";
 import { Task } from "../types/Task";
 
 export const taskService = {
@@ -17,7 +16,7 @@ export const taskService = {
 
       if (taskError) throw taskError;
 
-      // Then create its state
+      // Then create its initial state
       const { error: stateError } = await supabase
         .from('cleaning_task_states')
         .insert({
@@ -53,15 +52,40 @@ export const taskService = {
 
   async updateTaskState(taskId: number, completed: boolean) {
     try {
-      const { error } = await supabase
+      // First check if a state exists for this task
+      const { data: existingState, error: checkError } = await supabase
         .from('cleaning_task_states')
-        .upsert({
-          task_id: taskId,
-          completed,
-          updated_at: new Date().toISOString()
-        });
+        .select('*')
+        .eq('task_id', taskId)
+        .maybeSingle();
 
-      if (error) throw error;
+      if (checkError) throw checkError;
+
+      if (existingState) {
+        // Update existing state
+        const { error: updateError } = await supabase
+          .from('cleaning_task_states')
+          .update({ 
+            completed,
+            updated_at: new Date().toISOString()
+          })
+          .eq('task_id', taskId);
+
+        if (updateError) throw updateError;
+      } else {
+        // Create new state
+        const { error: insertError } = await supabase
+          .from('cleaning_task_states')
+          .insert({ 
+            task_id: taskId,
+            completed,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          });
+
+        if (insertError) throw insertError;
+      }
+
       return true;
     } catch (error) {
       console.error('Error updating task state:', error);
