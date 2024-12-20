@@ -4,56 +4,88 @@ import { toast } from "sonner";
 import { Task } from "../types/Task";
 
 export const useTaskPersistence = (currentAssignee: string) => {
-  const [tasks, setTasks] = useState<Task[]>([
-    { id: 1, description: "Barrer todas las habitaciones", completed: false },
-    { id: 2, description: "Trapear los pisos", completed: false },
-    { id: 3, description: "Limpiar los baños", completed: false },
-    { id: 4, description: "Limpiar ventanas", completed: false },
-    { id: 5, description: "Sacudir muebles", completed: false },
-    { id: 6, description: "Aspirar alfombras", completed: false },
-    { id: 7, description: "Limpiar cocina", completed: false },
-    { id: 8, description: "Sacar basura", completed: false },
-  ]);
+  const [tasks, setTasks] = useState<Task[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  // Load task states from database
+  // Load tasks from database
   useEffect(() => {
-    const loadTaskStates = async () => {
+    const loadTasks = async () => {
       try {
-        const { data: taskStates, error } = await supabase
-          .from('cleaning_task_states')
-          .select('task_id, completed')
+        // First get all tasks
+        const { data: tasksData, error: tasksError } = await supabase
+          .from('general_cleaning_tasks')
+          .select('*')
           .order('created_at', { ascending: true });
 
-        if (error) {
-          console.error('Error loading task states:', error);
+        if (tasksError) {
+          console.error('Error loading tasks:', tasksError);
+          toast.error("Error al cargar las tareas");
           return;
         }
 
-        if (taskStates) {
-          setTasks(prevTasks => 
-            prevTasks.map(task => {
-              const taskState = taskStates.find(state => state.task_id === task.id);
-              return taskState ? { ...task, completed: taskState.completed } : task;
-            })
-          );
+        // Then get their states
+        const { data: taskStates, error: statesError } = await supabase
+          .from('cleaning_task_states')
+          .select('*')
+          .order('created_at', { ascending: true });
+
+        if (statesError) {
+          console.error('Error loading task states:', statesError);
+          toast.error("Error al cargar el estado de las tareas");
+          return;
         }
+
+        // Combine tasks with their states
+        const combinedTasks = tasksData.map(task => {
+          const taskState = taskStates?.find(state => state.task_id === task.id);
+          return {
+            ...task,
+            completed: taskState?.completed || false
+          };
+        });
+
+        setTasks(combinedTasks);
+        setIsLoading(false);
       } catch (error) {
-        console.error('Error in loadTaskStates:', error);
+        console.error('Error in loadTasks:', error);
+        toast.error("Error al cargar las tareas");
+        setIsLoading(false);
       }
     };
 
-    loadTaskStates();
+    loadTasks();
   }, [currentAssignee]);
 
   const updateTaskState = async (taskId: number, completed: boolean) => {
     try {
+      // First ensure task exists in general_cleaning_tasks
+      const { data: existingTask, error: taskError } = await supabase
+        .from('general_cleaning_tasks')
+        .select('*')
+        .eq('id', taskId)
+        .maybeSingle();
+
+      if (taskError) {
+        console.error('Error checking task:', taskError);
+        return false;
+      }
+
+      if (!existingTask) {
+        console.error('Task not found:', taskId);
+        return false;
+      }
+
+      // Then update or create task state
       const { data: existingState, error: checkError } = await supabase
         .from('cleaning_task_states')
         .select('*')
         .eq('task_id', taskId)
         .maybeSingle();
 
-      if (checkError) throw checkError;
+      if (checkError) {
+        console.error('Error checking task state:', checkError);
+        return false;
+      }
 
       if (existingState) {
         const { error: updateError } = await supabase
@@ -64,7 +96,10 @@ export const useTaskPersistence = (currentAssignee: string) => {
           })
           .eq('task_id', taskId);
 
-        if (updateError) throw updateError;
+        if (updateError) {
+          console.error('Error updating task state:', updateError);
+          return false;
+        }
       } else {
         const { error: insertError } = await supabase
           .from('cleaning_task_states')
@@ -75,16 +110,18 @@ export const useTaskPersistence = (currentAssignee: string) => {
             updated_at: new Date().toISOString()
           });
 
-        if (insertError) throw insertError;
+        if (insertError) {
+          console.error('Error creating task state:', insertError);
+          return false;
+        }
       }
 
       return true;
     } catch (error) {
-      console.error('Error updating task state:', error);
-      toast.error("Error al actualizar el estado de la tarea");
+      console.error('Error in updateTaskState:', error);
       return false;
     }
   };
 
-  return { tasks, setTasks, updateTaskState };
+  return { tasks, setTasks, updateTaskState, isLoading };
 };

@@ -7,6 +7,7 @@ import { useTaskNotifications } from "./TaskNotifications";
 import { sendTaskAssignmentEmail } from "@/utils/emailUtils";
 import TaskListHeader from "./components/TaskListHeader";
 import TaskListContent from "./components/TaskListContent";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface TaskListProps {
   currentAssignee: string;
@@ -24,43 +25,11 @@ const TaskList = ({
   const [editingTask, setEditingTask] = useState<number | null>(null);
   const [newTask, setNewTask] = useState({ title: "", comment: "" });
   const { profiles } = useProfiles();
-  const { tasks, setTasks, updateTaskState } = useTaskPersistence(currentAssignee);
+  const { tasks, setTasks, updateTaskState, isLoading } = useTaskPersistence(currentAssignee);
 
   // Use the notifications hook
   useTaskNotifications({ tasks, currentAssignee });
   
-  // Load task states from database
-  useEffect(() => {
-    const loadTaskStates = async () => {
-      try {
-        const { data: taskStates, error } = await supabase
-          .from('cleaning_task_states')
-          .select('*')
-          .order('created_at', { ascending: true });
-
-        if (error) {
-          console.error('Error loading task states:', error);
-          toast.error("Error al cargar el estado de las tareas");
-          return;
-        }
-
-        if (taskStates) {
-          setTasks(prevTasks => 
-            prevTasks.map(task => {
-              const taskState = taskStates.find(state => state.task_id === task.id);
-              return taskState ? { ...task, completed: taskState.completed } : task;
-            })
-          );
-        }
-      } catch (error) {
-        console.error('Error in loadTaskStates:', error);
-        toast.error("Error al cargar el estado de las tareas");
-      }
-    };
-
-    loadTaskStates();
-  }, []);
-
   // Update completion percentage whenever tasks change
   useEffect(() => {
     const completedTasks = tasks.filter(task => task.completed).length;
@@ -137,7 +106,7 @@ const TaskList = ({
             console.log("Email notification sent successfully");
           } catch (error) {
             console.error("Error sending email notification:", error);
-            toast.error("Error al enviar la notificación por correo");
+            toast.error("Error al enviar la notificación");
           }
         }
       }
@@ -154,13 +123,14 @@ const TaskList = ({
     };
 
     // First ensure the task exists in the database
-    const { error: taskError } = await supabase
+    const { data: newTaskData, error: taskError } = await supabase
       .from('general_cleaning_tasks')
       .insert({
-        id: task.id,
         description: task.description,
         comment: task.comment
-      });
+      })
+      .select()
+      .single();
 
     if (taskError) {
       console.error('Error creating task:', taskError);
@@ -172,7 +142,7 @@ const TaskList = ({
     const { error: stateError } = await supabase
       .from('cleaning_task_states')
       .insert({
-        task_id: task.id,
+        task_id: newTaskData.id,
         completed: false
       });
 
@@ -182,7 +152,7 @@ const TaskList = ({
       return;
     }
 
-    setTasks([...tasks, task]);
+    setTasks([...tasks, { ...task, id: newTaskData.id }]);
     setNewTask({ title: "", comment: "" });
 
     // Notify assignee about new task
@@ -310,6 +280,15 @@ const TaskList = ({
       toast.error("Error al eliminar la tarea");
     }
   };
+
+  if (isLoading) {
+    return (
+      <div className="space-y-4">
+        <Skeleton className="h-12 w-full" />
+        <Skeleton className="h-32 w-full" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-4">
