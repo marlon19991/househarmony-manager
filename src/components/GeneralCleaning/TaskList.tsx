@@ -153,6 +153,35 @@ const TaskList = ({
       comment: newTask.comment
     };
 
+    // First ensure the task exists in the database
+    const { error: taskError } = await supabase
+      .from('general_cleaning_tasks')
+      .insert({
+        id: task.id,
+        description: task.description,
+        comment: task.comment
+      });
+
+    if (taskError) {
+      console.error('Error creating task:', taskError);
+      toast.error("Error al crear la tarea");
+      return;
+    }
+
+    // Then create the task state
+    const { error: stateError } = await supabase
+      .from('cleaning_task_states')
+      .insert({
+        task_id: task.id,
+        completed: false
+      });
+
+    if (stateError) {
+      console.error('Error creating task state:', stateError);
+      toast.error("Error al crear el estado de la tarea");
+      return;
+    }
+
     setTasks([...tasks, task]);
     setNewTask({ title: "", comment: "" });
 
@@ -181,6 +210,20 @@ const TaskList = ({
   const handleUpdateTask = async (taskId: number, newDescription: string, newComment: string) => {
     if (!newDescription) {
       toast.error("La descripción de la tarea no puede estar vacía");
+      return;
+    }
+
+    const { error } = await supabase
+      .from('general_cleaning_tasks')
+      .update({
+        description: newDescription,
+        comment: newComment
+      })
+      .eq('id', taskId);
+
+    if (error) {
+      console.error('Error updating task:', error);
+      toast.error("Error al actualizar la tarea");
       return;
     }
     
@@ -214,6 +257,17 @@ const TaskList = ({
   };
 
   const handleDeleteTask = async (taskId: number) => {
+    const { error } = await supabase
+      .from('general_cleaning_tasks')
+      .delete()
+      .eq('id', taskId);
+
+    if (error) {
+      console.error('Error deleting task:', error);
+      toast.error("Error al eliminar la tarea");
+      return;
+    }
+
     const taskToDelete = tasks.find(t => t.id === taskId);
     setTasks(tasks.filter(task => task.id !== taskId));
 
