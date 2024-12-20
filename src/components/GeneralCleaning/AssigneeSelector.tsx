@@ -45,14 +45,13 @@ const AssigneeSelector = ({ currentAssignee, onAssigneeChange, completionPercent
         return;
       }
 
-      // 2. Resetear todas las tareas completadas
+      // 2. Resetear todas las tareas a no completadas
       const { error: tasksError } = await supabase
         .from('cleaning_task_states')
         .update({ 
           completed: false,
           updated_at: new Date().toISOString()
-        })
-        .neq('completed', false); // Solo actualiza las tareas que están completadas
+        });
 
       if (tasksError) {
         console.error('Error resetting tasks:', tasksError);
