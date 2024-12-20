@@ -45,21 +45,36 @@ const AssigneeSelector = ({ currentAssignee, onAssigneeChange, completionPercent
         return;
       }
 
-      // 2. Resetear todas las tareas a no completadas
-      const { error: tasksError } = await supabase
-        .from('cleaning_task_states')
-        .update({ 
-          completed: false,
-          updated_at: new Date().toISOString()
-        });
+      // 2. Obtener todas las tareas existentes
+      const { data: tasks, error: tasksQueryError } = await supabase
+        .from('general_cleaning_tasks')
+        .select('id');
 
-      if (tasksError) {
-        console.error('Error resetting tasks:', tasksError);
-        toast.error("Error al reiniciar las tareas");
+      if (tasksQueryError) {
+        console.error('Error querying tasks:', tasksQueryError);
+        toast.error("Error al obtener las tareas");
         return;
       }
 
-      // 3. Notificar al nuevo responsable por correo
+      // 3. Resetear todas las tareas a no completadas
+      if (tasks && tasks.length > 0) {
+        const taskIds = tasks.map(task => task.id);
+        const { error: tasksError } = await supabase
+          .from('cleaning_task_states')
+          .update({ 
+            completed: false,
+            updated_at: new Date().toISOString()
+          })
+          .in('task_id', taskIds);
+
+        if (tasksError) {
+          console.error('Error resetting tasks:', tasksError);
+          toast.error("Error al reiniciar las tareas");
+          return;
+        }
+      }
+
+      // 4. Notificar al nuevo responsable por correo
       const assigneeProfile = profiles.find(p => p.name === newAssignee);
       if (assigneeProfile?.email) {
         try {
@@ -75,7 +90,7 @@ const AssigneeSelector = ({ currentAssignee, onAssigneeChange, completionPercent
         }
       }
 
-      // 4. Actualizar el estado en la UI y mostrar notificación
+      // 5. Actualizar el estado en la UI y mostrar notificación
       onAssigneeChange(newAssignee);
       toast.success(`Se ha asignado el aseo general a ${newAssignee}`);
       
