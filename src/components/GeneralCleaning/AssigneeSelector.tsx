@@ -30,34 +30,49 @@ const AssigneeSelector = ({ currentAssignee, onAssigneeChange, completionPercent
     });
 
     try {
-      // 1. Delete existing progress for the new assignee
-      const { error: deleteError } = await supabase
+      // Check if there's an existing record for the new assignee
+      const { data: existingProgress, error: queryError } = await supabase
         .from('general_cleaning_progress')
-        .delete()
-        .eq('assignee', newAssignee);
+        .select()
+        .eq('assignee', newAssignee)
+        .maybeSingle();
 
-      if (deleteError) {
-        console.error('Error deleting existing progress:', deleteError);
+      if (queryError) {
+        console.error('Error checking existing progress:', queryError);
         toast.error("Error al actualizar el progreso");
         return;
       }
 
-      // 2. Insert new progress
-      const { error: insertError } = await supabase
-        .from('general_cleaning_progress')
-        .insert({
-          assignee: newAssignee,
-          completion_percentage: 0,
-          last_updated: new Date().toISOString()
-        });
+      let progressError;
+      if (existingProgress) {
+        // Update existing record
+        const { error: updateError } = await supabase
+          .from('general_cleaning_progress')
+          .update({
+            completion_percentage: 0,
+            last_updated: new Date().toISOString()
+          })
+          .eq('assignee', newAssignee);
+        progressError = updateError;
+      } else {
+        // Insert new record
+        const { error: insertError } = await supabase
+          .from('general_cleaning_progress')
+          .insert({
+            assignee: newAssignee,
+            completion_percentage: 0,
+            last_updated: new Date().toISOString()
+          });
+        progressError = insertError;
+      }
 
-      if (insertError) {
-        console.error('Error inserting new progress:', insertError);
+      if (progressError) {
+        console.error('Error updating progress:', progressError);
         toast.error("Error al actualizar el progreso");
         return;
       }
 
-      // 3. Obtener todas las tareas existentes
+      // Reset all tasks to not completed
       const { data: tasks, error: tasksQueryError } = await supabase
         .from('general_cleaning_tasks')
         .select('id');
@@ -68,7 +83,6 @@ const AssigneeSelector = ({ currentAssignee, onAssigneeChange, completionPercent
         return;
       }
 
-      // 4. Resetear todas las tareas a no completadas
       if (tasks && tasks.length > 0) {
         const taskStates = tasks.map(task => ({
           task_id: task.id,
@@ -89,7 +103,7 @@ const AssigneeSelector = ({ currentAssignee, onAssigneeChange, completionPercent
         }
       }
 
-      // 5. Notificar al nuevo responsable por correo
+      // Notify new assignee
       const assigneeProfile = profiles.find(p => p.name === newAssignee);
       if (assigneeProfile?.email) {
         try {
@@ -105,7 +119,6 @@ const AssigneeSelector = ({ currentAssignee, onAssigneeChange, completionPercent
         }
       }
 
-      // 6. Actualizar el estado en la UI y mostrar notificación
       onAssigneeChange(newAssignee);
       toast.success(`Se ha asignado el aseo general a ${newAssignee}`);
       
