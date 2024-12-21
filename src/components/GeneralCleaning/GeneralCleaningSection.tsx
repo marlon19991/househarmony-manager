@@ -16,15 +16,16 @@ const GeneralCleaningSection = () => {
   useEffect(() => {
     const loadSavedProgress = async () => {
       try {
-        const { data: progressData, error } = await supabase
+        // First get the latest progress record
+        const { data: progressData, error: progressError } = await supabase
           .from('general_cleaning_progress')
           .select('*')
           .order('last_updated', { ascending: false })
           .limit(1)
           .maybeSingle();
 
-        if (error) {
-          console.error('Error loading progress:', error);
+        if (progressError) {
+          console.error('Error loading progress:', progressError);
           toast.error("Error al cargar el progreso");
           return;
         }
@@ -43,9 +44,44 @@ const GeneralCleaningSection = () => {
             return;
           }
 
+          // Get all task states to verify the completion percentage
+          const { data: taskStates, error: taskStatesError } = await supabase
+            .from('cleaning_task_states')
+            .select('completed');
+
+          if (taskStatesError) {
+            console.error('Error loading task states:', taskStatesError);
+            toast.error("Error al cargar el estado de las tareas");
+            return;
+          }
+
+          // Calculate actual completion percentage based on task states
+          const completedTasks = taskStates?.filter(state => state.completed)?.length || 0;
+          const totalTasks = taskStates?.length || 0;
+          const calculatedPercentage = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
+
           console.log('Setting current assignee to:', progressData.assignee);
+          console.log('Setting completion percentage to:', calculatedPercentage);
+          
           setCurrentAssignee(progressData.assignee);
-          setCompletionPercentage(progressData.completion_percentage || 0);
+          setCompletionPercentage(calculatedPercentage);
+
+          // Update the progress record if it doesn't match the calculated percentage
+          if (calculatedPercentage !== progressData.completion_percentage) {
+            const { error: updateError } = await supabase
+              .from('general_cleaning_progress')
+              .upsert({
+                assignee: progressData.assignee,
+                completion_percentage: calculatedPercentage,
+                last_updated: new Date().toISOString()
+              }, {
+                onConflict: 'assignee'
+              });
+
+            if (updateError) {
+              console.error('Error updating progress percentage:', updateError);
+            }
+          }
         } else {
           console.log('No progress data found, using default values');
           setCurrentAssignee("Sin asignar");
