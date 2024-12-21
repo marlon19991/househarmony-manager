@@ -67,16 +67,32 @@ const GeneralCleaningSection = () => {
     try {
       console.log('Changing assignee to:', newAssignee);
       
-      // Update progress in database
-      const { error } = await supabase
+      // First delete any existing progress for the new assignee
+      const { error: deleteError } = await supabase
         .from('general_cleaning_progress')
-        .upsert({
+        .delete()
+        .eq('assignee', newAssignee);
+
+      if (deleteError) {
+        console.error('Error deleting existing progress:', deleteError);
+        toast.error("Error al actualizar el responsable");
+        return;
+      }
+
+      // Then insert new progress
+      const { error: insertError } = await supabase
+        .from('general_cleaning_progress')
+        .insert({
           assignee: newAssignee,
           completion_percentage: 0,
           last_updated: new Date().toISOString()
         });
 
-      if (error) throw error;
+      if (insertError) {
+        console.error('Error inserting new progress:', insertError);
+        toast.error("Error al actualizar el responsable");
+        return;
+      }
 
       setCurrentAssignee(newAssignee);
       setCompletionPercentage(0);
