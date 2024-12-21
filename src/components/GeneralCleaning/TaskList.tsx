@@ -62,13 +62,15 @@ const TaskList = ({
     try {
       const newCompleted = !taskToUpdate.completed;
       
-      // Update task state in database
+      // Update task state in database using upsert
       const { error: stateError } = await supabase
         .from('cleaning_task_states')
         .upsert({ 
           task_id: taskId,
           completed: newCompleted,
           updated_at: new Date().toISOString()
+        }, {
+          onConflict: 'task_id'
         });
 
       if (stateError) {
