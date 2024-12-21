@@ -35,7 +35,6 @@ const TaskList = ({
     const percentage = Math.round((completedTasks / updatedTasks.length) * 100);
     
     try {
-      // Update progress in database using upsert
       const { error: progressError } = await supabase
         .from('general_cleaning_progress')
         .upsert({
@@ -64,13 +63,15 @@ const TaskList = ({
     try {
       const newCompleted = !taskToUpdate.completed;
       
-      // Update task state in database using upsert
+      // Update task state in database using upsert with onConflict
       const { error: stateError } = await supabase
         .from('cleaning_task_states')
         .upsert({ 
           task_id: taskId,
           completed: newCompleted,
           updated_at: new Date().toISOString()
+        }, {
+          onConflict: 'task_id'
         });
 
       if (stateError) throw stateError;
