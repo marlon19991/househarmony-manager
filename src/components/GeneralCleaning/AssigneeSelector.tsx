@@ -56,16 +56,19 @@ const AssigneeSelector = ({ currentAssignee, onAssigneeChange, completionPercent
         return;
       }
 
-      // 3. Resetear todas las tareas a no completadas
+      // 3. Resetear todas las tareas a no completadas usando upsert
       if (tasks && tasks.length > 0) {
-        const taskIds = tasks.map(task => task.id);
+        const taskStates = tasks.map(task => ({
+          task_id: task.id,
+          completed: false,
+          updated_at: new Date().toISOString()
+        }));
+
         const { error: tasksError } = await supabase
           .from('cleaning_task_states')
-          .update({ 
-            completed: false,
-            updated_at: new Date().toISOString()
-          })
-          .in('task_id', taskIds);
+          .upsert(taskStates, {
+            onConflict: 'task_id'
+          });
 
         if (tasksError) {
           console.error('Error resetting tasks:', tasksError);
