@@ -13,14 +13,14 @@ export const useTaskData = () => {
       try {
         console.log('Loading tasks from database...');
         
-        // Get all tasks with their states
+        // Get all tasks with their states using a join
         const { data: tasksData, error: tasksError } = await supabase
           .from('general_cleaning_tasks')
           .select(`
             id,
             description,
             comment,
-            cleaning_task_states (
+            cleaning_task_states!left (
               completed
             )
           `)
@@ -36,7 +36,8 @@ export const useTaskData = () => {
         const transformedTasks = tasksData.map(task => ({
           id: task.id,
           description: task.description,
-          completed: task.cleaning_task_states?.[0]?.completed || false,
+          // If there's a task state, use its completed value, otherwise default to false
+          completed: task.cleaning_task_states?.[0]?.completed ?? false,
           comment: task.comment
         }));
 
