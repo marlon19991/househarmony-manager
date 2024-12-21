@@ -12,9 +12,18 @@ export const useTaskData = () => {
     const loadTasks = async () => {
       try {
         console.log('Loading tasks from database...');
+        
+        // Get all tasks with their states
         const { data: tasksData, error: tasksError } = await supabase
           .from('general_cleaning_tasks')
-          .select('*')
+          .select(`
+            id,
+            description,
+            comment,
+            cleaning_task_states (
+              completed
+            )
+          `)
           .order('created_at', { ascending: true });
 
         if (tasksError) {
@@ -23,33 +32,16 @@ export const useTaskData = () => {
           return;
         }
 
-        console.log('Tasks loaded:', tasksData);
+        // Transform the data to match our Task type
+        const transformedTasks = tasksData.map(task => ({
+          id: task.id,
+          description: task.description,
+          completed: task.cleaning_task_states?.[0]?.completed || false,
+          comment: task.comment
+        }));
 
-        // Then get their states
-        const { data: taskStates, error: statesError } = await supabase
-          .from('cleaning_task_states')
-          .select('*');
-
-        if (statesError) {
-          console.error('Error loading task states:', statesError);
-          toast.error("Error al cargar el estado de las tareas");
-          return;
-        }
-
-        console.log('Task states loaded:', taskStates);
-
-        // Combine tasks with their states
-        const combinedTasks = tasksData.map(task => {
-          const taskState = taskStates?.find(state => state.task_id === task.id);
-          return {
-            id: task.id,
-            description: task.description,
-            completed: taskState?.completed || false,
-            comment: task.comment
-          };
-        });
-
-        setTasks(combinedTasks);
+        console.log('Tasks loaded:', transformedTasks);
+        setTasks(transformedTasks);
         setIsLoading(false);
       } catch (error) {
         console.error('Error in loadTasks:', error);
