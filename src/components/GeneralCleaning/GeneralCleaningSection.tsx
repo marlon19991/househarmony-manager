@@ -67,29 +67,44 @@ const GeneralCleaningSection = () => {
     try {
       console.log('Changing assignee to:', newAssignee);
       
-      // First delete any existing progress for the new assignee
-      const { error: deleteError } = await supabase
+      // Check if there's an existing record for the new assignee
+      const { data: existingProgress, error: queryError } = await supabase
         .from('general_cleaning_progress')
-        .delete()
-        .eq('assignee', newAssignee);
+        .select()
+        .eq('assignee', newAssignee)
+        .maybeSingle();
 
-      if (deleteError) {
-        console.error('Error deleting existing progress:', deleteError);
+      if (queryError) {
+        console.error('Error checking existing progress:', queryError);
         toast.error("Error al actualizar el responsable");
         return;
       }
 
-      // Then insert new progress
-      const { error: insertError } = await supabase
-        .from('general_cleaning_progress')
-        .insert({
-          assignee: newAssignee,
-          completion_percentage: 0,
-          last_updated: new Date().toISOString()
-        });
+      let progressError;
+      if (existingProgress) {
+        // Update existing record
+        const { error: updateError } = await supabase
+          .from('general_cleaning_progress')
+          .update({
+            completion_percentage: 0,
+            last_updated: new Date().toISOString()
+          })
+          .eq('assignee', newAssignee);
+        progressError = updateError;
+      } else {
+        // Insert new record
+        const { error: insertError } = await supabase
+          .from('general_cleaning_progress')
+          .insert({
+            assignee: newAssignee,
+            completion_percentage: 0,
+            last_updated: new Date().toISOString()
+          });
+        progressError = insertError;
+      }
 
-      if (insertError) {
-        console.error('Error inserting new progress:', insertError);
+      if (progressError) {
+        console.error('Error updating progress:', progressError);
         toast.error("Error al actualizar el responsable");
         return;
       }
