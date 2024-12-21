@@ -67,46 +67,52 @@ const GeneralCleaningSection = () => {
     try {
       console.log('Changing assignee to:', newAssignee);
       
-      // Check if there's an existing record for the new assignee
-      const { data: existingProgress, error: queryError } = await supabase
+      // Now we can use upsert since we have a unique constraint on assignee
+      const { error: progressError } = await supabase
         .from('general_cleaning_progress')
-        .select()
-        .eq('assignee', newAssignee)
-        .maybeSingle();
-
-      if (queryError) {
-        console.error('Error checking existing progress:', queryError);
-        toast.error("Error al actualizar el responsable");
-        return;
-      }
-
-      let progressError;
-      if (existingProgress) {
-        // Update existing record
-        const { error: updateError } = await supabase
-          .from('general_cleaning_progress')
-          .update({
-            completion_percentage: 0,
-            last_updated: new Date().toISOString()
-          })
-          .eq('assignee', newAssignee);
-        progressError = updateError;
-      } else {
-        // Insert new record
-        const { error: insertError } = await supabase
-          .from('general_cleaning_progress')
-          .insert({
-            assignee: newAssignee,
-            completion_percentage: 0,
-            last_updated: new Date().toISOString()
-          });
-        progressError = insertError;
-      }
+        .upsert({
+          assignee: newAssignee,
+          completion_percentage: 0,
+          last_updated: new Date().toISOString()
+        }, {
+          onConflict: 'assignee'
+        });
 
       if (progressError) {
         console.error('Error updating progress:', progressError);
         toast.error("Error al actualizar el responsable");
         return;
+      }
+
+      // Reset all tasks to not completed
+      const { data: tasks, error: tasksQueryError } = await supabase
+        .from('general_cleaning_tasks')
+        .select('id');
+
+      if (tasksQueryError) {
+        console.error('Error querying tasks:', tasksQueryError);
+        toast.error("Error al obtener las tareas");
+        return;
+      }
+
+      if (tasks && tasks.length > 0) {
+        const taskStates = tasks.map(task => ({
+          task_id: task.id,
+          completed: false,
+          updated_at: new Date().toISOString()
+        }));
+
+        const { error: tasksError } = await supabase
+          .from('cleaning_task_states')
+          .upsert(taskStates, {
+            onConflict: 'task_id'
+          });
+
+        if (tasksError) {
+          console.error('Error resetting tasks:', tasksError);
+          toast.error("Error al reiniciar las tareas");
+          return;
+        }
       }
 
       setCurrentAssignee(newAssignee);
