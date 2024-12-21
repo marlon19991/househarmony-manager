@@ -17,10 +17,8 @@ export const useTaskData = () => {
         const { data: tasksData, error: tasksError } = await supabase
           .from('general_cleaning_tasks')
           .select(`
-            id,
-            description,
-            comment,
-            cleaning_task_states!left (
+            *,
+            cleaning_task_states (
               completed
             )
           `)
@@ -32,16 +30,17 @@ export const useTaskData = () => {
           return;
         }
 
+        console.log('Raw tasks data:', tasksData);
+
         // Transform the data to match our Task type
         const transformedTasks = tasksData.map(task => ({
           id: task.id,
           description: task.description,
-          // If there's a task state, use its completed value, otherwise default to false
           completed: task.cleaning_task_states?.[0]?.completed ?? false,
-          comment: task.comment
+          comment: task.comment ?? null
         }));
 
-        console.log('Tasks loaded:', transformedTasks);
+        console.log('Transformed tasks:', transformedTasks);
         setTasks(transformedTasks);
         setIsLoading(false);
       } catch (error) {

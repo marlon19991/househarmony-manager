@@ -8,7 +8,6 @@ import TaskListHeader from "./components/TaskListHeader";
 import TaskListContent from "./components/TaskListContent";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useTaskData } from "./hooks/useTaskData";
-import { taskService } from "./services/taskService";
 
 interface TaskListProps {
   currentAssignee: string;
@@ -35,22 +34,25 @@ const TaskList = ({
     const completedTasks = updatedTasks.filter(task => task.completed).length;
     const percentage = Math.round((completedTasks / updatedTasks.length) * 100);
     
-    // Update progress in database
-    const { error: progressError } = await supabase
-      .from('general_cleaning_progress')
-      .upsert({
-        assignee: currentAssignee,
-        completion_percentage: percentage,
-        last_updated: new Date().toISOString()
-      });
+    try {
+      // Update progress in database using upsert
+      const { error: progressError } = await supabase
+        .from('general_cleaning_progress')
+        .upsert({
+          assignee: currentAssignee,
+          completion_percentage: percentage,
+          last_updated: new Date().toISOString()
+        }, {
+          onConflict: 'assignee'
+        });
 
-    if (progressError) {
-      console.error('Error updating progress:', progressError);
+      if (progressError) throw progressError;
+      
+      onTaskComplete(percentage);
+    } catch (error) {
+      console.error('Error updating progress:', error);
       toast.error("Error al actualizar el progreso");
-      return;
     }
-    
-    onTaskComplete(percentage);
   };
 
   const handleTaskToggle = async (taskId: number) => {
@@ -69,15 +71,9 @@ const TaskList = ({
           task_id: taskId,
           completed: newCompleted,
           updated_at: new Date().toISOString()
-        }, {
-          onConflict: 'task_id'
         });
 
-      if (stateError) {
-        console.error('Error updating task state:', stateError);
-        toast.error("Error al actualizar el estado de la tarea");
-        return;
-      }
+      if (stateError) throw stateError;
       
       const updatedTasks = tasks.map(task => 
         task.id === taskId ? { ...task, completed: newCompleted } : task
