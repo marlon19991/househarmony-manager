@@ -30,22 +30,34 @@ const AssigneeSelector = ({ currentAssignee, onAssigneeChange, completionPercent
     });
 
     try {
-      // 1. Resetear el progreso a 0%
-      const { error: progressError } = await supabase
+      // 1. Delete existing progress for the new assignee
+      const { error: deleteError } = await supabase
         .from('general_cleaning_progress')
-        .upsert({
+        .delete()
+        .eq('assignee', newAssignee);
+
+      if (deleteError) {
+        console.error('Error deleting existing progress:', deleteError);
+        toast.error("Error al actualizar el progreso");
+        return;
+      }
+
+      // 2. Insert new progress
+      const { error: insertError } = await supabase
+        .from('general_cleaning_progress')
+        .insert({
           assignee: newAssignee,
           completion_percentage: 0,
           last_updated: new Date().toISOString()
         });
 
-      if (progressError) {
-        console.error('Error resetting progress:', progressError);
+      if (insertError) {
+        console.error('Error inserting new progress:', insertError);
         toast.error("Error al actualizar el progreso");
         return;
       }
 
-      // 2. Obtener todas las tareas existentes
+      // 3. Obtener todas las tareas existentes
       const { data: tasks, error: tasksQueryError } = await supabase
         .from('general_cleaning_tasks')
         .select('id');
@@ -56,7 +68,7 @@ const AssigneeSelector = ({ currentAssignee, onAssigneeChange, completionPercent
         return;
       }
 
-      // 3. Resetear todas las tareas a no completadas usando upsert
+      // 4. Resetear todas las tareas a no completadas
       if (tasks && tasks.length > 0) {
         const taskStates = tasks.map(task => ({
           task_id: task.id,
@@ -77,7 +89,7 @@ const AssigneeSelector = ({ currentAssignee, onAssigneeChange, completionPercent
         }
       }
 
-      // 4. Notificar al nuevo responsable por correo
+      // 5. Notificar al nuevo responsable por correo
       const assigneeProfile = profiles.find(p => p.name === newAssignee);
       if (assigneeProfile?.email) {
         try {
@@ -93,7 +105,7 @@ const AssigneeSelector = ({ currentAssignee, onAssigneeChange, completionPercent
         }
       }
 
-      // 5. Actualizar el estado en la UI y mostrar notificación
+      // 6. Actualizar el estado en la UI y mostrar notificación
       onAssigneeChange(newAssignee);
       toast.success(`Se ha asignado el aseo general a ${newAssignee}`);
       
