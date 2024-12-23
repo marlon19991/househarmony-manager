@@ -5,13 +5,18 @@ import AssigneeSelector from "./AssigneeSelector";
 import ProgressDisplay from "./components/ProgressDisplay";
 import { useTaskState } from "./hooks/useTaskState";
 import { useProgressState } from "./hooks/useProgressState";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { AlertCircle } from "lucide-react";
 
 const GeneralCleaningSection = () => {
   const { resetTaskStates } = useTaskState();
   const { 
     currentAssignee,
     completionPercentage,
-    updateProgress
+    updateProgress,
+    isLoading,
+    error
   } = useProgressState();
 
   const handleAssigneeChange = async (newAssignee: string) => {
@@ -32,10 +37,28 @@ const GeneralCleaningSection = () => {
     }
   };
 
-  if (currentAssignee === null) {
+  if (error) {
+    return (
+      <Card className="p-6">
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>
+            Error al cargar los datos: {error}
+          </AlertDescription>
+        </Alert>
+      </Card>
+    );
+  }
+
+  if (isLoading) {
     return (
       <Card className="p-6 space-y-6">
-        <div>Cargando...</div>
+        <Skeleton className="h-4 w-32" />
+        <Skeleton className="h-8 w-full" />
+        <div className="grid gap-6 md:grid-cols-[2fr_1fr]">
+          <Skeleton className="h-64 w-full" />
+          <Skeleton className="h-32 w-full" />
+        </div>
       </Card>
     );
   }
