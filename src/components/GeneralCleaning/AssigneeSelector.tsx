@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import useProfiles from "@/hooks/useProfiles";
 import { sendTaskAssignmentEmail } from "@/utils/emailUtils";
 import { supabase } from "@/integrations/supabase/client";
+import { useTaskData } from "./hooks/useTaskData";
 
 interface AssigneeSelectorProps {
   currentAssignee: string;
@@ -14,6 +15,7 @@ interface AssigneeSelectorProps {
 
 const AssigneeSelector = ({ currentAssignee, onAssigneeChange, completionPercentage }: AssigneeSelectorProps) => {
   const { profiles } = useProfiles();
+  const { resetAllTasks } = useTaskData();
 
   const handleAssigneeChange = async (newAssignee: string) => {
     if (newAssignee === currentAssignee) return;
@@ -30,47 +32,8 @@ const AssigneeSelector = ({ currentAssignee, onAssigneeChange, completionPercent
     });
 
     try {
-      // Primero, reiniciar todos los estados de las tareas
-      const { data: tasks, error: tasksQueryError } = await supabase
-        .from('general_cleaning_tasks')
-        .select('id');
-
-      if (tasksQueryError) {
-        console.error('Error querying tasks:', tasksQueryError);
-        toast.error("Error al obtener las tareas");
-        return;
-      }
-
-      if (tasks && tasks.length > 0) {
-        // Crear nuevos estados para todas las tareas
-        const taskStates = tasks.map(task => ({
-          task_id: task.id,
-          completed: false,
-          updated_at: new Date().toISOString()
-        }));
-
-        // Eliminar estados anteriores y crear nuevos
-        const { error: deleteError } = await supabase
-          .from('cleaning_task_states')
-          .delete()
-          .in('task_id', tasks.map(t => t.id));
-
-        if (deleteError) {
-          console.error('Error deleting task states:', deleteError);
-          toast.error("Error al reiniciar las tareas");
-          return;
-        }
-
-        const { error: insertError } = await supabase
-          .from('cleaning_task_states')
-          .insert(taskStates);
-
-        if (insertError) {
-          console.error('Error creating new task states:', insertError);
-          toast.error("Error al reiniciar las tareas");
-          return;
-        }
-      }
+      // Reiniciar todas las tareas
+      await resetAllTasks();
 
       // Actualizar el progreso para el nuevo asignado
       const { error: progressError } = await supabase

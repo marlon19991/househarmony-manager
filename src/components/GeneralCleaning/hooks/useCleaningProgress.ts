@@ -8,7 +8,7 @@ export const useCleaningProgress = () => {
   const [completionPercentage, setCompletionPercentage] = useState(0);
   const { profiles } = useProfiles();
 
-  const calculateProgress = async (assignee: string) => {
+  const calculateProgress = async () => {
     try {
       const { data: taskStates, error: taskStatesError } = await supabase
         .from('cleaning_task_states')
@@ -66,7 +66,7 @@ export const useCleaningProgress = () => {
           return;
         }
 
-        const calculatedPercentage = await calculateProgress(progressData.assignee);
+        const calculatedPercentage = await calculateProgress();
         
         setCurrentAssignee(progressData.assignee);
         setCompletionPercentage(calculatedPercentage);
