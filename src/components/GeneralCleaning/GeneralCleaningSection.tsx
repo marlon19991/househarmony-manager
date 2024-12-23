@@ -1,48 +1,37 @@
 import { Card } from "@/components/ui/card";
+import { toast } from "sonner";
 import TaskList from "./TaskList";
 import AssigneeSelector from "./AssigneeSelector";
 import ProgressDisplay from "./components/ProgressDisplay";
-import { useCleaningProgress } from "./hooks/useCleaningProgress";
-import { useTaskData } from "./hooks/useTaskData";
+import { useTaskState } from "./hooks/useTaskState";
+import { useProgressState } from "./hooks/useProgressState";
 
 const GeneralCleaningSection = () => {
-  const {
+  const { resetTaskStates } = useTaskState();
+  const { 
     currentAssignee,
     completionPercentage,
-    setCurrentAssignee,
-    setCompletionPercentage,
-    updateProgress,
-    loadProgress
-  } = useCleaningProgress();
-
-  const { resetAllTasks, loadTasks } = useTaskData();
+    updateProgress
+  } = useProgressState();
 
   const handleAssigneeChange = async (newAssignee: string) => {
     try {
       console.log('Changing assignee to:', newAssignee);
       
-      // First update the progress
+      // Primero actualizamos el progreso
       await updateProgress(newAssignee, 0);
       
-      // Then reset all tasks
-      await resetAllTasks();
-      
-      // Update local state
-      setCurrentAssignee(newAssignee);
-      setCompletionPercentage(0);
-      
-      // Reload data
-      await loadProgress();
-      await loadTasks();
+      // Luego reiniciamos todas las tareas
+      await resetTaskStates();
       
       console.log('Assignee change completed successfully');
+      toast.success(`Se ha asignado el aseo general a ${newAssignee}`);
     } catch (error) {
       console.error('Error updating assignee:', error);
       toast.error("Error al cambiar el responsable");
     }
   };
 
-  // Si currentAssignee es null, mostrar un estado de carga
   if (currentAssignee === null) {
     return (
       <Card className="p-6 space-y-6">
@@ -59,9 +48,8 @@ const GeneralCleaningSection = () => {
           currentAssignee={currentAssignee}
           onTaskComplete={(percentage) => {
             const roundedPercentage = Math.round(percentage);
-            setCompletionPercentage(roundedPercentage);
+            updateProgress(currentAssignee, roundedPercentage);
           }}
-          onAssigneeChange={handleAssigneeChange}
           isDisabled={currentAssignee === "Sin asignar"}
         />
         <AssigneeSelector
