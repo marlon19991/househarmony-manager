@@ -71,6 +71,7 @@ export const useCleaningProgress = () => {
         setCurrentAssignee(progressData.assignee);
         setCompletionPercentage(calculatedPercentage);
 
+        // Si el porcentaje calculado es diferente al almacenado, actualizarlo
         if (calculatedPercentage !== progressData.completion_percentage) {
           await updateProgress(progressData.assignee, calculatedPercentage);
         }
