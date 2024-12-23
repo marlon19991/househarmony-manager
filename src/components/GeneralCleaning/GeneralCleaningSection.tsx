@@ -3,6 +3,7 @@ import TaskList from "./TaskList";
 import AssigneeSelector from "./AssigneeSelector";
 import ProgressDisplay from "./components/ProgressDisplay";
 import { useCleaningProgress } from "./hooks/useCleaningProgress";
+import { useTaskData } from "./hooks/useTaskData";
 
 const GeneralCleaningSection = () => {
   const {
@@ -10,15 +11,21 @@ const GeneralCleaningSection = () => {
     completionPercentage,
     setCurrentAssignee,
     setCompletionPercentage,
-    updateProgress
+    updateProgress,
+    loadProgress
   } = useCleaningProgress();
+
+  const { resetAllTasks, loadTasks } = useTaskData();
 
   const handleAssigneeChange = async (newAssignee: string) => {
     try {
       console.log('Changing assignee to:', newAssignee);
       await updateProgress(newAssignee, 0);
+      await resetAllTasks();
       setCurrentAssignee(newAssignee);
       setCompletionPercentage(0);
+      await loadProgress();
+      await loadTasks();
     } catch (error) {
       console.error('Error updating assignee:', error);
     }

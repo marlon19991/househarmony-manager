@@ -97,6 +97,7 @@ export const useCleaningProgress = () => {
     setCurrentAssignee,
     setCompletionPercentage,
     updateProgress,
-    calculateProgress
+    calculateProgress,
+    loadProgress
   };
 };
