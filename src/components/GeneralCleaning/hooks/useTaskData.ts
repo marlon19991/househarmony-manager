@@ -9,14 +9,18 @@ export const useTaskData = () => {
 
   const loadTasks = async () => {
     try {
-      console.log('Loading tasks from database...');
+      console.log('Loading tasks and their states...');
       
+      // Get all tasks with their latest state
       const { data: tasksData, error: tasksError } = await supabase
         .from('general_cleaning_tasks')
         .select(`
-          *,
+          id,
+          description,
+          comment,
           cleaning_task_states (
-            completed
+            completed,
+            updated_at
           )
         `)
         .order('created_at', { ascending: true });
@@ -33,7 +37,7 @@ export const useTaskData = () => {
         id: task.id,
         description: task.description,
         completed: task.cleaning_task_states?.[0]?.completed ?? false,
-        comment: task.comment ?? null
+        comment: task.comment
       }));
 
       console.log('Transformed tasks:', transformedTasks);
@@ -46,50 +50,61 @@ export const useTaskData = () => {
     }
   };
 
-  useEffect(() => {
-    loadTasks();
-  }, []);
-
   const resetAllTasks = async () => {
     try {
-      // Primero, obtener todas las tareas
+      console.log('Resetting all tasks...');
+      
+      // Delete all existing task states
+      const { error: deleteError } = await supabase
+        .from('cleaning_task_states')
+        .delete()
+        .neq('task_id', 0); // Delete all records
+
+      if (deleteError) {
+        console.error('Error deleting task states:', deleteError);
+        throw deleteError;
+      }
+
+      // Get all tasks
       const { data: tasks, error: tasksError } = await supabase
         .from('general_cleaning_tasks')
         .select('id');
 
-      if (tasksError) throw tasksError;
-
-      if (tasks && tasks.length > 0) {
-        // Eliminar todos los estados anteriores
-        const { error: deleteError } = await supabase
-          .from('cleaning_task_states')
-          .delete()
-          .in('task_id', tasks.map(t => t.id));
-
-        if (deleteError) throw deleteError;
-
-        // Crear nuevos estados para todas las tareas
-        const newTaskStates = tasks.map(task => ({
-          task_id: task.id,
-          completed: false,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        }));
-
-        const { error: insertError } = await supabase
-          .from('cleaning_task_states')
-          .insert(newTaskStates);
-
-        if (insertError) throw insertError;
-
-        // Recargar las tareas para actualizar la UI
-        await loadTasks();
+      if (tasksError) {
+        console.error('Error getting tasks:', tasksError);
+        throw tasksError;
       }
+
+      // Create new uncompleted states for all tasks
+      const newStates = tasks.map(task => ({
+        task_id: task.id,
+        completed: false,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      }));
+
+      const { error: insertError } = await supabase
+        .from('cleaning_task_states')
+        .insert(newStates);
+
+      if (insertError) {
+        console.error('Error creating new task states:', insertError);
+        throw insertError;
+      }
+
+      // Reload tasks to update the UI
+      await loadTasks();
+      console.log('Tasks reset successfully');
     } catch (error) {
-      console.error('Error resetting tasks:', error);
+      console.error('Error in resetAllTasks:', error);
       toast.error("Error al reiniciar las tareas");
+      throw error;
     }
   };
+
+  useEffect(() => {
+    loadTasks();
+  }, []);
 
   return { tasks, setTasks, isLoading, resetAllTasks, loadTasks };
 };

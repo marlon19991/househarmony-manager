@@ -20,14 +20,25 @@ const GeneralCleaningSection = () => {
   const handleAssigneeChange = async (newAssignee: string) => {
     try {
       console.log('Changing assignee to:', newAssignee);
+      
+      // First update the progress
       await updateProgress(newAssignee, 0);
+      
+      // Then reset all tasks
       await resetAllTasks();
+      
+      // Update local state
       setCurrentAssignee(newAssignee);
       setCompletionPercentage(0);
+      
+      // Reload data
       await loadProgress();
       await loadTasks();
+      
+      console.log('Assignee change completed successfully');
     } catch (error) {
       console.error('Error updating assignee:', error);
+      toast.error("Error al cambiar el responsable");
     }
   };
 

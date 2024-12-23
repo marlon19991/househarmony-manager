@@ -8,26 +8,10 @@ export const useCleaningProgress = () => {
   const [completionPercentage, setCompletionPercentage] = useState(0);
   const { profiles } = useProfiles();
 
-  const calculateProgress = async () => {
-    try {
-      const { data: taskStates, error: taskStatesError } = await supabase
-        .from('cleaning_task_states')
-        .select('completed');
-
-      if (taskStatesError) throw taskStatesError;
-
-      const completedTasks = taskStates?.filter(state => state.completed)?.length || 0;
-      const totalTasks = taskStates?.length || 0;
-      return totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
-    } catch (error) {
-      console.error('Error calculating progress:', error);
-      toast.error("Error al calcular el progreso");
-      return 0;
-    }
-  };
-
   const updateProgress = async (assignee: string, percentage: number) => {
     try {
+      console.log('Updating progress:', { assignee, percentage });
+      
       const { error: updateError } = await supabase
         .from('general_cleaning_progress')
         .upsert({
@@ -39,14 +23,19 @@ export const useCleaningProgress = () => {
         });
 
       if (updateError) throw updateError;
+      
+      console.log('Progress updated successfully');
     } catch (error) {
       console.error('Error updating progress:', error);
       toast.error("Error al actualizar el progreso");
+      throw error;
     }
   };
 
   const loadProgress = async () => {
     try {
+      console.log('Loading progress...');
+      
       const { data: progressData, error: progressError } = await supabase
         .from('general_cleaning_progress')
         .select('*')
@@ -66,16 +55,11 @@ export const useCleaningProgress = () => {
           return;
         }
 
-        const calculatedPercentage = await calculateProgress();
-        
+        console.log('Progress loaded:', progressData);
         setCurrentAssignee(progressData.assignee);
-        setCompletionPercentage(calculatedPercentage);
-
-        // Si el porcentaje calculado es diferente al almacenado, actualizarlo
-        if (calculatedPercentage !== progressData.completion_percentage) {
-          await updateProgress(progressData.assignee, calculatedPercentage);
-        }
+        setCompletionPercentage(progressData.completion_percentage || 0);
       } else {
+        console.log('No progress data found, setting default values');
         setCurrentAssignee("Sin asignar");
         setCompletionPercentage(0);
       }
@@ -97,7 +81,6 @@ export const useCleaningProgress = () => {
     setCurrentAssignee,
     setCompletionPercentage,
     updateProgress,
-    calculateProgress,
     loadProgress
   };
 };
