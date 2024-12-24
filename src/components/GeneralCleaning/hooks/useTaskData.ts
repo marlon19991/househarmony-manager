@@ -2,8 +2,6 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Task } from "../types/Task";
-import { taskStateService } from "../services/taskStateService";
-import { progressService } from "../services/progressService";
 
 export const useTaskData = () => {
   const [tasks, setTasks] = useState<Task[]>([]);
@@ -50,7 +48,9 @@ export const useTaskData = () => {
 
   const resetAllTasks = async () => {
     try {
-      // Primero, obtener todas las tareas
+      console.log('Resetting all tasks...');
+      
+      // First get all tasks
       const { data: tasks, error: tasksError } = await supabase
         .from('general_cleaning_tasks')
         .select('id');
@@ -58,7 +58,7 @@ export const useTaskData = () => {
       if (tasksError) throw tasksError;
 
       if (tasks && tasks.length > 0) {
-        // Eliminar todos los estados anteriores
+        // Delete all existing states
         const { error: deleteError } = await supabase
           .from('cleaning_task_states')
           .delete()
@@ -66,7 +66,7 @@ export const useTaskData = () => {
 
         if (deleteError) throw deleteError;
 
-        // Crear nuevos estados para todas las tareas
+        // Create new uncompleted states for all tasks
         const newTaskStates = tasks.map(task => ({
           task_id: task.id,
           completed: false,
@@ -80,8 +80,9 @@ export const useTaskData = () => {
 
         if (insertError) throw insertError;
 
-        // Recargar las tareas para actualizar la UI
+        // Reload tasks to update UI
         await loadTasks();
+        console.log('Tasks reset successfully');
       }
     } catch (error) {
       console.error('Error resetting tasks:', error);
@@ -89,10 +90,11 @@ export const useTaskData = () => {
     }
   };
 
+  // Load tasks on component mount
   useEffect(() => {
     loadTasks();
 
-    // Suscribirse a cambios en tiempo real
+    // Subscribe to real-time changes
     const channel = supabase
       .channel('task-changes')
       .on(

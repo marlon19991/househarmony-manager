@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
 import useProfiles from "@/hooks/useProfiles";
 import { useTaskNotifications } from "./TaskNotifications";
 import { sendTaskAssignmentEmail } from "@/utils/emailUtils";
@@ -8,6 +7,8 @@ import TaskListHeader from "./components/TaskListHeader";
 import TaskListContent from "./components/TaskListContent";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useTaskData } from "./hooks/useTaskData";
+import { taskService } from "./services/taskService";
+import { progressService } from "./services/progressService";
 
 interface TaskListProps {
   currentAssignee: string;
@@ -25,7 +26,7 @@ const TaskList = ({
   const [editingTask, setEditingTask] = useState<number | null>(null);
   const [newTask, setNewTask] = useState({ title: "", comment: "" });
   const { profiles } = useProfiles();
-  const { tasks, setTasks, isLoading } = useTaskData();
+  const { tasks, setTasks, isLoading, loadTasks } = useTaskData();
 
   useTaskNotifications({ tasks, currentAssignee });
 
@@ -34,18 +35,7 @@ const TaskList = ({
     const percentage = Math.round((completedTasks / updatedTasks.length) * 100);
     
     try {
-      const { error: progressError } = await supabase
-        .from('general_cleaning_progress')
-        .upsert({
-          assignee: currentAssignee,
-          completion_percentage: percentage,
-          last_updated: new Date().toISOString()
-        }, {
-          onConflict: 'assignee'
-        });
-
-      if (progressError) throw progressError;
-      
+      await progressService.updateProgress(currentAssignee, percentage);
       onTaskComplete(percentage);
     } catch (error) {
       console.error('Error updating progress:', error);
@@ -61,18 +51,7 @@ const TaskList = ({
 
     try {
       const newCompleted = !taskToUpdate.completed;
-      
-      const { error: stateError } = await supabase
-        .from('cleaning_task_states')
-        .upsert({ 
-          task_id: taskId,
-          completed: newCompleted,
-          updated_at: new Date().toISOString()
-        }, {
-          onConflict: 'task_id'
-        });
-
-      if (stateError) throw stateError;
+      await taskService.toggleTaskCompletion(taskId, newCompleted);
       
       const updatedTasks = tasks.map(task => 
         task.id === taskId ? { ...task, completed: newCompleted } : task
@@ -102,47 +81,10 @@ const TaskList = ({
     e.preventDefault();
     
     try {
-      // Create task in database without specifying an ID
-      const { data: newTaskData, error: taskError } = await supabase
-        .from('general_cleaning_tasks')
-        .insert({
-          description: newTask.title,
-          comment: newTask.comment,
-          created_at: new Date().toISOString()
-        })
-        .select()
-        .single();
-
-      if (taskError) {
-        console.error('Error creating task:', taskError);
-        toast.error("Error al crear la tarea");
-        return;
-      }
-
-      // Create initial task state
-      const { error: stateError } = await supabase
-        .from('cleaning_task_states')
-        .insert({
-          task_id: newTaskData.id,
-          completed: false,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        });
-
-      if (stateError) {
-        console.error('Error creating task state:', stateError);
-        toast.error("Error al crear el estado de la tarea");
-        return;
-      }
-
-      const newTaskWithState = {
-        ...newTaskData,
-        completed: false
-      };
-
-      setTasks([...tasks, newTaskWithState]);
+      const newTaskData = await taskService.createTask(newTask.title, newTask.comment);
+      setTasks([...tasks, newTaskData]);
       setNewTask({ title: "", comment: "" });
-      await updateProgress([...tasks, newTaskWithState]);
+      await updateProgress([...tasks, newTaskData]);
 
       if (currentAssignee !== "Sin asignar") {
         const assignee = profiles.find(p => p.name === currentAssignee);
@@ -150,13 +92,14 @@ const TaskList = ({
           await sendTaskAssignmentEmail(
             assignee.email,
             currentAssignee,
-            `Se te ha asignado una nueva tarea: ${newTaskWithState.description}`,
+            `Se te ha asignado una nueva tarea: ${newTaskData.description}`,
             "cleaning"
           );
         }
       }
 
       toast.success("Tarea agregada exitosamente");
+      await loadTasks(); // Reload tasks to ensure UI is in sync
     } catch (error) {
       console.error('Error adding task:', error);
       toast.error("Error al crear la tarea");
@@ -170,19 +113,7 @@ const TaskList = ({
     }
 
     try {
-      const { error: updateError } = await supabase
-        .from('general_cleaning_tasks')
-        .update({ 
-          description: newDescription,
-          comment: newComment
-        })
-        .eq('id', taskId);
-
-      if (updateError) {
-        console.error('Error updating task:', updateError);
-        toast.error("Error al actualizar la tarea");
-        return;
-      }
+      await taskService.updateTask(taskId, newDescription, newComment);
       
       setTasks(tasks.map(task => 
         task.id === taskId 
@@ -204,6 +135,7 @@ const TaskList = ({
       }
 
       toast.success("Tarea actualizada exitosamente");
+      await loadTasks(); // Reload tasks to ensure UI is in sync
     } catch (error) {
       console.error('Error updating task:', error);
       toast.error("Error al actualizar la tarea");
@@ -212,27 +144,7 @@ const TaskList = ({
 
   const handleDeleteTask = async (taskId: number) => {
     try {
-      const { error: stateError } = await supabase
-        .from('cleaning_task_states')
-        .delete()
-        .eq('task_id', taskId);
-
-      if (stateError) {
-        console.error('Error deleting task state:', stateError);
-        toast.error("Error al eliminar el estado de la tarea");
-        return;
-      }
-
-      const { error: taskError } = await supabase
-        .from('general_cleaning_tasks')
-        .delete()
-        .eq('id', taskId);
-
-      if (taskError) {
-        console.error('Error deleting task:', taskError);
-        toast.error("Error al eliminar la tarea");
-        return;
-      }
+      await taskService.deleteTask(taskId);
 
       const updatedTasks = tasks.filter(task => task.id !== taskId);
       setTasks(updatedTasks);
@@ -252,6 +164,7 @@ const TaskList = ({
       }
 
       toast.success("Tarea eliminada exitosamente");
+      await loadTasks(); // Reload tasks to ensure UI is in sync
     } catch (error) {
       console.error('Error in handleDeleteTask:', error);
       toast.error("Error al eliminar la tarea");
