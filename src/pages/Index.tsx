@@ -8,22 +8,22 @@ const Index = () => {
   const { profiles } = useProfiles();
   const features = [
     {
-      title: "General Cleaning",
-      description: "Manage cleaning tasks and assign responsibilities.",
+      title: "Limpieza General",
+      description: "Gestiona tareas de limpieza y asigna responsabilidades.",
       path: "/general-cleaning",
       icon: Brush,
       color: "bg-blue-500"
     },
     {
-      title: "Recurring Tasks",
-      description: "Manage recurring tasks and track progress.",
+      title: "Tareas Periódicas",
+      description: "Administra tareas recurrentes y su progreso.",
       path: "/recurring-tasks",
       icon: CheckSquare,
       color: "bg-green-500"
     },
     {
-      title: "Bills",
-      description: "Control shared expenses and payments.",
+      title: "Gastos",
+      description: "Controla gastos compartidos y pagos.",
       path: "/bills",
       icon: DollarSign,
       color: "bg-purple-500"
@@ -35,10 +35,10 @@ const Index = () => {
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-3xl font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
-            Household Manager
+            Gestión del Hogar
           </h1>
           <p className="text-muted-foreground mt-2">
-            Manage your household efficiently
+            Administra tu hogar eficientemente
           </p>
         </div>
       </div>
@@ -66,10 +66,10 @@ const Index = () => {
 
       {profiles.length === 0 && (
         <Card className="p-6 border-amber-200 bg-amber-50 dark:bg-amber-950 dark:border-amber-800">
-          <h3 className="font-semibold text-amber-800 dark:text-amber-200 mb-2">Important!</h3>
+          <h3 className="font-semibold text-amber-800 dark:text-amber-200 mb-2">¡Importante!</h3>
           <p className="text-sm text-amber-700 dark:text-amber-300">
-            No profiles have been created. To take advantage of all app features,
-            please <Link to="/settings" className="underline">create some profiles</Link> first.
+            No hay perfiles creados. Para aprovechar todas las funciones de la aplicación,
+            por favor <Link to="/settings" className="underline">crea algunos perfiles</Link> primero.
           </p>
         </Card>
       )}
