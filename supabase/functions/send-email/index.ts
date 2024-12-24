@@ -26,8 +26,20 @@ const handler = async (req: Request): Promise<Response> => {
 
     const emailRequest: EmailRequest = await req.json();
 
+    // If no recipient email is provided, skip sending
+    if (!emailRequest.to) {
+      console.log('No email address provided, skipping email send');
+      return new Response(
+        JSON.stringify({ message: "No email address provided, skipping" }), 
+        { 
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 200 
+        }
+      );
+    }
+
     // Validate required fields
-    if (!emailRequest.to || !emailRequest.subject || !emailRequest.html) {
+    if (!emailRequest.subject || !emailRequest.html) {
       throw new Error("Missing required email fields");
     }
 
@@ -38,7 +50,7 @@ const handler = async (req: Request): Promise<Response> => {
         Authorization: `Bearer ${RESEND_API_KEY}`,
       },
       body: JSON.stringify({
-        from: "Acme <onboarding@resend.dev>",
+        from: "LaJause <onboarding@resend.dev>",
         to: emailRequest.to,
         subject: emailRequest.subject,
         html: emailRequest.html,
@@ -49,6 +61,22 @@ const handler = async (req: Request): Promise<Response> => {
 
     if (!res.ok) {
       console.error("Resend API error:", data);
+      
+      // If it's a domain verification error, log it but don't treat it as an error
+      if (data.message?.includes('verify a domain')) {
+        console.log('Domain verification required, skipping email send');
+        return new Response(
+          JSON.stringify({ 
+            message: "Domain verification required, email not sent",
+            details: data.message 
+          }), 
+          { 
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+            status: 200 
+          }
+        );
+      }
+      
       throw new Error(data.message || "Failed to send email");
     }
 
