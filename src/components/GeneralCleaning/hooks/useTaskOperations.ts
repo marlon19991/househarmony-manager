@@ -20,6 +20,7 @@ export const useTaskOperations = (
     }
 
     try {
+      // Actualizar la tarea existente en lugar de crear una nueva
       const { error: updateError } = await supabase
         .from('general_cleaning_tasks')
         .update({ 
@@ -39,6 +40,7 @@ export const useTaskOperations = (
       setTasks(updatedTasks);
       setEditingTask(null);
 
+      // Solo enviar correo si hay un destinatario asignado y tiene correo
       if (currentAssignee !== "Sin asignar") {
         const assignee = profiles.find(p => p.name === currentAssignee);
         if (assignee?.email) {
