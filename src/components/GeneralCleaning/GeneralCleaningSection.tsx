@@ -15,16 +15,15 @@ const GeneralCleaningSection = () => {
 
   const handleAssigneeChange = async (newAssignee: string) => {
     try {
-      console.log('Changing assignee to:', newAssignee);
+      console.log('Cambiando responsable a:', newAssignee);
       await updateProgress(newAssignee, 0);
       setCurrentAssignee(newAssignee);
       setCompletionPercentage(0);
     } catch (error) {
-      console.error('Error updating assignee:', error);
+      console.error('Error al actualizar responsable:', error);
     }
   };
 
-  // Si currentAssignee es null, mostrar un estado de carga
   if (currentAssignee === null) {
     return (
       <Card className="p-6 space-y-6">

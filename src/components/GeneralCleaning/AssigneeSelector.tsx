@@ -18,7 +18,6 @@ const AssigneeSelector = ({ currentAssignee, onAssigneeChange, completionPercent
   const handleAssigneeChange = async (newAssignee: string) => {
     if (newAssignee === currentAssignee) return;
 
-    // Validar que el porcentaje de completitud sea al menos 75%
     if (completionPercentage < 75) {
       toast.error("Debes completar al menos el 75% de las tareas antes de cambiar el responsable");
       return;
@@ -36,7 +35,7 @@ const AssigneeSelector = ({ currentAssignee, onAssigneeChange, completionPercent
         .select('id');
 
       if (tasksQueryError) {
-        console.error('Error querying tasks:', tasksQueryError);
+        console.error('Error al obtener las tareas:', tasksQueryError);
         toast.error("Error al obtener las tareas");
         return;
       }
@@ -56,7 +55,7 @@ const AssigneeSelector = ({ currentAssignee, onAssigneeChange, completionPercent
           .in('task_id', tasks.map(t => t.id));
 
         if (deleteError) {
-          console.error('Error deleting task states:', deleteError);
+          console.error('Error al eliminar estados de tareas:', deleteError);
           toast.error("Error al reiniciar las tareas");
           return;
         }
@@ -66,7 +65,7 @@ const AssigneeSelector = ({ currentAssignee, onAssigneeChange, completionPercent
           .insert(taskStates);
 
         if (insertError) {
-          console.error('Error creating new task states:', insertError);
+          console.error('Error al crear nuevos estados de tareas:', insertError);
           toast.error("Error al reiniciar las tareas");
           return;
         }
@@ -84,7 +83,7 @@ const AssigneeSelector = ({ currentAssignee, onAssigneeChange, completionPercent
         });
 
       if (progressError) {
-        console.error('Error updating progress:', progressError);
+        console.error('Error al actualizar el progreso:', progressError);
         toast.error("Error al actualizar el progreso");
         return;
       }
@@ -99,9 +98,9 @@ const AssigneeSelector = ({ currentAssignee, onAssigneeChange, completionPercent
             "Aseo General",
             "cleaning"
           );
-          console.log("Email notification sent successfully");
+          console.log("Notificación por correo enviada exitosamente");
         } catch (emailError) {
-          console.error("Error sending email notification:", emailError);
+          console.error("Error al enviar notificación por correo:", emailError);
         }
       }
 
@@ -109,7 +108,7 @@ const AssigneeSelector = ({ currentAssignee, onAssigneeChange, completionPercent
       toast.success(`Se ha asignado el aseo general a ${newAssignee}`);
       
     } catch (error) {
-      console.error("Error updating assignee:", error);
+      console.error("Error al actualizar el responsable:", error);
       toast.error("Error al actualizar el responsable");
     }
   };
