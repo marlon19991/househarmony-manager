@@ -41,7 +41,13 @@ const addToQueue = (task: () => Promise<any>) => {
   });
 };
 
-export const sendEmail = async (to: string, subject: string, html: string) => {
+export const sendEmail = async (to: string | null | undefined, subject: string, html: string) => {
+  // Si no hay dirección de correo, retornamos sin error
+  if (!to) {
+    console.log('No email address provided, skipping email send');
+    return;
+  }
+
   const task = async () => {
     try {
       const { data, error } = await supabase.functions.invoke('send-email', {
@@ -69,13 +75,19 @@ export const sendEmail = async (to: string, subject: string, html: string) => {
 };
 
 export const sendTaskAssignmentEmail = async (
-  email: string, 
+  email: string | null | undefined, 
   assigneeName: string, 
   taskTitle: string,
   taskType: "recurring" | "cleaning",
   scheduleText?: string,
   notificationTime?: string
 ) => {
+  // Si no hay email, retornamos sin error
+  if (!email) {
+    console.log(`No email address for ${assigneeName}, skipping notification`);
+    return;
+  }
+
   const subject = taskType === "cleaning" ? 
     "¡Es tu turno para el Aseo General!" : 
     `Nueva tarea asignada: ${taskTitle}`;
@@ -109,13 +121,19 @@ export const sendTaskAssignmentEmail = async (
 };
 
 export const sendBillDueEmail = async (
-  email: string,
+  email: string | null | undefined,
   userName: string,
   billTitle: string,
   dueDate: string,
   amount: number,
   isOverdue: boolean = false
 ) => {
+  // Si no hay email, retornamos sin error
+  if (!email) {
+    console.log(`No email address for ${userName}, skipping bill notification`);
+    return;
+  }
+
   const subject = isOverdue ? 
     `¡Factura vencida!: ${billTitle}` : 
     `Factura próxima a vencer: ${billTitle}`;
