@@ -1,6 +1,5 @@
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Checkbox } from "@/components/ui/checkbox";
 import TaskEditForm from "./TaskEditForm";
 import { Task } from "./types/Task";
 import {
@@ -38,6 +37,10 @@ const TaskItem = ({
   tasks,
   isDisabled,
 }: TaskItemProps) => {
+  if (task.completed) {
+    return null; // No renderizar tareas completadas
+  }
+
   return (
     <Card key={task.id} className="p-4">
       {editingTask === task.id ? (
@@ -50,26 +53,41 @@ const TaskItem = ({
         />
       ) : (
         <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-3">
-            <Checkbox
-              checked={task.completed}
-              onCheckedChange={() => onTaskToggle(task.id)}
-              id={`task-${task.id}`}
-              disabled={isDisabled}
-            />
-            <div>
-              <label
-                htmlFor={`task-${task.id}`}
-                className={`text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 ${isDisabled ? 'opacity-50' : ''}`}
-              >
-                {task.description}
-              </label>
-              {task.comment && (
-                <p className="text-xs text-gray-500 mt-1">{task.comment}</p>
-              )}
-            </div>
+          <div>
+            <h3 className="text-sm font-medium leading-none">
+              {task.description}
+            </h3>
+            {task.comment && (
+              <p className="text-xs text-gray-500 mt-1">{task.comment}</p>
+            )}
           </div>
           <div className="flex gap-2">
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="text-green-600"
+                  disabled={isDisabled}
+                >
+                  Completar
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>¿Completar esta tarea?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Esta acción marcará la tarea como completada y desaparecerá de la lista.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                  <AlertDialogAction onClick={() => onTaskToggle(task.id)}>
+                    Completar
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
             <Button
               variant="ghost"
               size="sm"
