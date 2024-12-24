@@ -10,9 +10,15 @@ interface AssigneeSelectorProps {
   currentAssignee: string;
   onAssigneeChange: (newAssignee: string) => void;
   completionPercentage: number;
+  onTasksReset: () => Promise<void>;
 }
 
-const AssigneeSelector = ({ currentAssignee, onAssigneeChange, completionPercentage }: AssigneeSelectorProps) => {
+const AssigneeSelector = ({ 
+  currentAssignee, 
+  onAssigneeChange, 
+  completionPercentage,
+  onTasksReset 
+}: AssigneeSelectorProps) => {
   const { profiles } = useProfiles();
 
   const handleAssigneeChange = async (newAssignee: string) => {
@@ -29,45 +35,8 @@ const AssigneeSelector = ({ currentAssignee, onAssigneeChange, completionPercent
     });
 
     try {
-      // First, get all task states
-      const { data: taskStates, error: statesError } = await supabase
-        .from('cleaning_task_states')
-        .select('*');
-
-      if (statesError) throw statesError;
-
-      // Delete all existing task states
-      if (taskStates && taskStates.length > 0) {
-        const { error: deleteError } = await supabase
-          .from('cleaning_task_states')
-          .delete()
-          .in('task_id', taskStates.map(state => state.task_id));
-
-        if (deleteError) throw deleteError;
-      }
-
-      // Get all tasks to create new states
-      const { data: tasks, error: tasksError } = await supabase
-        .from('general_cleaning_tasks')
-        .select('id');
-
-      if (tasksError) throw tasksError;
-
-      if (tasks && tasks.length > 0) {
-        // Create new uncompleted states for all tasks
-        const newStates = tasks.map(task => ({
-          task_id: task.id,
-          completed: false,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        }));
-
-        const { error: insertError } = await supabase
-          .from('cleaning_task_states')
-          .insert(newStates);
-
-        if (insertError) throw insertError;
-      }
+      // Reset all task states
+      await onTasksReset();
 
       // Update progress for new assignee
       const { error: progressError } = await supabase

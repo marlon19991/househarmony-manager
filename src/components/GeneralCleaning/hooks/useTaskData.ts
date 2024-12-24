@@ -20,7 +20,8 @@ export const useTaskData = () => {
           comment,
           created_at,
           cleaning_task_states!inner (
-            completed
+            completed,
+            updated_at
           )
         `)
         .order('created_at', { ascending: true });
@@ -37,7 +38,8 @@ export const useTaskData = () => {
         id: task.id,
         description: task.description,
         completed: task.cleaning_task_states[0]?.completed ?? false,
-        comment: task.comment
+        comment: task.comment,
+        lastUpdated: task.cleaning_task_states[0]?.updated_at
       }));
 
       console.log('Transformed tasks:', transformedTasks);
@@ -69,7 +71,7 @@ export const useTaskData = () => {
             setTasks(currentTasks => 
               currentTasks.map(task => 
                 task.id === payload.new.task_id 
-                  ? { ...task, completed: payload.new.completed }
+                  ? { ...task, completed: payload.new.completed, lastUpdated: payload.new.updated_at }
                   : task
               )
             );
@@ -83,5 +85,26 @@ export const useTaskData = () => {
     };
   }, []);
 
-  return { tasks, setTasks, isLoading };
+  const resetTaskStates = async () => {
+    try {
+      const { error: resetError } = await supabase
+        .from('cleaning_task_states')
+        .update({ 
+          completed: false,
+          updated_at: new Date().toISOString()
+        })
+        .in('task_id', tasks.map(task => task.id));
+
+      if (resetError) throw resetError;
+
+      setTasks(currentTasks => 
+        currentTasks.map(task => ({ ...task, completed: false }))
+      );
+    } catch (error) {
+      console.error('Error resetting task states:', error);
+      toast.error("Error al reiniciar las tareas");
+    }
+  };
+
+  return { tasks, setTasks, isLoading, resetTaskStates };
 };

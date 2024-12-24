@@ -3,6 +3,7 @@ import TaskList from "./TaskList";
 import AssigneeSelector from "./AssigneeSelector";
 import ProgressDisplay from "./components/ProgressDisplay";
 import { useCleaningProgress } from "./hooks/useCleaningProgress";
+import { useTaskData } from "./hooks/useTaskData";
 
 const GeneralCleaningSection = () => {
   const {
@@ -12,6 +13,8 @@ const GeneralCleaningSection = () => {
     setCompletionPercentage,
     updateProgress
   } = useCleaningProgress();
+
+  const { resetTaskStates } = useTaskData();
 
   const handleAssigneeChange = async (newAssignee: string) => {
     try {
@@ -49,6 +52,7 @@ const GeneralCleaningSection = () => {
           currentAssignee={currentAssignee}
           onAssigneeChange={handleAssigneeChange}
           completionPercentage={completionPercentage}
+          onTasksReset={resetTaskStates}
         />
       </div>
     </Card>
