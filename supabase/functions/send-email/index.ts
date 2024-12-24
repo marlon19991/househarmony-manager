@@ -29,6 +29,7 @@ const handler = async (req: Request): Promise<Response> => {
     const emailRequest: EmailRequest = await req.json();
     console.log("Attempting to send email to:", emailRequest.to);
 
+    // During testing phase, we'll use the default testing domain
     const res = await fetch("https://api.resend.com/emails", {
       method: "POST",
       headers: {
@@ -36,7 +37,7 @@ const handler = async (req: Request): Promise<Response> => {
         Authorization: `Bearer ${RESEND_API_KEY}`,
       },
       body: JSON.stringify({
-        from: "LaJause <onboarding@resend.dev>", // Using Resend's default testing domain
+        from: "onboarding@resend.dev", // Using Resend's testing email
         to: emailRequest.to,
         subject: emailRequest.subject,
         html: emailRequest.html,
