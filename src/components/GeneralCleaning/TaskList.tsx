@@ -27,7 +27,6 @@ const TaskList = ({
   const { profiles } = useProfiles();
   const { tasks, setTasks, isLoading } = useTaskData();
 
-  // Use the notifications hook
   useTaskNotifications({ tasks, currentAssignee });
 
   const updateProgress = async (updatedTasks: any[]) => {
@@ -63,7 +62,6 @@ const TaskList = ({
     try {
       const newCompleted = !taskToUpdate.completed;
       
-      // Update task state in database using upsert with onConflict
       const { error: stateError } = await supabase
         .from('cleaning_task_states')
         .upsert({ 
@@ -83,7 +81,6 @@ const TaskList = ({
       setTasks(updatedTasks);
       await updateProgress(updatedTasks);
 
-      // Notify assignee about task status change
       if (currentAssignee !== "Sin asignar") {
         const assignee = profiles.find(p => p.name === currentAssignee);
         if (assignee?.email) {
@@ -105,7 +102,7 @@ const TaskList = ({
     e.preventDefault();
     
     try {
-      // Create task in database
+      // Create task in database without specifying an ID
       const { data: newTaskData, error: taskError } = await supabase
         .from('general_cleaning_tasks')
         .insert({
@@ -147,7 +144,6 @@ const TaskList = ({
       setNewTask({ title: "", comment: "" });
       await updateProgress([...tasks, newTaskWithState]);
 
-      // Notify assignee about new task
       if (currentAssignee !== "Sin asignar") {
         const assignee = profiles.find(p => p.name === currentAssignee);
         if (assignee?.email) {
@@ -174,7 +170,6 @@ const TaskList = ({
     }
 
     try {
-      // Update task in database
       const { error: updateError } = await supabase
         .from('general_cleaning_tasks')
         .update({ 
@@ -196,7 +191,6 @@ const TaskList = ({
       ));
       setEditingTask(null);
 
-      // Notify assignee about task update
       if (currentAssignee !== "Sin asignar") {
         const assignee = profiles.find(p => p.name === currentAssignee);
         if (assignee?.email) {
@@ -218,7 +212,6 @@ const TaskList = ({
 
   const handleDeleteTask = async (taskId: number) => {
     try {
-      // Delete task state first due to foreign key constraint
       const { error: stateError } = await supabase
         .from('cleaning_task_states')
         .delete()
@@ -230,7 +223,6 @@ const TaskList = ({
         return;
       }
 
-      // Then delete the task
       const { error: taskError } = await supabase
         .from('general_cleaning_tasks')
         .delete()
@@ -246,7 +238,6 @@ const TaskList = ({
       setTasks(updatedTasks);
       await updateProgress(updatedTasks);
 
-      // Notify assignee about task deletion
       if (currentAssignee !== "Sin asignar") {
         const taskToDelete = tasks.find(t => t.id === taskId);
         const assignee = profiles.find(p => p.name === currentAssignee);
