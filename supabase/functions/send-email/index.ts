@@ -9,7 +9,7 @@ const corsHeaders = {
 };
 
 interface EmailRequest {
-  to: string[];
+  to: string | string[];
   subject: string;
   html: string;
 }
@@ -27,11 +27,16 @@ const handler = async (req: Request): Promise<Response> => {
     }
 
     const emailRequest: EmailRequest = await req.json();
-    console.log("Attempting to send email to:", emailRequest.to);
+    console.log("Original email request:", emailRequest);
+
+    // Ensure to is always an array
+    const toArray = Array.isArray(emailRequest.to) 
+      ? emailRequest.to 
+      : [emailRequest.to];
 
     // During testing phase, force sending only to the verified email
     const testEmail = "esteban19991@gmail.com";
-    const recipients = emailRequest.to.map(() => testEmail);
+    const recipients = toArray.map(() => testEmail);
     
     console.log("Sending email with recipients:", recipients);
 
