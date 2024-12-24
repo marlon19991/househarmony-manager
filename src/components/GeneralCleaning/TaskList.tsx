@@ -80,8 +80,14 @@ const TaskList = ({
         });
 
       if (stateError) throw stateError;
+
+      // Update local state immediately for better UX
+      const updatedTasks = tasks.map(task =>
+        task.id === taskId ? { ...task, completed: newCompleted } : task
+      );
+      setTasks(updatedTasks);
+      await updateProgress(updatedTasks);
       
-      // Let the subscription handle the UI update
       if (currentAssignee !== "Sin asignar") {
         const assignee = profiles.find(p => p.name === currentAssignee);
         if (assignee?.email) {

@@ -59,8 +59,16 @@ export const useTaskData = () => {
           schema: 'public',
           table: 'cleaning_task_states'
         },
-        () => {
-          loadTasks(); // Reload tasks when states change
+        (payload) => {
+          console.log('Task state changed:', payload);
+          // Update the specific task's completed status in the UI
+          setTasks(currentTasks => 
+            currentTasks.map(task => 
+              task.id === payload.new.task_id 
+                ? { ...task, completed: payload.new.completed }
+                : task
+            )
+          );
         }
       )
       .subscribe();
