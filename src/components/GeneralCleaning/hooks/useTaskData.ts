@@ -2,7 +2,6 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Task } from "../types/Task";
-import { RealtimePostgresChangesPayload } from "@supabase/supabase-js";
 
 export const useTaskData = () => {
   const [tasks, setTasks] = useState<Task[]>([]);
@@ -15,13 +14,9 @@ export const useTaskData = () => {
       const { data: tasksData, error: tasksError } = await supabase
         .from('general_cleaning_tasks')
         .select(`
-          id,
-          description,
-          comment,
-          created_at,
-          cleaning_task_states!inner (
-            completed,
-            updated_at
+          *,
+          cleaning_task_states (
+            completed
           )
         `)
         .order('created_at', { ascending: true });
@@ -37,9 +32,8 @@ export const useTaskData = () => {
       const transformedTasks = tasksData.map(task => ({
         id: task.id,
         description: task.description,
-        completed: task.cleaning_task_states[0]?.completed ?? false,
-        comment: task.comment,
-        lastUpdated: task.cleaning_task_states[0]?.updated_at
+        completed: task.cleaning_task_states?.[0]?.completed ?? false,
+        comment: task.comment ?? null
       }));
 
       console.log('Transformed tasks:', transformedTasks);
@@ -54,56 +48,48 @@ export const useTaskData = () => {
 
   useEffect(() => {
     loadTasks();
-
-    const channel = supabase
-      .channel('task-states-changes')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'cleaning_task_states'
-        },
-        (payload: RealtimePostgresChangesPayload<any>) => {
-          console.log('Task state changed:', payload);
-          
-          if (payload.new && typeof payload.new.task_id === 'number' && typeof payload.new.completed === 'boolean') {
-            setTasks(currentTasks => 
-              currentTasks.map(task => 
-                task.id === payload.new.task_id 
-                  ? { ...task, completed: payload.new.completed, lastUpdated: payload.new.updated_at }
-                  : task
-              )
-            );
-          }
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
   }, []);
 
-  const resetTaskStates = async () => {
+  const resetAllTasks = async () => {
     try {
-      console.log('Resetting task states...');
-      const { error: resetError } = await supabase
-        .from('cleaning_task_states')
-        .update({ 
+      // Primero, obtener todas las tareas
+      const { data: tasks, error: tasksError } = await supabase
+        .from('general_cleaning_tasks')
+        .select('id');
+
+      if (tasksError) throw tasksError;
+
+      if (tasks && tasks.length > 0) {
+        // Eliminar todos los estados anteriores
+        const { error: deleteError } = await supabase
+          .from('cleaning_task_states')
+          .delete()
+          .in('task_id', tasks.map(t => t.id));
+
+        if (deleteError) throw deleteError;
+
+        // Crear nuevos estados para todas las tareas
+        const newTaskStates = tasks.map(task => ({
+          task_id: task.id,
           completed: false,
+          created_at: new Date().toISOString(),
           updated_at: new Date().toISOString()
-        })
-        .in('task_id', tasks.map(task => task.id));
+        }));
 
-      if (resetError) throw resetError;
+        const { error: insertError } = await supabase
+          .from('cleaning_task_states')
+          .insert(newTaskStates);
 
-      await loadTasks(); // Reload tasks after reset
+        if (insertError) throw insertError;
+
+        // Recargar las tareas para actualizar la UI
+        await loadTasks();
+      }
     } catch (error) {
-      console.error('Error resetting task states:', error);
+      console.error('Error resetting tasks:', error);
       toast.error("Error al reiniciar las tareas");
     }
   };
 
-  return { tasks, setTasks, isLoading, resetTaskStates, loadTasks };
+  return { tasks, setTasks, isLoading, resetAllTasks, loadTasks };
 };

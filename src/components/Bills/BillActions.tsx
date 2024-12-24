@@ -42,18 +42,18 @@ export const BillActions = ({
           onClick={() => setShowPayConfirmation(true)}
         >
           <CheckCircle className="mr-2 h-4 w-4" />
-          Pay
+          Pagar
         </Button>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Confirm payment?</AlertDialogTitle>
+            <AlertDialogTitle>¿Confirmar pago?</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to mark the bill "{title}" as paid?
+              ¿Estás seguro de que deseas marcar como pagada la factura "{title}"?
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel onClick={() => setShowPayConfirmation(false)}>
-              Cancel
+              Cancelar
             </AlertDialogCancel>
             <AlertDialogAction
               onClick={() => {
@@ -61,7 +61,7 @@ export const BillActions = ({
                 setShowPayConfirmation(false);
               }}
             >
-              Confirm Payment
+              Confirmar Pago
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -74,7 +74,7 @@ export const BillActions = ({
         className="w-full sm:w-auto"
       >
         <Pencil className="mr-2 h-4 w-4" />
-        Edit
+        Editar
       </Button>
 
       <AlertDialog open={showDeleteConfirmation} onOpenChange={setShowDeleteConfirmation}>
@@ -85,18 +85,18 @@ export const BillActions = ({
           onClick={() => setShowDeleteConfirmation(true)}
         >
           <Trash2 className="mr-2 h-4 w-4" />
-          Delete
+          Eliminar
         </Button>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete bill?</AlertDialogTitle>
+            <AlertDialogTitle>¿Eliminar factura?</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete the bill "{title}"? This action cannot be undone.
+              ¿Estás seguro de que deseas eliminar la factura "{title}"? Esta acción no se puede deshacer.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel onClick={() => setShowDeleteConfirmation(false)}>
-              Cancel
+              Cancelar
             </AlertDialogCancel>
             <AlertDialogAction
               onClick={() => {
@@ -104,7 +104,7 @@ export const BillActions = ({
                 setShowDeleteConfirmation(false);
               }}
             >
-              Delete
+              Eliminar
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

@@ -8,22 +8,22 @@ const Index = () => {
   const { profiles } = useProfiles();
   const features = [
     {
-      title: "Limpieza General",
-      description: "Gestiona tareas de limpieza y asigna responsabilidades.",
+      title: "Aseo General",
+      description: "Gestiona las tareas de limpieza general y asigna responsables.",
       path: "/general-cleaning",
       icon: Brush,
       color: "bg-blue-500"
     },
     {
       title: "Tareas Periódicas",
-      description: "Administra tareas recurrentes y su progreso.",
+      description: "Administra las tareas recurrentes y su progreso.",
       path: "/recurring-tasks",
       icon: CheckSquare,
       color: "bg-green-500"
     },
     {
-      title: "Gastos",
-      description: "Controla gastos compartidos y pagos.",
+      title: "Facturas",
+      description: "Controla los gastos y pagos compartidos.",
       path: "/bills",
       icon: DollarSign,
       color: "bg-purple-500"
@@ -35,10 +35,10 @@ const Index = () => {
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-3xl font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
-            Gestión del Hogar
+            Household Manager
           </h1>
           <p className="text-muted-foreground mt-2">
-            Administra tu hogar eficientemente
+            Gestiona tu hogar de manera eficiente
           </p>
         </div>
       </div>

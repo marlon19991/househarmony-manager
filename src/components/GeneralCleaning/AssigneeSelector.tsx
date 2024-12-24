@@ -5,26 +5,22 @@ import { toast } from "sonner";
 import useProfiles from "@/hooks/useProfiles";
 import { sendTaskAssignmentEmail } from "@/utils/emailUtils";
 import { supabase } from "@/integrations/supabase/client";
-import { taskService } from "./services/taskService";
+import { useTaskData } from "./hooks/useTaskData";
 
 interface AssigneeSelectorProps {
   currentAssignee: string;
   onAssigneeChange: (newAssignee: string) => void;
   completionPercentage: number;
-  onTasksReset: () => Promise<void>;
 }
 
-const AssigneeSelector = ({ 
-  currentAssignee, 
-  onAssigneeChange, 
-  completionPercentage,
-  onTasksReset 
-}: AssigneeSelectorProps) => {
+const AssigneeSelector = ({ currentAssignee, onAssigneeChange, completionPercentage }: AssigneeSelectorProps) => {
   const { profiles } = useProfiles();
+  const { resetAllTasks } = useTaskData();
 
   const handleAssigneeChange = async (newAssignee: string) => {
     if (newAssignee === currentAssignee) return;
 
+    // Validar que el porcentaje de completitud sea al menos 75%
     if (completionPercentage < 75) {
       toast.error("Debes completar al menos el 75% de las tareas antes de cambiar el responsable");
       return;
@@ -36,11 +32,10 @@ const AssigneeSelector = ({
     });
 
     try {
-      // Reiniciar estados de tareas
-      await taskService.resetTaskStates();
-      await onTasksReset();
+      // Reiniciar todas las tareas
+      await resetAllTasks();
 
-      // Actualizar progreso para nuevo responsable
+      // Actualizar el progreso para el nuevo asignado
       const { error: progressError } = await supabase
         .from('general_cleaning_progress')
         .upsert({
@@ -51,20 +46,25 @@ const AssigneeSelector = ({
           onConflict: 'assignee'
         });
 
-      if (progressError) throw progressError;
+      if (progressError) {
+        console.error('Error updating progress:', progressError);
+        toast.error("Error al actualizar el progreso");
+        return;
+      }
 
-      // Notificar al nuevo responsable
+      // Notificar al nuevo asignado
       const assigneeProfile = profiles.find(p => p.name === newAssignee);
       if (assigneeProfile?.email) {
         try {
           await sendTaskAssignmentEmail(
             assigneeProfile.email,
             newAssignee,
-            "Se te ha asignado el Aseo General",
+            "Aseo General",
             "cleaning"
           );
+          console.log("Email notification sent successfully");
         } catch (emailError) {
-          console.error("Error al enviar notificación por correo:", emailError);
+          console.error("Error sending email notification:", emailError);
         }
       }
 
@@ -72,7 +72,7 @@ const AssigneeSelector = ({
       toast.success(`Se ha asignado el aseo general a ${newAssignee}`);
       
     } catch (error) {
-      console.error("Error al actualizar el responsable:", error);
+      console.error("Error updating assignee:", error);
       toast.error("Error al actualizar el responsable");
     }
   };
