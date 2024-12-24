@@ -21,12 +21,12 @@ export const BillForm = ({ onSubmit, initialData }: BillFormProps) => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.title || !formData.amount) {
-      toast.error("Por favor completa todos los campos requeridos");
+      toast.error("Please complete all required fields");
       return;
     }
 
     if (formData.selectedProfiles.length === 0) {
-      toast.error("Por favor selecciona al menos un perfil");
+      toast.error("Please select at least one profile");
       return;
     }
 
@@ -36,26 +36,26 @@ export const BillForm = ({ onSubmit, initialData }: BillFormProps) => {
   return (
     <form onSubmit={handleSubmit} className="space-y-4 mt-6">
       <div>
-        <Label htmlFor="billTitle">Título</Label>
+        <Label htmlFor="billTitle">Title</Label>
         <Input
           id="billTitle"
           value={formData.title}
           onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-          placeholder="Título de la factura"
+          placeholder="Bill title"
         />
       </div>
       <div>
-        <Label htmlFor="billAmount">Monto</Label>
+        <Label htmlFor="billAmount">Amount</Label>
         <Input
           id="billAmount"
           type="number"
           value={formData.amount}
           onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
-          placeholder="Monto de la factura"
+          placeholder="Bill amount"
         />
       </div>
       <div>
-        <Label htmlFor="paymentDueDate">Fecha límite de pago</Label>
+        <Label htmlFor="paymentDueDate">Payment due date</Label>
         <Input
           id="paymentDueDate"
           type="date"
@@ -64,17 +64,17 @@ export const BillForm = ({ onSubmit, initialData }: BillFormProps) => {
         />
       </div>
       <div>
-        <Label>Asignar a perfiles</Label>
+        <Label>Assign to profiles</Label>
         <AssigneeField
           selectedAssignees={formData.selectedProfiles}
           onChange={(profiles) => setFormData({ ...formData, selectedProfiles: profiles })}
         />
         <p className="text-sm text-gray-500 mt-1">
-          Los perfiles seleccionados recibirán notificaciones sobre esta factura
+          Selected profiles will receive notifications about this bill
         </p>
       </div>
       <Button type="submit" className="w-full">
-        {initialData ? "Actualizar" : "Agregar"} Factura
+        {initialData ? "Update" : "Add"} Bill
       </Button>
     </form>
   );

@@ -20,21 +20,21 @@ export const BillsHeader = ({ isOpen, setIsOpen, onAddBill }: BillsHeaderProps) 
   return (
     <div className="flex items-center justify-between">
       <div>
-        <h2 className="text-2xl font-bold">Facturas</h2>
-        <p className="text-muted-foreground">Gestiona y organiza tus facturas</p>
+        <h2 className="text-2xl font-bold">Bills</h2>
+        <p className="text-muted-foreground">Manage and organize your bills</p>
       </div>
       <Sheet open={isOpen} onOpenChange={setIsOpen}>
         <SheetTrigger asChild>
           <Button>
             <Plus className="w-4 h-4 mr-2" />
-            Agregar Factura
+            Add Bill
           </Button>
         </SheetTrigger>
         <SheetContent>
           <SheetHeader>
-            <SheetTitle>Nueva Factura</SheetTitle>
+            <SheetTitle>New Bill</SheetTitle>
             <SheetDescription>
-              Agrega una nueva factura para dividir entre los miembros.
+              Add a new bill to split between members.
             </SheetDescription>
           </SheetHeader>
           <BillForm onSubmit={onAddBill} />

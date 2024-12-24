@@ -8,22 +8,22 @@ const Index = () => {
   const { profiles } = useProfiles();
   const features = [
     {
-      title: "Aseo General",
-      description: "Gestiona las tareas de limpieza general y asigna responsables.",
+      title: "General Cleaning",
+      description: "Manage cleaning tasks and assign responsibilities.",
       path: "/general-cleaning",
       icon: Brush,
       color: "bg-blue-500"
     },
     {
-      title: "Tareas Periódicas",
-      description: "Administra las tareas recurrentes y su progreso.",
+      title: "Recurring Tasks",
+      description: "Manage recurring tasks and track progress.",
       path: "/recurring-tasks",
       icon: CheckSquare,
       color: "bg-green-500"
     },
     {
-      title: "Facturas",
-      description: "Controla los gastos y pagos compartidos.",
+      title: "Bills",
+      description: "Control shared expenses and payments.",
       path: "/bills",
       icon: DollarSign,
       color: "bg-purple-500"
@@ -38,7 +38,7 @@ const Index = () => {
             Household Manager
           </h1>
           <p className="text-muted-foreground mt-2">
-            Gestiona tu hogar de manera eficiente
+            Manage your household efficiently
           </p>
         </div>
       </div>
@@ -66,10 +66,10 @@ const Index = () => {
 
       {profiles.length === 0 && (
         <Card className="p-6 border-amber-200 bg-amber-50 dark:bg-amber-950 dark:border-amber-800">
-          <h3 className="font-semibold text-amber-800 dark:text-amber-200 mb-2">¡Importante!</h3>
+          <h3 className="font-semibold text-amber-800 dark:text-amber-200 mb-2">Important!</h3>
           <p className="text-sm text-amber-700 dark:text-amber-300">
-            No hay perfiles creados. Para aprovechar todas las funciones de la aplicación,
-            por favor <Link to="/settings" className="underline">crea algunos perfiles</Link> primero.
+            No profiles have been created. To take advantage of all app features,
+            please <Link to="/settings" className="underline">create some profiles</Link> first.
           </p>
         </Card>
       )}
