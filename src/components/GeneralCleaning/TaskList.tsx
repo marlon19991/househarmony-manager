@@ -8,6 +8,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useTaskState } from "./hooks/useTaskState";
 import { useProgress } from "./hooks/useProgress";
 import { taskService } from "./services/taskService";
+import { supabase } from "@/integrations/supabase/client";
 
 interface TaskListProps {
   currentAssignee: string;
