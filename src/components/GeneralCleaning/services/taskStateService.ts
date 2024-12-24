@@ -13,21 +13,30 @@ export const taskStateService = {
 
       if (!tasks || tasks.length === 0) return;
 
-      // Then update all task states to uncompleted
-      const { error: updateError } = await supabase
+      // Delete existing states first to ensure a clean slate
+      const { error: deleteError } = await supabase
         .from('cleaning_task_states')
-        .upsert(
+        .delete()
+        .in('task_id', tasks.map(t => t.id));
+
+      if (deleteError) throw deleteError;
+
+      // Then create new uncompleted states for all tasks
+      const { error: insertError } = await supabase
+        .from('cleaning_task_states')
+        .insert(
           tasks.map(task => ({
             task_id: task.id,
             completed: false,
+            created_at: new Date().toISOString(),
             updated_at: new Date().toISOString()
-          })),
-          { onConflict: 'task_id' }
+          }))
         );
 
-      if (updateError) throw updateError;
+      if (insertError) throw insertError;
     } catch (error) {
       console.error('Error resetting task states:', error);
+      toast.error("Error al reiniciar el estado de las tareas");
       throw error;
     }
   },
@@ -48,6 +57,7 @@ export const taskStateService = {
       if (error) throw error;
     } catch (error) {
       console.error('Error updating task state:', error);
+      toast.error("Error al actualizar el estado de la tarea");
       throw error;
     }
   },
@@ -62,6 +72,7 @@ export const taskStateService = {
       return data || [];
     } catch (error) {
       console.error('Error getting task states:', error);
+      toast.error("Error al obtener el estado de las tareas");
       throw error;
     }
   }

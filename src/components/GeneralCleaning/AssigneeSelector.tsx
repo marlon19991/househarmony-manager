@@ -4,7 +4,6 @@ import { User } from "lucide-react";
 import { toast } from "sonner";
 import useProfiles from "@/hooks/useProfiles";
 import { sendTaskAssignmentEmail } from "@/utils/emailUtils";
-import { supabase } from "@/integrations/supabase/client";
 import { useTaskData } from "./hooks/useTaskData";
 import { progressService } from "./services/progressService";
 import { taskStateService } from "./services/taskStateService";
@@ -28,14 +27,16 @@ const AssigneeSelector = ({ currentAssignee, onAssigneeChange, completionPercent
     }
 
     try {
-      // Reiniciar todas las tareas
-      await resetAllTasks();
+      // First reset all task states in the database
       await taskStateService.resetTaskStates();
-
-      // Actualizar el progreso para el nuevo asignado
+      
+      // Then update the progress for the new assignee
       await progressService.updateProgress(newAssignee, 0);
 
-      // Notificar al nuevo asignado
+      // Reset tasks in the UI
+      await resetAllTasks();
+
+      // Notify the new assignee
       const assigneeProfile = profiles.find(p => p.name === newAssignee);
       if (assigneeProfile?.email) {
         try {
