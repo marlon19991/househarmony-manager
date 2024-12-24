@@ -81,12 +81,10 @@ const TaskList = ({
 
       if (stateError) throw stateError;
 
-      // Update local state immediately for better UX
-      const updatedTasks = tasks.map(task =>
-        task.id === taskId ? { ...task, completed: newCompleted } : task
-      );
-      setTasks(updatedTasks);
-      await updateProgress(updatedTasks);
+      // La actualización visual será manejada por la suscripción en useTaskData
+      await updateProgress(tasks.map(t => 
+        t.id === taskId ? { ...t, completed: newCompleted } : t
+      ));
       
       if (currentAssignee !== "Sin asignar") {
         const assignee = profiles.find(p => p.name === currentAssignee);
