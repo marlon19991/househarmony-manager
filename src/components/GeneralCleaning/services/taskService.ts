@@ -3,6 +3,42 @@ import { toast } from "sonner";
 import { Task } from "../types/Task";
 
 export const taskService = {
+  async fetchTasks() {
+    try {
+      console.log('Fetching tasks from database...');
+      const { data: tasksData, error: tasksError } = await supabase
+        .from('general_cleaning_tasks')
+        .select(`
+          *,
+          cleaning_task_states (
+            completed
+          )
+        `)
+        .order('created_at', { ascending: true });
+
+      if (tasksError) {
+        console.error('Error fetching tasks:', tasksError);
+        throw tasksError;
+      }
+
+      console.log('Raw tasks data:', tasksData);
+
+      const transformedTasks = tasksData.map(task => ({
+        id: task.id,
+        description: task.description,
+        completed: task.cleaning_task_states?.[0]?.completed ?? false,
+        comment: task.comment ?? null
+      }));
+
+      console.log('Transformed tasks:', transformedTasks);
+      return transformedTasks;
+    } catch (error) {
+      console.error('Error in fetchTasks:', error);
+      toast.error("Error al cargar las tareas");
+      throw error;
+    }
+  },
+
   async createTask(description: string, comment: string) {
     try {
       const { data: newTask, error: taskError } = await supabase
