@@ -4,11 +4,28 @@ import { toast } from "sonner";
 export const taskStateService = {
   async resetTaskStates() {
     try {
-      const { error } = await supabase
+      // First get all task IDs
+      const { data: tasks, error: tasksError } = await supabase
+        .from('general_cleaning_tasks')
+        .select('id');
+
+      if (tasksError) throw tasksError;
+
+      if (!tasks || tasks.length === 0) return;
+
+      // Then update all task states to uncompleted
+      const { error: updateError } = await supabase
         .from('cleaning_task_states')
-        .update({ completed: false, updated_at: new Date().toISOString() });
-      
-      if (error) throw error;
+        .upsert(
+          tasks.map(task => ({
+            task_id: task.id,
+            completed: false,
+            updated_at: new Date().toISOString()
+          })),
+          { onConflict: 'task_id' }
+        );
+
+      if (updateError) throw updateError;
     } catch (error) {
       console.error('Error resetting task states:', error);
       throw error;
