@@ -34,7 +34,7 @@ export const useTaskData = () => {
           id: task.id,
           description: task.description,
           completed: task.cleaning_task_states?.[0]?.completed ?? false,
-          comment: task.comment ?? null
+          comment: task.comment
         }));
 
         console.log('Transformed tasks:', transformedTasks);
@@ -48,6 +48,26 @@ export const useTaskData = () => {
     };
 
     loadTasks();
+
+    // Subscribe to changes in cleaning_task_states
+    const taskStatesSubscription = supabase
+      .channel('cleaning_task_states_changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'cleaning_task_states'
+        },
+        () => {
+          loadTasks(); // Reload tasks when states change
+        }
+      )
+      .subscribe();
+
+    return () => {
+      taskStatesSubscription.unsubscribe();
+    };
   }, []);
 
   return { tasks, setTasks, isLoading };

@@ -81,13 +81,7 @@ const TaskList = ({
 
       if (stateError) throw stateError;
       
-      const updatedTasks = tasks.map(task => 
-        task.id === taskId ? { ...task, completed: newCompleted } : task
-      );
-      
-      setTasks(updatedTasks);
-      await updateProgress(updatedTasks);
-
+      // Let the subscription handle the UI update
       if (currentAssignee !== "Sin asignar") {
         const assignee = profiles.find(p => p.name === currentAssignee);
         if (assignee?.email) {
@@ -140,14 +134,7 @@ const TaskList = ({
         return;
       }
 
-      const newTaskWithState = {
-        ...newTaskData,
-        completed: false
-      };
-
-      setTasks([...tasks, newTaskWithState]);
       setNewTask({ title: "", comment: "" });
-      await updateProgress([...tasks, newTaskWithState]);
 
       if (currentAssignee !== "Sin asignar") {
         const assignee = profiles.find(p => p.name === currentAssignee);
@@ -155,7 +142,7 @@ const TaskList = ({
           await sendTaskAssignmentEmail(
             assignee.email,
             currentAssignee,
-            `Se te ha asignado una nueva tarea: ${newTaskWithState.description}`,
+            `Se te ha asignado una nueva tarea: ${newTaskData.description}`,
             "cleaning"
           );
         }
