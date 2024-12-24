@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import useProfiles from "@/hooks/useProfiles";
 import { sendTaskAssignmentEmail } from "@/utils/emailUtils";
 import { supabase } from "@/integrations/supabase/client";
+import { taskService } from "./services/taskService";
 
 interface AssigneeSelectorProps {
   currentAssignee: string;
@@ -35,10 +36,11 @@ const AssigneeSelector = ({
     });
 
     try {
-      // Reset all task states
+      // Reiniciar estados de tareas
+      await taskService.resetTaskStates();
       await onTasksReset();
 
-      // Update progress for new assignee
+      // Actualizar progreso para nuevo responsable
       const { error: progressError } = await supabase
         .from('general_cleaning_progress')
         .upsert({
@@ -51,7 +53,7 @@ const AssigneeSelector = ({
 
       if (progressError) throw progressError;
 
-      // Notify new assignee
+      // Notificar al nuevo responsable
       const assigneeProfile = profiles.find(p => p.name === newAssignee);
       if (assigneeProfile?.email) {
         try {

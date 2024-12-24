@@ -1,14 +1,13 @@
 import { useState } from "react";
 import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
 import useProfiles from "@/hooks/useProfiles";
 import { useTaskNotifications } from "./TaskNotifications";
-import { sendTaskAssignmentEmail } from "@/utils/emailUtils";
 import TaskListHeader from "./components/TaskListHeader";
 import TaskListContent from "./components/TaskListContent";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useTaskData } from "./hooks/useTaskData";
-import { useTaskOperations } from "./hooks/useTaskOperations";
+import { useTaskState } from "./hooks/useTaskState";
+import { useProgress } from "./hooks/useProgress";
+import { taskService } from "./services/taskService";
 
 interface TaskListProps {
   currentAssignee: string;
@@ -24,41 +23,12 @@ const TaskList = ({
   isDisabled 
 }: TaskListProps) => {
   const [newTask, setNewTask] = useState({ title: "", comment: "" });
+  const [editingTask, setEditingTask] = useState<number | null>(null);
   const { profiles } = useProfiles();
-  const { tasks, setTasks, isLoading, loadTasks } = useTaskData();
+  const { tasks, setTasks, isLoading, loadTasks } = useTaskState();
+  const { completionPercentage, updateProgress } = useProgress(currentAssignee);
 
   useTaskNotifications({ tasks, currentAssignee });
-
-  const updateProgress = async (updatedTasks: any[]) => {
-    const completedTasks = updatedTasks.filter(task => task.completed).length;
-    const percentage = Math.round((completedTasks / updatedTasks.length) * 100);
-    
-    try {
-      const { error: progressError } = await supabase
-        .from('general_cleaning_progress')
-        .upsert({
-          assignee: currentAssignee,
-          completion_percentage: percentage,
-          last_updated: new Date().toISOString()
-        }, {
-          onConflict: 'assignee'
-        });
-
-      if (progressError) throw progressError;
-      
-      onTaskComplete(percentage);
-    } catch (error) {
-      console.error('Error updating progress:', error);
-      toast.error("Error al actualizar el progreso");
-    }
-  };
-
-  const { 
-    editingTask, 
-    setEditingTask, 
-    handleUpdateTask, 
-    handleDeleteTask 
-  } = useTaskOperations(tasks, setTasks, currentAssignee, profiles, updateProgress);
 
   const handleTaskToggle = async (taskId: number) => {
     if (isDisabled) return;
@@ -69,47 +39,21 @@ const TaskList = ({
     try {
       const newCompleted = !taskToUpdate.completed;
       
-      // Update visual state immediately
-      setTasks(currentTasks => 
-        currentTasks.map(t => 
-          t.id === taskId ? { ...t, completed: newCompleted } : t
-        )
-      );
-
-      const { error: stateError } = await supabase
-        .from('cleaning_task_states')
-        .upsert({ 
-          task_id: taskId,
-          completed: newCompleted,
-          updated_at: new Date().toISOString()
-        }, {
-          onConflict: 'task_id'
-        });
-
-      if (stateError) {
-        // Revert visual state if database update fails
-        await loadTasks();
-        throw stateError;
-      }
-
-      // Update progress after successful toggle
-      await updateProgress(tasks.map(t => 
+      // Actualizar estado visual inmediatamente
+      const updatedTasks = tasks.map(t => 
         t.id === taskId ? { ...t, completed: newCompleted } : t
-      ));
+      );
+      setTasks(updatedTasks);
+
+      // Actualizar en la base de datos
+      await taskService.toggleTaskState(taskId, newCompleted);
       
-      if (currentAssignee !== "Sin asignar") {
-        const assignee = profiles.find(p => p.name === currentAssignee);
-        if (assignee?.email) {
-          await sendTaskAssignmentEmail(
-            assignee.email,
-            currentAssignee,
-            `La tarea "${taskToUpdate.description}" ha sido marcada como ${newCompleted ? 'completada' : 'pendiente'}`,
-            "cleaning"
-          );
-        }
-      }
+      // Actualizar progreso
+      await updateProgress(updatedTasks);
+      onTaskComplete(completionPercentage);
     } catch (error) {
       console.error('Error toggling task:', error);
+      await loadTasks(); // Recargar estado real si hay error
       toast.error("Error al actualizar el estado de la tarea");
     }
   };
@@ -118,55 +62,73 @@ const TaskList = ({
     e.preventDefault();
     
     try {
-      const { data: newTaskData, error: taskError } = await supabase
-        .from('general_cleaning_tasks')
-        .insert({
-          description: newTask.title,
-          comment: newTask.comment,
-          created_at: new Date().toISOString()
-        })
-        .select()
-        .single();
-
-      if (taskError) {
-        console.error('Error creating task:', taskError);
-        toast.error("Error al crear la tarea");
-        return;
-      }
-
-      const { error: stateError } = await supabase
-        .from('cleaning_task_states')
-        .insert({
-          task_id: newTaskData.id,
-          completed: false,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        });
-
-      if (stateError) {
-        console.error('Error creating task state:', stateError);
-        toast.error("Error al crear el estado de la tarea");
-        return;
-      }
+      const newTaskData = await taskService.addTask(newTask.title, newTask.comment);
+      
+      setTasks(currentTasks => [...currentTasks, {
+        id: newTaskData.id,
+        description: newTask.title,
+        comment: newTask.comment,
+        completed: false
+      }]);
 
       setNewTask({ title: "", comment: "" });
-
-      if (currentAssignee !== "Sin asignar") {
-        const assignee = profiles.find(p => p.name === currentAssignee);
-        if (assignee?.email) {
-          await sendTaskAssignmentEmail(
-            assignee.email,
-            currentAssignee,
-            `Se te ha asignado una nueva tarea: ${newTaskData.description}`,
-            "cleaning"
-          );
-        }
-      }
-
       toast.success("Tarea agregada exitosamente");
     } catch (error) {
       console.error('Error adding task:', error);
       toast.error("Error al crear la tarea");
+    }
+  };
+
+  const handleUpdateTask = async (taskId: number, newDescription: string, newComment: string) => {
+    try {
+      const { error } = await supabase
+        .from('general_cleaning_tasks')
+        .update({
+          description: newDescription,
+          comment: newComment
+        })
+        .eq('id', taskId);
+
+      if (error) throw error;
+
+      setTasks(currentTasks => 
+        currentTasks.map(task =>
+          task.id === taskId
+            ? { ...task, description: newDescription, comment: newComment }
+            : task
+        )
+      );
+      setEditingTask(null);
+      toast.success("Tarea actualizada exitosamente");
+    } catch (error) {
+      console.error('Error updating task:', error);
+      toast.error("Error al actualizar la tarea");
+    }
+  };
+
+  const handleDeleteTask = async (taskId: number) => {
+    try {
+      const { error: stateError } = await supabase
+        .from('cleaning_task_states')
+        .delete()
+        .eq('task_id', taskId);
+
+      if (stateError) throw stateError;
+
+      const { error: taskError } = await supabase
+        .from('general_cleaning_tasks')
+        .delete()
+        .eq('id', taskId);
+
+      if (taskError) throw taskError;
+
+      const updatedTasks = tasks.filter(task => task.id !== taskId);
+      setTasks(updatedTasks);
+      await updateProgress(updatedTasks);
+      toast.success("Tarea eliminada exitosamente");
+    } catch (error) {
+      console.error('Error deleting task:', error);
+      toast.error("Error al eliminar la tarea");
     }
   };
 
