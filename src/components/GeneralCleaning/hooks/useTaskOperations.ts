@@ -1,46 +1,42 @@
 import { useState } from "react";
-import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 import { Task } from "../types/Task";
+import { Profile } from "@/types/profile";
 import { sendTaskAssignmentEmail } from "@/utils/emailUtils";
 
 export const useTaskOperations = (
   tasks: Task[],
   setTasks: React.Dispatch<React.SetStateAction<Task[]>>,
   currentAssignee: string,
-  profiles: any[],
-  updateProgress: (tasks: Task[]) => Promise<void>
+  profiles: Profile[],
+  updateProgress: (updatedTasks: Task[]) => Promise<void>
 ) => {
   const [editingTask, setEditingTask] = useState<number | null>(null);
 
   const handleUpdateTask = async (taskId: number, newDescription: string, newComment: string) => {
-    if (!newDescription) {
-      toast.error("La descripción de la tarea no puede estar vacía");
-      return;
-    }
-
     try {
-      // Actualizar la tarea existente en lugar de crear una nueva
-      const { error: updateError } = await supabase
+      const { error } = await supabase
         .from('general_cleaning_tasks')
-        .update({ 
+        .update({
           description: newDescription,
           comment: newComment
         })
         .eq('id', taskId);
 
-      if (updateError) throw updateError;
-      
-      const updatedTasks = tasks.map(task => 
-        task.id === taskId 
+      if (error) throw error;
+
+      const updatedTasks = tasks.map(task =>
+        task.id === taskId
           ? { ...task, description: newDescription, comment: newComment }
           : task
       );
-      
+
       setTasks(updatedTasks);
       setEditingTask(null);
+      toast.success("Tarea actualizada exitosamente");
 
-      // Solo enviar correo si hay un destinatario asignado y tiene correo
+      // Notify assignee
       if (currentAssignee !== "Sin asignar") {
         const assignee = profiles.find(p => p.name === currentAssignee);
         if (assignee?.email) {
@@ -52,8 +48,6 @@ export const useTaskOperations = (
           );
         }
       }
-
-      toast.success("Tarea actualizada exitosamente");
     } catch (error) {
       console.error('Error updating task:', error);
       toast.error("Error al actualizar la tarea");
@@ -62,6 +56,7 @@ export const useTaskOperations = (
 
   const handleDeleteTask = async (taskId: number) => {
     try {
+      // First delete task states
       const { error: stateError } = await supabase
         .from('cleaning_task_states')
         .delete()
@@ -69,6 +64,7 @@ export const useTaskOperations = (
 
       if (stateError) throw stateError;
 
+      // Then delete the task
       const { error: taskError } = await supabase
         .from('general_cleaning_tasks')
         .delete()
@@ -79,23 +75,9 @@ export const useTaskOperations = (
       const updatedTasks = tasks.filter(task => task.id !== taskId);
       setTasks(updatedTasks);
       await updateProgress(updatedTasks);
-
-      if (currentAssignee !== "Sin asignar") {
-        const taskToDelete = tasks.find(t => t.id === taskId);
-        const assignee = profiles.find(p => p.name === currentAssignee);
-        if (assignee?.email && taskToDelete) {
-          await sendTaskAssignmentEmail(
-            assignee.email,
-            currentAssignee,
-            `La tarea "${taskToDelete.description}" ha sido eliminada`,
-            "cleaning"
-          );
-        }
-      }
-
       toast.success("Tarea eliminada exitosamente");
     } catch (error) {
-      console.error('Error in handleDeleteTask:', error);
+      console.error('Error deleting task:', error);
       toast.error("Error al eliminar la tarea");
     }
   };

@@ -7,13 +7,11 @@ export const useTaskData = () => {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Load tasks from database
   useEffect(() => {
     const loadTasks = async () => {
       try {
         console.log('Loading tasks from database...');
         
-        // Get all tasks with their states using a join
         const { data: tasksData, error: tasksError } = await supabase
           .from('general_cleaning_tasks')
           .select(`
@@ -32,7 +30,6 @@ export const useTaskData = () => {
 
         console.log('Raw tasks data:', tasksData);
 
-        // Transform the data to match our Task type
         const transformedTasks = tasksData.map(task => ({
           id: task.id,
           description: task.description,
