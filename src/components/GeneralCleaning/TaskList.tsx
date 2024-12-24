@@ -69,6 +69,13 @@ const TaskList = ({
     try {
       const newCompleted = !taskToUpdate.completed;
       
+      // Actualizar inmediatamente el estado visual
+      setTasks(currentTasks => 
+        currentTasks.map(t => 
+          t.id === taskId ? { ...t, completed: newCompleted } : t
+        )
+      );
+
       const { error: stateError } = await supabase
         .from('cleaning_task_states')
         .upsert({ 
@@ -79,9 +86,16 @@ const TaskList = ({
           onConflict: 'task_id'
         });
 
-      if (stateError) throw stateError;
+      if (stateError) {
+        // Revertir el cambio visual si hay error
+        setTasks(currentTasks => 
+          currentTasks.map(t => 
+            t.id === taskId ? { ...t, completed: !newCompleted } : t
+          )
+        );
+        throw stateError;
+      }
 
-      // La actualización visual será manejada por la suscripción en useTaskData
       await updateProgress(tasks.map(t => 
         t.id === taskId ? { ...t, completed: newCompleted } : t
       ));

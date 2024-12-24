@@ -15,8 +15,11 @@ export const useTaskData = () => {
       const { data: tasksData, error: tasksError } = await supabase
         .from('general_cleaning_tasks')
         .select(`
-          *,
-          cleaning_task_states (
+          id,
+          description,
+          comment,
+          created_at,
+          cleaning_task_states!inner (
             completed
           )
         `)
@@ -33,7 +36,7 @@ export const useTaskData = () => {
       const transformedTasks = tasksData.map(task => ({
         id: task.id,
         description: task.description,
-        completed: task.cleaning_task_states?.[0]?.completed ?? false,
+        completed: task.cleaning_task_states[0]?.completed ?? false,
         comment: task.comment
       }));
 
@@ -59,9 +62,10 @@ export const useTaskData = () => {
           schema: 'public',
           table: 'cleaning_task_states'
         },
-        (payload: RealtimePostgresChangesPayload<{ task_id: number, completed: boolean }>) => {
+        (payload: RealtimePostgresChangesPayload<any>) => {
           console.log('Task state changed:', payload);
-          if (payload.new && 'task_id' in payload.new && 'completed' in payload.new) {
+          
+          if (payload.new && typeof payload.new.task_id === 'number' && typeof payload.new.completed === 'boolean') {
             setTasks(currentTasks => 
               currentTasks.map(task => 
                 task.id === payload.new.task_id 
