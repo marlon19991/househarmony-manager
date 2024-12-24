@@ -9,7 +9,6 @@ export const sendTaskAssignmentEmail = async (
   notificationTime?: string
 ) => {
   try {
-    const { data: { user } } = await supabase.auth.getUser();
     const projectUrl = window.location.origin;
 
     const { error } = await supabase.functions.invoke('send-email', {
@@ -27,6 +26,37 @@ export const sendTaskAssignmentEmail = async (
     if (error) throw error;
   } catch (error) {
     console.error('Error sending email:', error);
+    throw error;
+  }
+};
+
+export const sendBillDueEmail = async (
+  email: string,
+  userName: string,
+  billTitle: string,
+  dueDate: string,
+  amount: number,
+  isOverdue: boolean = false
+) => {
+  try {
+    const projectUrl = window.location.origin;
+
+    const { error } = await supabase.functions.invoke('send-email', {
+      body: {
+        to: email,
+        userName,
+        billTitle,
+        dueDate,
+        amount,
+        isOverdue,
+        type: 'bill_due',
+        projectUrl
+      }
+    });
+
+    if (error) throw error;
+  } catch (error) {
+    console.error('Error sending bill due email:', error);
     throw error;
   }
 };
