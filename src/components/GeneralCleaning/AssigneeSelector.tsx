@@ -6,6 +6,8 @@ import useProfiles from "@/hooks/useProfiles";
 import { sendTaskAssignmentEmail } from "@/utils/emailUtils";
 import { supabase } from "@/integrations/supabase/client";
 import { useTaskData } from "./hooks/useTaskData";
+import { progressService } from "./services/progressService";
+import { taskStateService } from "./services/taskStateService";
 
 interface AssigneeSelectorProps {
   currentAssignee: string;
@@ -20,37 +22,18 @@ const AssigneeSelector = ({ currentAssignee, onAssigneeChange, completionPercent
   const handleAssigneeChange = async (newAssignee: string) => {
     if (newAssignee === currentAssignee) return;
 
-    // Validar que el porcentaje de completitud sea al menos 75%
     if (completionPercentage < 75) {
       toast.error("Debes completar al menos el 75% de las tareas antes de cambiar el responsable");
       return;
     }
 
-    console.log('Iniciando cambio de responsable:', { 
-      anteriorResponsable: currentAssignee, 
-      nuevoResponsable: newAssignee 
-    });
-
     try {
       // Reiniciar todas las tareas
       await resetAllTasks();
+      await taskStateService.resetTaskStates();
 
       // Actualizar el progreso para el nuevo asignado
-      const { error: progressError } = await supabase
-        .from('general_cleaning_progress')
-        .upsert({
-          assignee: newAssignee,
-          completion_percentage: 0,
-          last_updated: new Date().toISOString()
-        }, {
-          onConflict: 'assignee'
-        });
-
-      if (progressError) {
-        console.error('Error updating progress:', progressError);
-        toast.error("Error al actualizar el progreso");
-        return;
-      }
+      await progressService.updateProgress(newAssignee, 0);
 
       // Notificar al nuevo asignado
       const assigneeProfile = profiles.find(p => p.name === newAssignee);

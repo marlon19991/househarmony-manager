@@ -2,6 +2,8 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Task } from "../types/Task";
+import { taskStateService } from "../services/taskStateService";
+import { progressService } from "../services/progressService";
 
 export const useTaskData = () => {
   const [tasks, setTasks] = useState<Task[]>([]);
@@ -46,10 +48,6 @@ export const useTaskData = () => {
     }
   };
 
-  useEffect(() => {
-    loadTasks();
-  }, []);
-
   const resetAllTasks = async () => {
     try {
       // Primero, obtener todas las tareas
@@ -90,6 +88,30 @@ export const useTaskData = () => {
       toast.error("Error al reiniciar las tareas");
     }
   };
+
+  useEffect(() => {
+    loadTasks();
+
+    // Suscribirse a cambios en tiempo real
+    const channel = supabase
+      .channel('task-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'cleaning_task_states'
+        },
+        () => {
+          loadTasks();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, []);
 
   return { tasks, setTasks, isLoading, resetAllTasks, loadTasks };
 };
