@@ -35,12 +35,14 @@ export const RecurringTasksSection = () => {
 
   const fetchTasks = async () => {
     try {
+      console.log('Fetching tasks...');
       const { data, error } = await supabase
         .from('recurring_tasks')
         .select('*')
         .order('created_at', { ascending: false });
 
       if (error) throw error;
+      console.log('Fetched tasks:', data);
       setTasks(data || []);
     } catch (error) {
       console.error('Error fetching tasks:', error);
@@ -50,18 +52,31 @@ export const RecurringTasksSection = () => {
 
   const handleAddTask = () => {
     setIsAddingTask(false);
+    fetchTasks(); // Refresh tasks after adding
   };
 
   const handleUpdateTask = async (taskId: number, updatedTask: any) => {
     try {
+      console.log('Updating task:', taskId, updatedTask);
       const { error } = await supabase
         .from('recurring_tasks')
-        .update(updatedTask)
+        .update({
+          title: updatedTask.title,
+          description: updatedTask.description,
+          assignees: updatedTask.assignees,
+          weekdays: updatedTask.weekdays,
+          start_date: updatedTask.start_date,
+          end_date: updatedTask.end_date,
+          icon: updatedTask.icon,
+          recurrence_type: updatedTask.recurrence_type,
+          notification_time: updatedTask.notification_time
+        })
         .eq('id', taskId);
 
       if (error) throw error;
+
       toast.success("Tarea actualizada exitosamente");
-      fetchTasks();
+      await fetchTasks(); // Refresh tasks after update
     } catch (error) {
       console.error('Error updating task:', error);
       toast.error("Error al actualizar la tarea");
@@ -70,13 +85,16 @@ export const RecurringTasksSection = () => {
 
   const handleDeleteTask = async (taskId: number) => {
     try {
+      console.log('Deleting task:', taskId);
       const { error } = await supabase
         .from('recurring_tasks')
         .delete()
         .eq('id', taskId);
 
       if (error) throw error;
+
       toast.success("Tarea periódica eliminada exitosamente");
+      await fetchTasks(); // Refresh tasks after deletion
     } catch (error) {
       console.error('Error deleting task:', error);
       toast.error("Error al eliminar la tarea");
