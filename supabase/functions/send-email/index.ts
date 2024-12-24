@@ -9,36 +9,27 @@ const corsHeaders = {
 };
 
 interface EmailRequest {
-  to: string | string[];
+  to: string;
   subject: string;
   html: string;
 }
 
 const handler = async (req: Request): Promise<Response> => {
-  // Handle CORS preflight requests
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
     if (!RESEND_API_KEY) {
-      console.error("RESEND_API_KEY is not configured");
-      throw new Error("Email service not configured");
+      throw new Error("Missing RESEND_API_KEY");
     }
 
     const emailRequest: EmailRequest = await req.json();
-    console.log("Original email request:", emailRequest);
 
-    // Ensure to is always an array
-    const toArray = Array.isArray(emailRequest.to) 
-      ? emailRequest.to 
-      : [emailRequest.to];
-
-    // During testing phase, force sending only to the verified email
-    const testEmail = "esteban19991@gmail.com";
-    const recipients = toArray.map(() => testEmail);
-    
-    console.log("Sending email with recipients:", recipients);
+    // Validate required fields
+    if (!emailRequest.to || !emailRequest.subject || !emailRequest.html) {
+      throw new Error("Missing required email fields");
+    }
 
     const res = await fetch("https://api.resend.com/emails", {
       method: "POST",
@@ -47,34 +38,33 @@ const handler = async (req: Request): Promise<Response> => {
         Authorization: `Bearer ${RESEND_API_KEY}`,
       },
       body: JSON.stringify({
-        from: "onboarding@resend.dev", // Using Resend's testing email
-        to: recipients,
+        from: "Acme <onboarding@resend.dev>",
+        to: emailRequest.to,
         subject: emailRequest.subject,
         html: emailRequest.html,
       }),
     });
 
     const data = await res.json();
-    
+
     if (!res.ok) {
-      console.error("Error from Resend API:", data);
-      return new Response(JSON.stringify({ error: data }), {
-        status: res.status,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      console.error("Resend API error:", data);
+      throw new Error(data.message || "Failed to send email");
     }
 
-    console.log("Email sent successfully:", data);
     return new Response(JSON.stringify(data), {
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 200,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
-  } catch (error: any) {
+  } catch (error) {
     console.error("Error in send-email function:", error);
-    return new Response(JSON.stringify({ error: error.message }), {
-      status: 500,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    return new Response(
+      JSON.stringify({ error: error.message }),
+      {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 500,
+      }
+    );
   }
 };
 
