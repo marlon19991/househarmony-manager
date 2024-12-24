@@ -25,7 +25,7 @@ const TaskList = ({
 }: TaskListProps) => {
   const [newTask, setNewTask] = useState({ title: "", comment: "" });
   const { profiles } = useProfiles();
-  const { tasks, setTasks, isLoading } = useTaskData();
+  const { tasks, setTasks, isLoading, loadTasks } = useTaskData();
 
   useTaskNotifications({ tasks, currentAssignee });
 
@@ -69,7 +69,7 @@ const TaskList = ({
     try {
       const newCompleted = !taskToUpdate.completed;
       
-      // Actualizar inmediatamente el estado visual
+      // Update visual state immediately
       setTasks(currentTasks => 
         currentTasks.map(t => 
           t.id === taskId ? { ...t, completed: newCompleted } : t
@@ -87,15 +87,12 @@ const TaskList = ({
         });
 
       if (stateError) {
-        // Revertir el cambio visual si hay error
-        setTasks(currentTasks => 
-          currentTasks.map(t => 
-            t.id === taskId ? { ...t, completed: !newCompleted } : t
-          )
-        );
+        // Revert visual state if database update fails
+        await loadTasks();
         throw stateError;
       }
 
+      // Update progress after successful toggle
       await updateProgress(tasks.map(t => 
         t.id === taskId ? { ...t, completed: newCompleted } : t
       ));

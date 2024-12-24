@@ -87,6 +87,7 @@ export const useTaskData = () => {
 
   const resetTaskStates = async () => {
     try {
+      console.log('Resetting task states...');
       const { error: resetError } = await supabase
         .from('cleaning_task_states')
         .update({ 
@@ -97,14 +98,12 @@ export const useTaskData = () => {
 
       if (resetError) throw resetError;
 
-      setTasks(currentTasks => 
-        currentTasks.map(task => ({ ...task, completed: false }))
-      );
+      await loadTasks(); // Reload tasks after reset
     } catch (error) {
       console.error('Error resetting task states:', error);
       toast.error("Error al reiniciar las tareas");
     }
   };
 
-  return { tasks, setTasks, isLoading, resetTaskStates };
+  return { tasks, setTasks, isLoading, resetTaskStates, loadTasks };
 };
