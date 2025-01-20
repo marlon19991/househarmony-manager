@@ -4,9 +4,7 @@ import { User } from "lucide-react";
 import { toast } from "sonner";
 import useProfiles from "@/hooks/useProfiles";
 import { sendTaskAssignmentEmail } from "@/utils/emailUtils";
-import { useTaskData } from "./hooks/useTaskData";
-import { progressService } from "./services/progressService";
-import { taskStateService } from "./services/taskStateService";
+import { supabase } from "@/integrations/supabase/client";
 
 interface AssigneeSelectorProps {
   currentAssignee: string;
@@ -16,47 +14,53 @@ interface AssigneeSelectorProps {
 
 const AssigneeSelector = ({ currentAssignee, onAssigneeChange, completionPercentage }: AssigneeSelectorProps) => {
   const { profiles } = useProfiles();
-  const { resetAllTasks } = useTaskData();
 
-  const handleAssigneeChange = async (newAssignee: string) => {
+    const handleAssigneeChange = async (newAssignee: string) => {
     if (newAssignee === currentAssignee) return;
-
+  
     if (completionPercentage < 75) {
       toast.error("Debes completar al menos el 75% de las tareas antes de cambiar el responsable");
       return;
     }
-
+  
     try {
-      // First reset all task states in the database
-      await taskStateService.resetTaskStates();
-      
-      // Then update the progress for the new assignee
-      await progressService.updateProgress(newAssignee, 0);
-
-      // Reset tasks in the UI
-      await resetAllTasks();
-
-      // Notify the new assignee
-      const assigneeProfile = profiles.find(p => p.name === newAssignee);
-      if (assigneeProfile?.email) {
-        try {
-          await sendTaskAssignmentEmail(
-            assigneeProfile.email,
-            newAssignee,
-            "Aseo General",
-            "cleaning"
-          );
-          console.log("Email notification sent successfully");
-        } catch (emailError) {
-          console.error("Error sending email notification:", emailError);
-        }
-      }
-
+      // Primero actualizamos el responsable
       onAssigneeChange(newAssignee);
+
+      // Delete all existing task states for the tasks
+      const { data: tasks, error: tasksError } = await supabase
+        .from('general_cleaning_tasks')
+        .select('id');
+  
+      if (tasksError) throw tasksError;
+  
+      if (tasks && tasks.length > 0) {
+        // Delete all existing states
+        const { error: deleteError } = await supabase
+          .from('cleaning_task_states')
+          .delete()
+          .in('task_id', tasks.map(task => task.id));
+  
+        if (deleteError) throw deleteError;
+  
+        // Create new uncompleted states for all tasks
+        const newStates = tasks.map(task => ({
+          task_id: task.id,
+          completed: false,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        }));
+  
+        const { error: insertError } = await supabase
+          .from('cleaning_task_states')
+          .insert(newStates);
+  
+        if (insertError) throw insertError;
+      }
+  
       toast.success(`Se ha asignado el aseo general a ${newAssignee}`);
-      
     } catch (error) {
-      console.error("Error updating assignee:", error);
+      console.error("Error al actualizar el responsable:", error);
       toast.error("Error al actualizar el responsable");
     }
   };

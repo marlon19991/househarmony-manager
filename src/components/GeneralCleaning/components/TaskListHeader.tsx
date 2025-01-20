@@ -16,13 +16,15 @@ interface TaskListHeaderProps {
   newTask: { title: string; comment: string };
   setNewTask: React.Dispatch<React.SetStateAction<{ title: string; comment: string }>>;
   onAddTask: (e: React.FormEvent) => Promise<void>;
+  isDisabled: boolean;
 }
 
 const TaskListHeader = ({ 
   currentAssignee, 
   newTask, 
-  setNewTask, 
-  onAddTask 
+  setNewTask,
+  onAddTask,
+  isDisabled
 }: TaskListHeaderProps) => {
   return (
     <div className="flex items-center justify-between">
@@ -31,23 +33,24 @@ const TaskListHeader = ({
       </div>
       <Sheet>
         <SheetTrigger asChild>
-          <Button size="sm">
+          <Button size="sm" disabled={isDisabled}>
             <Plus className="w-4 h-4 mr-2" />
             Agregar Tarea
           </Button>
         </SheetTrigger>
         <SheetContent>
           <SheetHeader>
-            <SheetTitle>Agregar Nueva Tarea</SheetTitle>
+            <SheetTitle>Nueva Tarea</SheetTitle>
             <SheetDescription>
-              Crea una nueva tarea de limpieza general.
+              Agrega una nueva tarea a la lista de limpieza general
             </SheetDescription>
           </SheetHeader>
           <div className="mt-6">
             <TaskForm
               newTask={newTask}
               setNewTask={setNewTask}
-              onAddTask={onAddTask}
+              onSubmit={onAddTask}
+              isDisabled={isDisabled}
             />
           </div>
         </SheetContent>

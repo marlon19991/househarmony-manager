@@ -11,7 +11,7 @@ export function ThemeToggle() {
   const { theme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
 
-  // Evita hidratación incorrecta
+  // Evitar hidratación incorrecta
   useEffect(() => {
     setMounted(true);
   }, []);

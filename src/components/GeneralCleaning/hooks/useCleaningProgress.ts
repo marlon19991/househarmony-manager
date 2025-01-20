@@ -21,7 +21,7 @@ export const useCleaningProgress = () => {
       const totalTasks = taskStates?.length || 0;
       return totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
     } catch (error) {
-      console.error('Error calculating progress:', error);
+      console.error('Error al calcular el progreso:', error);
       toast.error("Error al calcular el progreso");
       return 0;
     }
@@ -31,7 +31,7 @@ export const useCleaningProgress = () => {
     try {
       await progressService.updateProgress(assignee, percentage);
     } catch (error) {
-      console.error('Error updating progress:', error);
+      console.error('Error al actualizar el progreso:', error);
       toast.error("Error al actualizar el progreso");
     }
   };
@@ -70,7 +70,7 @@ export const useCleaningProgress = () => {
         setCompletionPercentage(0);
       }
     } catch (error) {
-      console.error('Error loading progress:', error);
+      console.error('Error al cargar el progreso:', error);
       toast.error("Error al cargar el progreso");
     }
   };

@@ -132,7 +132,7 @@ export const RecurringTaskForm = ({ onSubmit, onCancel, initialData }: Recurring
       onSubmit();
       toast.success(initialData ? "Tarea actualizada" : "Tarea creada");
     } catch (error) {
-      console.error('Error:', error);
+      console.error('Error al guardar la tarea:', error);
       toast.error("Error al guardar la tarea");
     }
   };
@@ -145,7 +145,7 @@ export const RecurringTaskForm = ({ onSubmit, onCancel, initialData }: Recurring
           id="taskTitle"
           value={title}
           onChange={(e) => setTitle(e.target.value)}
-          placeholder="Título de la tarea"
+          placeholder="Escribe el título de la tarea"
         />
       </div>
 
@@ -155,7 +155,7 @@ export const RecurringTaskForm = ({ onSubmit, onCancel, initialData }: Recurring
           id="taskDescription"
           value={description}
           onChange={(e) => setDescription(e.target.value)}
-          placeholder="Descripción de la tarea"
+          placeholder="Describe los detalles de la tarea"
           className="h-24"
         />
       </div>

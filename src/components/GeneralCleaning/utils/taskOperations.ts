@@ -17,7 +17,7 @@ export const ensureTaskExists = async (task: Task) => {
       .maybeSingle();
 
     if (checkError) {
-      console.error('Error checking task:', checkError);
+      console.error('Error al verificar la tarea:', checkError);
       return false;
     }
 
@@ -32,13 +32,13 @@ export const ensureTaskExists = async (task: Task) => {
         });
 
       if (insertError) {
-        console.error('Error creating task:', insertError);
+        console.error('Error al crear la tarea:', insertError);
         return false;
       }
     }
     return true;
   } catch (error) {
-    console.error('Error in ensureTaskExists:', error);
+    console.error('Error en ensureTaskExists:', error);
     return false;
   }
 };
@@ -52,7 +52,7 @@ export const loadTaskState = async (taskId: number, setTasks: React.Dispatch<Rea
       .maybeSingle();
 
     if (error) {
-      console.error('Error loading task state:', error);
+      console.error('Error al cargar el estado de la tarea:', error);
       return;
     }
 
@@ -71,12 +71,12 @@ export const loadTaskState = async (taskId: number, setTasks: React.Dispatch<Rea
         });
 
       if (insertError) {
-        console.error('Error creating task state:', insertError);
+        console.error('Error al crear el estado de la tarea:', insertError);
         toast.error("Error al crear el estado de la tarea");
       }
     }
   } catch (error) {
-    console.error('Error in loadTaskState:', error);
+    console.error('Error en loadTaskState:', error);
     toast.error("Error al cargar el estado de la tarea");
   }
 };
@@ -98,7 +98,7 @@ export const handleTaskToggle = async (
       .maybeSingle();
 
     if (checkError) {
-      console.error('Error checking task state:', checkError);
+      console.error('Error al verificar el estado de la tarea:', checkError);
       return;
     }
 
@@ -112,7 +112,7 @@ export const handleTaskToggle = async (
         .eq('task_id', taskId);
 
       if (updateError) {
-        console.error('Error updating task state:', updateError);
+        console.error('Error al actualizar el estado de la tarea:', updateError);
         toast.error("Error al actualizar el estado de la tarea");
       }
     } else {
@@ -124,12 +124,12 @@ export const handleTaskToggle = async (
         });
 
       if (insertError) {
-        console.error('Error creating task state:', insertError);
+        console.error('Error al crear el estado de la tarea:', insertError);
         toast.error("Error al crear el estado de la tarea");
       }
     }
   } catch (error) {
-    console.error('Error in handleTaskToggle:', error);
+    console.error('Error en handleTaskToggle:', error);
     toast.error("Error al cambiar el estado de la tarea");
   }
 };

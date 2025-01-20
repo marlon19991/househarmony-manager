@@ -20,30 +20,30 @@ export const useTaskState = (currentAssignee: string) => {
       try {
         const { data: taskStates, error } = await supabase
           .from('cleaning_task_states')
-          .select('task_id, completed');
+          .select('task_id, completed')
+          .eq('assignee', currentAssignee);
 
         if (error) {
-          console.error('Error loading task states:', error);
+          console.error('Error al cargar los estados de las tareas:', error);
           toast.error("Error al cargar el estado de las tareas");
           return;
         }
 
-        if (taskStates) {
-          setTasks(prevTasks => 
-            prevTasks.map(task => {
-              const taskState = taskStates.find(state => state.task_id === task.id);
-              return taskState ? { ...task, completed: taskState.completed } : task;
-            })
-          );
-        }
+        // Reiniciar todas las tareas a no completadas al cambiar el responsable
+        setTasks(prevTasks => 
+          prevTasks.map(task => ({
+            ...task,
+            completed: taskStates?.find(state => state.task_id === task.id)?.completed || false
+          }))
+        );
       } catch (error) {
-        console.error('Error in loadTaskStates:', error);
+        console.error('Error en loadTaskStates:', error);
         toast.error("Error al cargar el estado de las tareas");
       }
     };
 
     loadTaskStates();
-  }, []);
+  }, [currentAssignee]);
 
   const updateTaskState = async (taskId: number, completed: boolean) => {
     try {
@@ -52,6 +52,7 @@ export const useTaskState = (currentAssignee: string) => {
         .from('cleaning_task_states')
         .select('*')
         .eq('task_id', taskId)
+        .eq('assignee', currentAssignee)
         .maybeSingle();
 
       if (checkError) {
@@ -66,7 +67,8 @@ export const useTaskState = (currentAssignee: string) => {
             completed,
             updated_at: new Date().toISOString()
           })
-          .eq('task_id', taskId);
+          .eq('task_id', taskId)
+          .eq('assignee', currentAssignee);
 
         if (updateError) throw updateError;
       } else {
@@ -75,6 +77,7 @@ export const useTaskState = (currentAssignee: string) => {
           .from('cleaning_task_states')
           .insert({ 
             task_id: taskId,
+            assignee: currentAssignee,
             completed,
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString()

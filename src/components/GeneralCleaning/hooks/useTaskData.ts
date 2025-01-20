@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Task } from "../types/Task";
-import { taskService } from "../services/taskService";
+import { RealtimePostgresChangesPayload } from "@supabase/supabase-js";
 
 export const useTaskData = () => {
   const [tasks, setTasks] = useState<Task[]>([]);
@@ -10,68 +10,49 @@ export const useTaskData = () => {
 
   const loadTasks = async () => {
     try {
-      setIsLoading(true);
-      const loadedTasks = await taskService.fetchTasks();
-      setTasks(loadedTasks);
+      console.log('Loading tasks from database...');
+      
+      const { data: tasksData, error: tasksError } = await supabase
+        .from('general_cleaning_tasks')
+        .select(`
+          id,
+          description,
+          comment,
+          created_at,
+          cleaning_task_states!inner (
+            completed
+          )
+        `)
+        .order('created_at', { ascending: true });
+
+      if (tasksError) {
+        console.error('Error loading tasks:', tasksError);
+        toast.error("Error al cargar las tareas");
+        return;
+      }
+
+      const transformedTasks = tasksData.map(task => ({
+        id: task.id,
+        description: task.description,
+        completed: task.cleaning_task_states[0]?.completed ?? false,
+        comment: task.comment
+      }));
+
+      setTasks(transformedTasks);
+      setIsLoading(false);
     } catch (error) {
       console.error('Error in loadTasks:', error);
       toast.error("Error al cargar las tareas");
-    } finally {
       setIsLoading(false);
     }
   };
 
-  const resetAllTasks = async () => {
-    try {
-      console.log('Resetting all tasks...');
-      
-      // First get all tasks
-      const { data: tasks, error: tasksError } = await supabase
-        .from('general_cleaning_tasks')
-        .select('id');
-
-      if (tasksError) throw tasksError;
-
-      if (tasks && tasks.length > 0) {
-        // Delete all existing states
-        const { error: deleteError } = await supabase
-          .from('cleaning_task_states')
-          .delete()
-          .in('task_id', tasks.map(t => t.id));
-
-        if (deleteError) throw deleteError;
-
-        // Create new uncompleted states for all tasks
-        const newTaskStates = tasks.map(task => ({
-          task_id: task.id,
-          completed: false,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        }));
-
-        const { error: insertError } = await supabase
-          .from('cleaning_task_states')
-          .insert(newTaskStates);
-
-        if (insertError) throw insertError;
-
-        // Reload tasks to update UI
-        await loadTasks();
-        console.log('Tasks reset successfully');
-      }
-    } catch (error) {
-      console.error('Error resetting tasks:', error);
-      toast.error("Error al reiniciar las tareas");
-    }
-  };
-
-  // Load tasks on component mount
+  // Call loadTasks on mount and set up real-time subscription
   useEffect(() => {
     loadTasks();
 
-    // Subscribe to real-time changes
     const channel = supabase
-      .channel('task-changes')
+      .channel('task-states-changes')
       .on(
         'postgres_changes',
         {
@@ -79,8 +60,19 @@ export const useTaskData = () => {
           schema: 'public',
           table: 'cleaning_task_states'
         },
-        () => {
-          loadTasks();
+        (payload: RealtimePostgresChangesPayload<{ task_id: number; completed: boolean }>) => {
+          console.log('Task state changed:', payload);
+          
+          const payloadData = payload.new as { task_id: number; completed: boolean };
+          if (payload.new && 'task_id' in payload.new && 'completed' in payload.new) {
+            setTasks(currentTasks => 
+              currentTasks.map(task => 
+                task.id === payloadData.task_id 
+                  ? { ...task, completed: payloadData.completed }
+                  : task
+              )
+            );
+          }
         }
       )
       .subscribe();
@@ -90,5 +82,5 @@ export const useTaskData = () => {
     };
   }, []);
 
-  return { tasks, setTasks, isLoading, resetAllTasks, loadTasks };
+  return { tasks, setTasks, isLoading };
 };
