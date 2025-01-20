@@ -34,7 +34,7 @@ import useProfiles from "@/hooks/useProfiles";
 import { ProfileForm, ProfileFormData } from "./ProfileForm";
 
 const iconOptions = [
-  { src: "/placeholder.svg", label: "Predeterminado" },
+  { src: "/placeholder.svg", label: "Default" },
   { src: "https://github.com/shadcn.png", label: "Avatar 1" },
   { src: "https://api.dicebear.com/7.x/avataaars/svg", label: "Avatar 2" },
 ];
