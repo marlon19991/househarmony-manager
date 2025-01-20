@@ -16,38 +16,44 @@ import TaskForm from "./TaskForm";
 interface TaskListProps {
   tasks: Task[];
   currentAssignee: string;
-  onTaskStateChange: (taskId: number, completed: boolean) => Promise<boolean>;
-  addTask: (description: string, comment: string) => Promise<boolean>;
+  onTaskToggle: (taskId: number) => void;
+  onAddTask: (e: React.FormEvent) => Promise<void>;
+  onUpdateTask: (taskId: number, description: string, comment: string) => Promise<void>;
+  onDeleteTask: (taskId: number) => Promise<void>;
+  newTask: { title: string; comment: string };
+  setNewTask: React.Dispatch<React.SetStateAction<{ title: string; comment: string }>>;
   isDisabled: boolean;
 }
 
 const TaskList = ({
   tasks,
   currentAssignee,
-  onTaskStateChange,
-  addTask,
+  onTaskToggle,
+  onAddTask,
+  onUpdateTask,
+  onDeleteTask,
+  newTask,
+  setNewTask,
   isDisabled
 }: TaskListProps) => {
-  const [newTask, setNewTask] = useState({ title: "", comment: "" });
-  const [editingTask, setEditingTask] = useState<number | null>(null);
+  const [editingTaskId, setEditingTaskId] = useState<number | null>(null);
   const { profiles } = useProfiles();
   const { isLoading } = useTaskData();
 
   useTaskNotifications({ tasks, currentAssignee });
 
-  const handleTaskToggle = async (taskId: number, completed: boolean) => {
-    if (isDisabled) return;
-    await onTaskStateChange(taskId, !completed);
+  const handleStartEditing = (taskId: number) => {
+    setEditingTaskId(taskId);
   };
 
-  const handleAddTask = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newTask.title.trim()) return;
+  const handleCancelEditing = () => {
+    setEditingTaskId(null);
+  };
 
-    const success = await addTask(newTask.title, newTask.comment);
-    if (success) {
-      setNewTask({ title: "", comment: "" });
-    }
+  const handleUpdateTask = async (description: string, comment: string) => {
+    if (editingTaskId === null) return;
+    await onUpdateTask(editingTaskId, description, comment);
+    setEditingTaskId(null);
   };
 
   if (isLoading) {
@@ -60,23 +66,25 @@ const TaskList = ({
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       <TaskListHeader
         currentAssignee={currentAssignee}
         newTask={newTask}
         setNewTask={setNewTask}
-        onAddTask={handleAddTask}
+        onAddTask={onAddTask}
         isDisabled={isDisabled}
       />
-      <div className="space-y-3">
+      <div className="space-y-4">
         {tasks.map((task) => (
           <TaskItem
             key={task.id}
             task={task}
-            isEditing={editingTask === task.id}
-            onToggle={() => handleTaskToggle(task.id, task.completed)}
-            onStartEditing={() => setEditingTask(task.id)}
-            onCancelEditing={() => setEditingTask(null)}
+            isEditing={editingTaskId === task.id}
+            onToggle={() => onTaskToggle(task.id)}
+            onStartEditing={() => handleStartEditing(task.id)}
+            onCancelEditing={handleCancelEditing}
+            onDelete={() => onDeleteTask(task.id)}
+            onUpdate={handleUpdateTask}
             isDisabled={isDisabled}
           />
         ))}

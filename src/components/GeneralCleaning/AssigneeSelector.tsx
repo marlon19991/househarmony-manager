@@ -15,7 +15,7 @@ interface AssigneeSelectorProps {
 const AssigneeSelector = ({ currentAssignee, onAssigneeChange, completionPercentage }: AssigneeSelectorProps) => {
   const { profiles } = useProfiles();
 
-    const handleAssigneeChange = async (newAssignee: string) => {
+  const handleAssigneeChange = async (newAssignee: string) => {
     if (newAssignee === currentAssignee) return;
   
     if (completionPercentage < 75) {
@@ -57,8 +57,6 @@ const AssigneeSelector = ({ currentAssignee, onAssigneeChange, completionPercent
   
         if (insertError) throw insertError;
       }
-  
-      toast.success(`Se ha asignado el aseo general a ${newAssignee}`);
     } catch (error) {
       console.error("Error al actualizar el responsable:", error);
       toast.error("Error al actualizar el responsable");

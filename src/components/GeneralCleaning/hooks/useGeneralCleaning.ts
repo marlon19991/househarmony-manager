@@ -239,6 +239,75 @@ export const useGeneralCleaning = () => {
     }
   };
 
+  // Actualizar una tarea
+  const updateTask = async (taskId: number, description: string, comment: string) => {
+    try {
+      const { error: updateError } = await supabase
+        .from('general_cleaning_tasks')
+        .update({
+          description,
+          comment
+        })
+        .eq('id', taskId);
+
+      if (updateError) throw updateError;
+
+      // Actualizar el estado local
+      setTasks(tasks.map(task =>
+        task.id === taskId
+          ? { ...task, description, comment }
+          : task
+      ));
+
+      toast.success("Tarea actualizada exitosamente");
+      return true;
+    } catch (error) {
+      console.error('Error al actualizar la tarea:', error);
+      toast.error("Error al actualizar la tarea");
+      return false;
+    }
+  };
+
+  // Eliminar una tarea
+  const deleteTask = async (taskId: number) => {
+    try {
+      // 1. Eliminar el estado de la tarea
+      const { error: stateError } = await supabase
+        .from('cleaning_task_states')
+        .delete()
+        .eq('task_id', taskId);
+
+      if (stateError) throw stateError;
+
+      // 2. Eliminar la tarea
+      const { error: taskError } = await supabase
+        .from('general_cleaning_tasks')
+        .delete()
+        .eq('id', taskId);
+
+      if (taskError) throw taskError;
+
+      // 3. Actualizar el estado local
+      const updatedTasks = tasks.filter(task => task.id !== taskId);
+      setTasks(updatedTasks);
+
+      // 4. Recalcular el progreso
+      const completedTasks = updatedTasks.filter(task => task.completed).length;
+      const newPercentage = updatedTasks.length > 0 
+        ? Math.round((completedTasks / updatedTasks.length) * 100)
+        : 0;
+      setCompletionPercentage(newPercentage);
+      await updateProgress(currentAssignee, newPercentage);
+
+      toast.success("Tarea eliminada exitosamente");
+      return true;
+    } catch (error) {
+      console.error('Error al eliminar la tarea:', error);
+      toast.error("Error al eliminar la tarea");
+      return false;
+    }
+  };
+
   // Cargar el estado inicial cuando el componente se monta o cuando cambian los perfiles
   useEffect(() => {
     if (profiles.length > 0) {
@@ -274,6 +343,8 @@ export const useGeneralCleaning = () => {
     updateTaskState,
     changeAssignee,
     loadInitialState,
-    addTask
+    addTask,
+    updateTask,
+    deleteTask
   };
 }; 

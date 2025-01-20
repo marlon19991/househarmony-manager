@@ -1,54 +1,58 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Task } from "./types/Task";
 
 interface TaskEditFormProps {
   task: Task;
-  onUpdateTask: (description: string, comment: string) => void;
-  onCancelEditing: () => void;
+  onSubmit: (description: string, comment: string) => void;
+  onCancel: () => void;
 }
 
-const TaskEditForm = ({
-  task,
-  onUpdateTask,
-  onCancelEditing
-}: TaskEditFormProps) => {
+const TaskEditForm = ({ task, onSubmit, onCancel }: TaskEditFormProps) => {
   const [description, setDescription] = useState(task.description);
   const [comment, setComment] = useState(task.comment || "");
 
-  const handleSubmit = () => {
-    onUpdateTask(description, comment);
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!description.trim()) return;
+    onSubmit(description, comment);
   };
 
   return (
-    <div className="space-y-2">
-      <Input
-        value={description}
-        onChange={(e) => setDescription(e.target.value)}
-        placeholder="Descripción de la tarea"
-      />
-      <Input
-        value={comment}
-        onChange={(e) => setComment(e.target.value)}
-        placeholder="Agregar un comentario"
-      />
-      <div className="flex gap-2">
-        <Button 
-          onClick={handleSubmit}
-          size="sm"
-        >
-          Guardar
-        </Button>
-        <Button 
-          variant="outline" 
-          size="sm"
-          onClick={onCancelEditing}
-        >
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <div className="space-y-2">
+        <label htmlFor="description" className="text-sm font-medium">
+          Descripción
+        </label>
+        <Input
+          id="description"
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
+          placeholder="Descripción de la tarea"
+        />
+      </div>
+      <div className="space-y-2">
+        <label htmlFor="comment" className="text-sm font-medium">
+          Comentario (opcional)
+        </label>
+        <Textarea
+          id="comment"
+          value={comment}
+          onChange={(e) => setComment(e.target.value)}
+          placeholder="Agregar un comentario"
+        />
+      </div>
+      <div className="flex justify-end gap-2">
+        <Button type="button" variant="outline" onClick={onCancel}>
           Cancelar
         </Button>
+        <Button type="submit">
+          Guardar
+        </Button>
       </div>
-    </div>
+    </form>
   );
 };
 
