@@ -18,16 +18,16 @@ export const TaskForm = ({ newTask, setNewTask, onSubmit }: TaskFormProps) => {
   return (
     <form onSubmit={onSubmit} className="space-y-4">
       <div>
-        <Label htmlFor="taskTitle">Nueva Tarea</Label>
+        <Label htmlFor="taskTitle">Título de la tarea</Label>
         <Input
           id="taskTitle"
           value={newTask.title}
           onChange={(e) => setNewTask({ ...newTask, title: e.target.value })}
-          placeholder="Título de la tarea"
+          placeholder="Escribe el título de la tarea"
         />
       </div>
       <div>
-        <Label htmlFor="taskAssignee">Asignar a</Label>
+        <Label htmlFor="taskAssignee">Responsable</Label>
         <Select 
           onValueChange={(value) => setNewTask({ ...newTask, assignee: value })} 
           value={newTask.assignee}
@@ -51,7 +51,7 @@ export const TaskForm = ({ newTask, setNewTask, onSubmit }: TaskFormProps) => {
         </Select>
       </div>
       <Button type="submit" className="w-full">
-        Agregar Tarea
+        Crear Tarea
       </Button>
     </form>
   );

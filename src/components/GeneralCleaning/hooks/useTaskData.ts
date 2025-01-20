@@ -31,8 +31,6 @@ export const useTaskData = () => {
         return;
       }
 
-      console.log('Raw tasks data:', tasksData);
-
       const transformedTasks = tasksData.map(task => ({
         id: task.id,
         description: task.description,
@@ -40,7 +38,6 @@ export const useTaskData = () => {
         comment: task.comment
       }));
 
-      console.log('Transformed tasks:', transformedTasks);
       setTasks(transformedTasks);
       setIsLoading(false);
     } catch (error) {
@@ -50,6 +47,7 @@ export const useTaskData = () => {
     }
   };
 
+  // Call loadTasks on mount and set up real-time subscription
   useEffect(() => {
     loadTasks();
 
@@ -62,14 +60,15 @@ export const useTaskData = () => {
           schema: 'public',
           table: 'cleaning_task_states'
         },
-        (payload: RealtimePostgresChangesPayload<any>) => {
+        (payload: RealtimePostgresChangesPayload<{ task_id: number; completed: boolean }>) => {
           console.log('Task state changed:', payload);
           
-          if (payload.new && typeof payload.new.task_id === 'number' && typeof payload.new.completed === 'boolean') {
+          const payloadData = payload.new as { task_id: number; completed: boolean };
+          if (payload.new && 'task_id' in payload.new && 'completed' in payload.new) {
             setTasks(currentTasks => 
               currentTasks.map(task => 
-                task.id === payload.new.task_id 
-                  ? { ...task, completed: payload.new.completed }
+                task.id === payloadData.task_id 
+                  ? { ...task, completed: payloadData.completed }
                   : task
               )
             );

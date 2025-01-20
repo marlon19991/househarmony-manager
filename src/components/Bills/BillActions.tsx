@@ -10,6 +10,7 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
+  AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 
 interface BillActionsProps {
@@ -20,92 +21,46 @@ interface BillActionsProps {
   title: string;
 }
 
-export const BillActions = ({
-  status,
-  onToggleStatus,
-  onEdit,
-  onDelete,
-  title,
-}: BillActionsProps) => {
-  const [showPayConfirmation, setShowPayConfirmation] = useState(false);
-  const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false);
-
-  if (status === "paid") return null;
+export const BillActions = ({ status, onToggleStatus, onEdit, onDelete, title }: BillActionsProps) => {
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
   return (
-    <div className="flex flex-col sm:flex-row w-full sm:w-auto gap-2 mt-4 sm:mt-0">
-      <AlertDialog open={showPayConfirmation} onOpenChange={setShowPayConfirmation}>
-        <Button
-          variant="outline"
-          size="sm"
-          className="text-green-600 hover:text-green-700 hover:bg-green-50 w-full sm:w-auto"
-          onClick={() => setShowPayConfirmation(true)}
-        >
-          <CheckCircle className="mr-2 h-4 w-4" />
-          Pay
-        </Button>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Confirm payment?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Are you sure you want to mark the bill "{title}" as paid?
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel onClick={() => setShowPayConfirmation(false)}>
-              Cancel
-            </AlertDialogCancel>
-            <AlertDialogAction
-              onClick={() => {
-                onToggleStatus();
-                setShowPayConfirmation(false);
-              }}
-            >
-              Confirm Payment
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-
+    <div className="flex items-center gap-2">
       <Button
-        variant="outline"
-        size="sm"
-        onClick={onEdit}
-        className="w-full sm:w-auto"
+        variant="ghost"
+        size="icon"
+        onClick={onToggleStatus}
+        className={status === "paid" ? "text-green-500" : "text-amber-500"}
       >
-        <Pencil className="mr-2 h-4 w-4" />
-        Edit
+        <CheckCircle className="h-4 w-4" />
       </Button>
-
-      <AlertDialog open={showDeleteConfirmation} onOpenChange={setShowDeleteConfirmation}>
-        <Button
-          variant="outline"
-          size="sm"
-          className="text-red-600 hover:text-red-700 hover:bg-red-50 w-full sm:w-auto"
-          onClick={() => setShowDeleteConfirmation(true)}
-        >
-          <Trash2 className="mr-2 h-4 w-4" />
-          Delete
-        </Button>
+      <Button
+        variant="ghost"
+        size="icon"
+        onClick={onEdit}
+      >
+        <Pencil className="h-4 w-4" />
+      </Button>
+      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <AlertDialogTrigger asChild>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="text-destructive"
+          >
+            <Trash2 className="h-4 w-4" />
+          </Button>
+        </AlertDialogTrigger>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete bill?</AlertDialogTitle>
+            <AlertDialogTitle>¿Estás seguro?</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete the bill "{title}"? This action cannot be undone.
+              Esta acción no se puede deshacer. Se eliminará el gasto "{title}" permanentemente.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel onClick={() => setShowDeleteConfirmation(false)}>
-              Cancel
-            </AlertDialogCancel>
-            <AlertDialogAction
-              onClick={() => {
-                onDelete();
-                setShowDeleteConfirmation(false);
-              }}
-            >
-              Delete
-            </AlertDialogAction>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={onDelete}>Eliminar</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

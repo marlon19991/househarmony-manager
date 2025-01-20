@@ -2,29 +2,20 @@ import { Card } from "@/components/ui/card";
 import TaskList from "./TaskList";
 import AssigneeSelector from "./AssigneeSelector";
 import ProgressDisplay from "./components/ProgressDisplay";
-import { useCleaningProgress } from "./hooks/useCleaningProgress";
+import { useGeneralCleaning } from "./hooks/useGeneralCleaning";
 
 const GeneralCleaningSection = () => {
   const {
+    tasks,
     currentAssignee,
     completionPercentage,
-    setCurrentAssignee,
-    setCompletionPercentage,
-    updateProgress
-  } = useCleaningProgress();
+    isLoading,
+    updateTaskState,
+    changeAssignee,
+    addTask
+  } = useGeneralCleaning();
 
-  const handleAssigneeChange = async (newAssignee: string) => {
-    try {
-      console.log('Cambiando responsable a:', newAssignee);
-      await updateProgress(newAssignee, 0);
-      setCurrentAssignee(newAssignee);
-      setCompletionPercentage(0);
-    } catch (error) {
-      console.error('Error al actualizar responsable:', error);
-    }
-  };
-
-  if (currentAssignee === null) {
+  if (isLoading || currentAssignee === null) {
     return (
       <Card className="p-6 space-y-6">
         <div>Cargando...</div>
@@ -37,17 +28,15 @@ const GeneralCleaningSection = () => {
       <ProgressDisplay completionPercentage={completionPercentage} />
       <div className="grid gap-6 md:grid-cols-[2fr_1fr]">
         <TaskList
+          tasks={tasks}
           currentAssignee={currentAssignee}
-          onTaskComplete={(percentage) => {
-            const roundedPercentage = Math.round(percentage);
-            setCompletionPercentage(roundedPercentage);
-          }}
-          onAssigneeChange={handleAssigneeChange}
+          onTaskStateChange={updateTaskState}
+          addTask={addTask}
           isDisabled={currentAssignee === "Sin asignar"}
         />
         <AssigneeSelector
           currentAssignee={currentAssignee}
-          onAssigneeChange={handleAssigneeChange}
+          onAssigneeChange={changeAssignee}
           completionPercentage={completionPercentage}
         />
       </div>

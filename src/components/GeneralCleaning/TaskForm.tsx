@@ -1,36 +1,46 @@
-import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 
 interface TaskFormProps {
   newTask: { title: string; comment: string };
-  setNewTask: (task: { title: string; comment: string }) => void;
-  onAddTask: (e: React.FormEvent) => void;
+  setNewTask: React.Dispatch<React.SetStateAction<{ title: string; comment: string }>>;
+  onSubmit: (e: React.FormEvent) => Promise<void>;
+  isDisabled: boolean;
 }
 
-const TaskForm = ({ newTask, setNewTask, onAddTask }: TaskFormProps) => {
+const TaskForm = ({ newTask, setNewTask, onSubmit, isDisabled }: TaskFormProps) => {
   return (
-    <form onSubmit={onAddTask} className="space-y-4">
-      <div>
-        <Label htmlFor="taskTitle">Nueva Tarea</Label>
+    <form onSubmit={onSubmit} className="space-y-4">
+      <div className="space-y-2">
+        <label htmlFor="title" className="text-sm font-medium">
+          Descripción
+        </label>
         <Input
-          id="taskTitle"
+          id="title"
           value={newTask.title}
           onChange={(e) => setNewTask({ ...newTask, title: e.target.value })}
-          placeholder="Título de la tarea"
+          placeholder="Descripción de la tarea"
+          disabled={isDisabled}
         />
       </div>
-      <div>
-        <Label htmlFor="taskComment">Comentario</Label>
+      <div className="space-y-2">
+        <label htmlFor="comment" className="text-sm font-medium">
+          Comentario (opcional)
+        </label>
         <Textarea
-          id="taskComment"
+          id="comment"
           value={newTask.comment}
           onChange={(e) => setNewTask({ ...newTask, comment: e.target.value })}
-          placeholder="Comentario sobre la tarea"
+          placeholder="Agregar un comentario"
+          disabled={isDisabled}
         />
       </div>
-      <Button type="submit" className="w-full">
+      <Button 
+        type="submit" 
+        className="w-full"
+        disabled={isDisabled || !newTask.title.trim()}
+      >
         Agregar Tarea
       </Button>
     </form>

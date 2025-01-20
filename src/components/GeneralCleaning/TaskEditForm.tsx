@@ -1,47 +1,41 @@
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Task } from "./utils/taskOperations";
+import { Task } from "./types/Task";
 
 interface TaskEditFormProps {
   task: Task;
-  setTasks: React.Dispatch<React.SetStateAction<Task[]>>;
-  tasks: Task[];
-  onUpdateTask: (taskId: number, newDescription: string, newComment: string) => void;
-  setEditingTask: (taskId: number | null) => void;
+  onUpdateTask: (description: string, comment: string) => void;
+  onCancelEditing: () => void;
 }
 
 const TaskEditForm = ({
   task,
-  setTasks,
-  tasks,
   onUpdateTask,
-  setEditingTask,
+  onCancelEditing
 }: TaskEditFormProps) => {
+  const [description, setDescription] = useState(task.description);
+  const [comment, setComment] = useState(task.comment || "");
+
+  const handleSubmit = () => {
+    onUpdateTask(description, comment);
+  };
+
   return (
     <div className="space-y-2">
       <Input
-        value={task.description}
-        onChange={(e) => {
-          const newDescription = e.target.value;
-          setTasks(tasks.map(t => 
-            t.id === task.id ? { ...t, description: newDescription } : t
-          ));
-        }}
+        value={description}
+        onChange={(e) => setDescription(e.target.value)}
         placeholder="Descripción de la tarea"
       />
       <Input
-        value={task.comment || ""}
-        onChange={(e) => {
-          const newComment = e.target.value;
-          setTasks(tasks.map(t => 
-            t.id === task.id ? { ...t, comment: newComment } : t
-          ));
-        }}
+        value={comment}
+        onChange={(e) => setComment(e.target.value)}
         placeholder="Agregar un comentario"
       />
       <div className="flex gap-2">
         <Button 
-          onClick={() => onUpdateTask(task.id, task.description, task.comment || "")}
+          onClick={handleSubmit}
           size="sm"
         >
           Guardar
@@ -49,7 +43,7 @@ const TaskEditForm = ({
         <Button 
           variant="outline" 
           size="sm"
-          onClick={() => setEditingTask(null)}
+          onClick={onCancelEditing}
         >
           Cancelar
         </Button>

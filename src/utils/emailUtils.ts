@@ -5,27 +5,28 @@ export const sendTaskAssignmentEmail = async (
   assignee: string,
   taskTitle: string,
   taskType: "cleaning" | "recurring",
-  schedule?: string,
+  scheduleText?: string,
   notificationTime?: string
 ) => {
   try {
-    const projectUrl = window.location.origin;
-
     const { error } = await supabase.functions.invoke('send-email', {
       body: {
         to: email,
-        assignee,
-        taskTitle,
-        taskType,
-        schedule,
-        notificationTime,
-        projectUrl
+        subject: taskType === "cleaning" 
+          ? "Nueva tarea de limpieza asignada"
+          : "Nueva tarea periódica asignada",
+        content: taskType === "cleaning"
+          ? `Hola ${assignee},\n\nSe te ha asignado una nueva tarea de limpieza general:\n\n${taskTitle}\n\nPor favor, revisa la aplicación para ver los detalles.`
+          : `Hola ${assignee},\n\nSe te ha asignado una nueva tarea periódica:\n\n${taskTitle}\n\nProgramación: ${scheduleText}\nHora de notificación: ${notificationTime}\n\nPor favor, revisa la aplicación para ver los detalles.`
       }
     });
 
-    if (error) throw error;
+    if (error) {
+      console.error('Error al enviar el correo electrónico:', error);
+      throw error;
+    }
   } catch (error) {
-    console.error('Error sending email:', error);
+    console.error('Error al enviar el correo electrónico:', error);
     throw error;
   }
 };
