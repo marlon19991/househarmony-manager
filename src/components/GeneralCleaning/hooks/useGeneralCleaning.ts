@@ -152,29 +152,18 @@ export const useGeneralCleaning = () => {
       // 1. Actualizar el responsable y reiniciar el progreso en la base de datos
       await updateProgress(newAssignee, 0);
 
-      // 2. Reiniciar todos los estados de las tareas
-      const { error: deleteError } = await supabase
+      // 2. Actualizar todos los estados de las tareas a no completados
+      const { error: updateError } = await supabase
         .from('cleaning_task_states')
-        .delete()
+        .update({
+          completed: false,
+          updated_at: new Date().toISOString()
+        })
         .in('task_id', tasks.map(task => task.id));
 
-      if (deleteError) throw deleteError;
+      if (updateError) throw updateError;
 
-      // 3. Crear nuevos estados para todas las tareas
-      const newStates = tasks.map(task => ({
-        task_id: task.id,
-        completed: false,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      }));
-
-      const { error: insertError } = await supabase
-        .from('cleaning_task_states')
-        .insert(newStates);
-
-      if (insertError) throw insertError;
-
-      // 4. Actualizar el estado local
+      // 3. Actualizar el estado local
       setCurrentAssignee(newAssignee);
       setCompletionPercentage(0);
       setTasks(tasks.map(task => ({ ...task, completed: false })));

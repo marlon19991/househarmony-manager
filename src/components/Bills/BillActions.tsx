@@ -23,17 +23,38 @@ interface BillActionsProps {
 
 export const BillActions = ({ status, onToggleStatus, onEdit, onDelete, title }: BillActionsProps) => {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [showPayDialog, setShowPayDialog] = useState(false);
+
+  if (status === "paid") {
+    return null;
+  }
 
   return (
     <div className="flex items-center gap-2">
-      <Button
-        variant="ghost"
-        size="icon"
-        onClick={onToggleStatus}
-        className={status === "paid" ? "text-green-500" : "text-amber-500"}
-      >
-        <CheckCircle className="h-4 w-4" />
-      </Button>
+      <AlertDialog open={showPayDialog} onOpenChange={setShowPayDialog}>
+        <AlertDialogTrigger asChild>
+          <Button
+            variant="ghost"
+            className="text-green-500"
+          >
+            <CheckCircle className="h-4 w-4 mr-2" />
+            Pagar Factura
+          </Button>
+        </AlertDialogTrigger>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirmar Pago</AlertDialogTitle>
+            <AlertDialogDescription>
+              ¿Estás seguro de que deseas marcar la factura "{title}" como pagada?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={onToggleStatus}>Confirmar Pago</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       <Button
         variant="ghost"
         size="icon"
@@ -41,6 +62,7 @@ export const BillActions = ({ status, onToggleStatus, onEdit, onDelete, title }:
       >
         <Pencil className="h-4 w-4" />
       </Button>
+
       <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
         <AlertDialogTrigger asChild>
           <Button

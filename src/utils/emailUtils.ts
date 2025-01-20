@@ -9,16 +9,24 @@ export const sendTaskAssignmentEmail = async (
   notificationTime?: string
 ) => {
   try {
-    const { error } = await supabase.functions.invoke('send-email', {
-      body: {
-        to: email,
-        subject: taskType === "cleaning" 
-          ? "Nueva tarea de limpieza asignada"
-          : "Nueva tarea periódica asignada",
-        content: taskType === "cleaning"
-          ? `Hola ${assignee},\n\nSe te ha asignado una nueva tarea de limpieza general:\n\n${taskTitle}\n\nPor favor, revisa la aplicación para ver los detalles.`
-          : `Hola ${assignee},\n\nSe te ha asignado una nueva tarea periódica:\n\n${taskTitle}\n\nProgramación: ${scheduleText}\nHora de notificación: ${notificationTime}\n\nPor favor, revisa la aplicación para ver los detalles.`
+    const emailData = {
+      to: email,
+      subject: taskType === "cleaning" 
+        ? "Nueva tarea de limpieza asignada"
+        : "Nueva tarea periódica asignada",
+      template: "task_assignment",
+      data: {
+        assignee,
+        taskTitle,
+        taskType,
+        scheduleText: scheduleText || "",
+        notificationTime: notificationTime || "",
+        isRecurring: taskType === "recurring"
       }
+    };
+
+    const { error } = await supabase.functions.invoke('send-email', {
+      body: emailData
     });
 
     if (error) {
@@ -27,7 +35,8 @@ export const sendTaskAssignmentEmail = async (
     }
   } catch (error) {
     console.error('Error al enviar el correo electrónico:', error);
-    throw error;
+    // No volvemos a lanzar el error para evitar que se detenga el flujo de la aplicación
+    // La tarea se guardará aunque falle el envío del correo
   }
 };
 
@@ -40,24 +49,28 @@ export const sendBillDueEmail = async (
   isOverdue: boolean = false
 ) => {
   try {
-    const projectUrl = window.location.origin;
-
-    const { error } = await supabase.functions.invoke('send-email', {
-      body: {
-        to: email,
+    const emailData = {
+      to: email,
+      subject: isOverdue 
+        ? "Recordatorio de pago vencido"
+        : "Recordatorio de pago próximo",
+      template: "bill_due",
+      data: {
         userName,
         billTitle,
         dueDate,
         amount,
-        isOverdue,
-        type: 'bill_due',
-        projectUrl
+        isOverdue
       }
+    };
+
+    const { error } = await supabase.functions.invoke('send-email', {
+      body: emailData
     });
 
     if (error) throw error;
   } catch (error) {
-    console.error('Error sending bill due email:', error);
-    throw error;
+    console.error('Error al enviar recordatorio de pago:', error);
+    // No volvemos a lanzar el error para evitar que se detenga el flujo de la aplicación
   }
 };
