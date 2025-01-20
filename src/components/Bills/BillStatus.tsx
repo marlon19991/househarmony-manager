@@ -11,7 +11,7 @@ export const BillStatus = ({ status, paymentDueDate }: BillStatusProps) => {
   const getStatusInfo = () => {
     if (status === "paid") {
       return {
-        text: "Paid",
+        text: "Pagada",
         className: "bg-green-500"
       };
     }
@@ -21,20 +21,20 @@ export const BillStatus = ({ status, paymentDueDate }: BillStatusProps) => {
 
     if (daysUntilDue < 0) {
       return {
-        text: "Overdue",
+        text: "Vencida",
         className: "bg-red-500"
       };
     }
 
     if (daysUntilDue <= 5) {
       return {
-        text: "Due soon",
+        text: "Próxima a vencer",
         className: "bg-yellow-500"
       };
     }
 
     return {
-      text: "On time",
+      text: "A tiempo",
       className: "bg-green-500"
     };
   };

@@ -27,7 +27,6 @@ const TaskEditForm = ({
             t.id === task.id ? { ...t, description: newDescription } : t
           ));
         }}
-        placeholder="Descripción de la tarea"
       />
       <Input
         value={task.comment || ""}
