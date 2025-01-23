@@ -3,47 +3,60 @@ import { differenceInDays } from "date-fns";
 import { cn } from "@/lib/utils";
 
 interface BillStatusProps {
-  status: "pending" | "paid";
-  paymentDueDate: Date;
+  dueDate: string;
+  status: string;
 }
 
-export const BillStatus = ({ status, paymentDueDate }: BillStatusProps) => {
-  const getStatusInfo = () => {
-    if (status === "paid") {
-      return {
-        text: "Paid",
-        className: "bg-green-500"
-      };
+export const BillStatus = ({ dueDate, status }: BillStatusProps) => {
+  try {
+    const dueDateObj = new Date(dueDate);
+    if (isNaN(dueDateObj.getTime())) {
+      console.error('Fecha inválida:', dueDate);
+      return (
+        <span className="text-red-500 font-semibold text-base">
+          Error en fecha
+        </span>
+      );
     }
 
     const today = new Date();
-    const daysUntilDue = differenceInDays(paymentDueDate, today);
+    const daysUntilDue = differenceInDays(dueDateObj, today);
+
+    if (status === 'paid') {
+      return (
+        <span className="text-green-600 font-semibold text-base">
+          Pagada
+        </span>
+      );
+    }
 
     if (daysUntilDue < 0) {
-      return {
-        text: "Overdue",
-        className: "bg-red-500"
-      };
+      return (
+        <span className="text-red-600 font-semibold text-base">
+          Vencida
+        </span>
+      );
     }
 
-    if (daysUntilDue <= 5) {
-      return {
-        text: "Due soon",
-        className: "bg-yellow-500"
-      };
+    if (daysUntilDue <= 3) {
+      return (
+        <span className="text-yellow-600 font-semibold text-base">
+          Próxima a vencer
+        </span>
+      );
     }
 
-    return {
-      text: "On time",
-      className: "bg-green-500"
-    };
-  };
-
-  const { text, className } = getStatusInfo();
-
-  return (
-    <Badge variant="secondary" className={cn("text-white", className)}>
-      {text}
-    </Badge>
-  );
+    return (
+      <span className="text-emerald-600 font-semibold text-base">
+        A tiempo
+      </span>
+    );
+  } catch (error) {
+    console.error('Error al procesar el estado de la factura:', error);
+    return (
+      <span className="text-red-500 font-semibold text-base">
+        Error
+      </span>
+    );
+  }
 };

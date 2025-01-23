@@ -2,30 +2,27 @@ import { format } from "date-fns";
 import { es } from "date-fns/locale";
 
 interface BillDatesProps {
-  paymentDueDate: Date;
-  status: "pending" | "paid";
+  dueDate: string;
+  status: string;
 }
 
-export const BillDates = ({ paymentDueDate, status }: BillDatesProps) => {
-  const formatDate = (date: Date) => {
-    return format(date, "dd 'de' MMMM, yyyy", { locale: es });
-  };
+export const BillDates = ({ dueDate, status }: BillDatesProps) => {
+  try {
+    const dueDateObj = new Date(dueDate);
+    if (isNaN(dueDateObj.getTime())) {
+      console.error('Fecha inválida:', dueDate);
+      return <span>Fecha no válida</span>;
+    }
 
-  if (status === "paid") {
-    return (
-      <div className="space-y-1">
-        <p className="text-sm text-muted-foreground">
-          Pagada el {formatDate(paymentDueDate)}
-        </p>
-      </div>
-    );
+    const formattedDueDate = format(dueDateObj, "PPP", { locale: es });
+
+    if (status === 'paid') {
+      return <span>Pagada el {formattedDueDate}</span>;
+    }
+
+    return <span>Vence el {formattedDueDate}</span>;
+  } catch (error) {
+    console.error('Error al formatear las fechas:', error);
+    return <span>Error al procesar las fechas</span>;
   }
-
-  return (
-    <div className="space-y-1">
-      <p className="text-sm text-muted-foreground">
-        Fecha límite: {formatDate(paymentDueDate)}
-      </p>
-    </div>
-  );
 };

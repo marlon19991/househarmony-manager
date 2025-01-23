@@ -6,11 +6,10 @@ export interface Bill {
   id: number;
   title: string;
   amount: number;
-  dueDate: string;
-  paymentDueDate: Date;
-  status: "pending" | "paid";
-  splitBetween: number;
-  selectedProfiles: string[];
+  payment_due_date: string;
+  status: string;
+  selected_profiles: string[];
+  split_between?: number;
 }
 
 export const fetchBills = async () => {
@@ -27,11 +26,10 @@ export const fetchBills = async () => {
       id: bill.id,
       title: bill.title,
       amount: bill.amount,
-      dueDate: new Date(bill.payment_due_date).toLocaleDateString(),
-      paymentDueDate: new Date(bill.payment_due_date),
-      status: bill.status as "pending" | "paid",
-      splitBetween: bill.split_between,
-      selectedProfiles: bill.selected_profiles || []
+      payment_due_date: bill.payment_due_date,
+      status: bill.status,
+      selected_profiles: bill.selected_profiles || [],
+      split_between: bill.split_between
     }));
   } catch (error) {
     console.error('Error fetching bills:', error);
@@ -47,10 +45,10 @@ export const createBill = async (newBill: any) => {
       .insert({
         title: newBill.title,
         amount: newBill.amount,
-        payment_due_date: new Date(newBill.paymentDueDate).toISOString(),
+        payment_due_date: newBill.due_date,
         status: 'pending',
-        split_between: newBill.selectedProfiles.length || 1,
-        selected_profiles: newBill.selectedProfiles
+        selected_profiles: newBill.selectedProfiles,
+        split_between: newBill.selectedProfiles.length
       })
       .select()
       .single();
@@ -62,11 +60,10 @@ export const createBill = async (newBill: any) => {
       id: data.id,
       title: data.title,
       amount: data.amount,
-      dueDate: new Date(data.payment_due_date).toLocaleDateString(),
-      paymentDueDate: new Date(data.payment_due_date),
-      status: data.status as "pending" | "paid",
-      splitBetween: data.split_between,
-      selectedProfiles: data.selected_profiles || []
+      payment_due_date: data.payment_due_date,
+      status: data.status,
+      selected_profiles: data.selected_profiles || [],
+      split_between: data.split_between
     };
   } catch (error) {
     console.error('Error adding bill:', error);
@@ -82,10 +79,11 @@ export const updateBill = async (updatedBill: Bill) => {
       .update({
         title: updatedBill.title,
         amount: updatedBill.amount,
-        payment_due_date: updatedBill.paymentDueDate.toISOString(),
-        split_between: updatedBill.splitBetween,
-        selected_profiles: updatedBill.selectedProfiles
-      } as any)
+        payment_due_date: updatedBill.payment_due_date,
+        status: updatedBill.status,
+        selected_profiles: updatedBill.selected_profiles,
+        split_between: updatedBill.selected_profiles.length
+      })
       .eq('id', updatedBill.id);
 
     if (error) throw error;
@@ -123,7 +121,7 @@ export const deleteBill = async (billId: number) => {
 };
 
 export const createNextMonthBill = async (currentBill: Bill) => {
-  const nextMonthDate = addMonths(currentBill.paymentDueDate, 1);
+  const nextMonthDate = addMonths(new Date(currentBill.payment_due_date), 1);
   
   try {
     const { data, error } = await supabase
@@ -133,9 +131,9 @@ export const createNextMonthBill = async (currentBill: Bill) => {
         amount: currentBill.amount,
         payment_due_date: nextMonthDate.toISOString(),
         status: 'pending',
-        split_between: currentBill.splitBetween,
-        selected_profiles: currentBill.selectedProfiles
-      } as any)
+        selected_profiles: currentBill.selected_profiles,
+        split_between: currentBill.split_between
+      })
       .select()
       .single();
 
@@ -146,11 +144,10 @@ export const createNextMonthBill = async (currentBill: Bill) => {
       id: data.id,
       title: data.title,
       amount: data.amount,
-      dueDate: new Date(data.payment_due_date).toLocaleDateString(),
-      paymentDueDate: new Date(data.payment_due_date),
-      status: data.status as "pending" | "paid",
-      splitBetween: data.split_between,
-      selectedProfiles: data.selected_profiles || []
+      payment_due_date: data.payment_due_date,
+      status: data.status,
+      selected_profiles: data.selected_profiles || [],
+      split_between: data.split_between
     };
   } catch (error) {
     console.error('Error creating next month bill:', error);

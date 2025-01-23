@@ -7,75 +7,123 @@ import { toast } from "sonner";
 
 interface BillFormProps {
   onSubmit: (bill: any) => void;
-  initialData?: any;
+  onCancel?: () => void;
+  initialData?: {
+    title: string;
+    amount: number;
+    payment_due_date: string;
+    status?: string;
+    selected_profiles: string[];
+  };
 }
 
-export const BillForm = ({ onSubmit, initialData }: BillFormProps) => {
+export const BillForm = ({ onSubmit, onCancel, initialData }: BillFormProps) => {
+  const formatDateForInput = (date: string | undefined) => {
+    if (!date) return '';
+    try {
+      const d = new Date(date);
+      if (isNaN(d.getTime())) {
+        console.error('Fecha inválida:', date);
+        return '';
+      }
+      return d.toISOString().split('T')[0];
+    } catch (error) {
+      console.error('Error al formatear la fecha:', error);
+      return '';
+    }
+  };
+
   const [formData, setFormData] = useState({
     title: initialData?.title || "",
     amount: initialData?.amount || "",
-    paymentDueDate: initialData?.paymentDueDate || new Date().toISOString().split('T')[0],
-    selectedProfiles: initialData?.selectedProfiles || []
+    due_date: formatDateForInput(initialData?.payment_due_date) || new Date().toISOString().split('T')[0],
+    selectedProfiles: initialData?.selected_profiles || []
   });
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.title || !formData.amount) {
-      toast.error("Please complete all required fields");
+    if (!formData.title || !formData.amount || !formData.due_date) {
+      toast.error("Por favor completa todos los campos requeridos");
       return;
     }
 
     if (formData.selectedProfiles.length === 0) {
-      toast.error("Please select at least one profile");
+      toast.error("Por favor selecciona al menos un perfil");
       return;
     }
 
-    onSubmit(formData);
+    try {
+      const dueDate = new Date(formData.due_date);
+      if (isNaN(dueDate.getTime())) {
+        toast.error("La fecha de vencimiento no es válida");
+        return;
+      }
+
+      onSubmit({
+        ...formData,
+        amount: parseFloat(formData.amount.toString())
+      });
+
+      if (onCancel) {
+        onCancel();
+      }
+    } catch (error) {
+      console.error('Error al procesar el formulario:', error);
+      toast.error('Error al procesar el formulario');
+    }
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4 mt-6">
+    <form onSubmit={handleSubmit} className="space-y-4 mt-4">
       <div>
-        <Label htmlFor="billTitle">Title</Label>
+        <Label htmlFor="title">Título</Label>
         <Input
-          id="billTitle"
+          id="title"
           value={formData.title}
           onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-          placeholder="Bill title"
+          placeholder="Ingresa el título de la factura"
         />
       </div>
+
       <div>
-        <Label htmlFor="billAmount">Amount</Label>
+        <Label htmlFor="amount">Monto</Label>
         <Input
-          id="billAmount"
+          id="amount"
           type="number"
           value={formData.amount}
           onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
-          placeholder="Bill amount"
+          placeholder="Ingresa el monto"
         />
       </div>
+
       <div>
-        <Label htmlFor="paymentDueDate">Payment due date</Label>
+        <Label htmlFor="due_date">Fecha de vencimiento</Label>
         <Input
-          id="paymentDueDate"
+          id="due_date"
           type="date"
-          value={formData.paymentDueDate}
-          onChange={(e) => setFormData({ ...formData, paymentDueDate: e.target.value })}
+          value={formData.due_date}
+          onChange={(e) => setFormData({ ...formData, due_date: e.target.value })}
         />
       </div>
+
       <div>
-        <Label>Assign to profiles</Label>
+        <Label>Asignar a</Label>
         <AssigneeField
           selectedAssignees={formData.selectedProfiles}
-          onChange={(profiles) => setFormData({ ...formData, selectedProfiles: profiles })}
+          onChange={(assignees) => setFormData({ ...formData, selectedProfiles: assignees })}
         />
-        <p className="text-sm text-gray-500 mt-1">
-          Selected profiles will receive notifications about this bill
-        </p>
       </div>
-      <Button type="submit" className="w-full">
-        {initialData ? "Update" : "Add"} Bill
-      </Button>
+
+      <div className="flex justify-end space-x-2 pt-4">
+        {onCancel && (
+          <Button type="button" variant="outline" onClick={onCancel}>
+            Cancelar
+          </Button>
+        )}
+        <Button type="submit">
+          {initialData ? 'Actualizar' : 'Crear'} Factura
+        </Button>
+      </div>
     </form>
   );
 };

@@ -83,6 +83,7 @@ export const RecurringTaskItem = ({ task, onDelete, onUpdate }: RecurringTaskIte
       <Card className="p-4">
         <RecurringTaskForm
           initialData={{
+            id: task.id,
             title: task.title,
             description: task.description,
             selectedAssignees: task.assignees || [],

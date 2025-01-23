@@ -168,6 +168,26 @@ export const useGeneralCleaning = () => {
       setCompletionPercentage(0);
       setTasks(tasks.map(task => ({ ...task, completed: false })));
 
+      // 4. Enviar notificación por correo al nuevo responsable
+      const newAssigneeProfile = profiles.find(p => p.name === newAssignee);
+      if (newAssigneeProfile?.email) {
+        try {
+          const { error } = await supabase.functions.invoke('send-task-notifications', {
+            body: {
+              assigneeEmail: newAssigneeProfile.email,
+              assigneeName: newAssignee,
+              taskType: "cleaning",
+              message: "Es tu turno para el aseo general"
+            }
+          });
+
+          if (error) throw error;
+        } catch (emailError) {
+          console.error('Error al enviar la notificación por correo:', emailError);
+          // No interrumpimos el flujo si falla el envío del correo
+        }
+      }
+
       toast.success(`Se ha asignado el aseo general a ${newAssignee}`);
     } catch (error) {
       console.error('Error al cambiar el responsable:', error);
