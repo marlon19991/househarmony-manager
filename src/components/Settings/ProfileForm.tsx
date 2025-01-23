@@ -37,13 +37,13 @@ export const ProfileForm = ({ profile, setProfile, onSubmit, iconOptions }: Prof
         />
       </div>
       <div>
-        <Label htmlFor="email">Correo electrónico</Label>
+        <Label htmlFor="email">Email</Label>
         <Input
           id="email"
           type="email"
           value={profile.email || ""}
           onChange={(e) => setProfile({ ...profile, email: e.target.value })}
-          placeholder="Correo electrónico (opcional)"
+          placeholder="Email (opcional)"
         />
       </div>
       <div>

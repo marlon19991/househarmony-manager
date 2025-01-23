@@ -20,39 +20,25 @@ const corsHeaders = {
 };
 
 interface EmailRequest {
-  to: string;
+  to: string[];
   subject: string;
   html: string;
 }
 
 const handler = async (req: Request): Promise<Response> => {
+  // Handle CORS preflight requests
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
     if (!RESEND_API_KEY) {
-      throw new Error("Missing RESEND_API_KEY");
+      console.error("RESEND_API_KEY is not configured");
+      throw new Error("Email service not configured");
     }
 
     const emailRequest: EmailRequest = await req.json();
-
-    // If no recipient email is provided, skip sending
-    if (!emailRequest.to) {
-      console.log('No email address provided, skipping email send');
-      return new Response(
-        JSON.stringify({ message: "No email address provided, skipping" }), 
-        { 
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-          status: 200 
-        }
-      );
-    }
-
-    // Validate required fields
-    if (!emailRequest.subject || !emailRequest.html) {
-      throw new Error("Missing required email fields");
-    }
+    console.log("Attempting to send email to:", emailRequest.to);
 
     const res = await fetch("https://api.resend.com/emails", {
       method: "POST",
@@ -61,7 +47,7 @@ const handler = async (req: Request): Promise<Response> => {
         Authorization: `Bearer ${RESEND_API_KEY}`,
       },
       body: JSON.stringify({
-        from: "LaJause <onboarding@resend.dev>",
+        from: "LaJause <onboarding@resend.dev>", // Using Resend's default testing domain
         to: emailRequest.to,
         subject: emailRequest.subject,
         html: emailRequest.html,
@@ -69,41 +55,26 @@ const handler = async (req: Request): Promise<Response> => {
     });
 
     const data = await res.json();
-
+    
     if (!res.ok) {
-      console.error("Resend API error:", data);
-      
-      // If it's a domain verification error, log it but don't treat it as an error
-      if (data.message?.includes('verify a domain')) {
-        console.log('Domain verification required, skipping email send');
-        return new Response(
-          JSON.stringify({ 
-            message: "Domain verification required, email not sent",
-            details: data.message 
-          }), 
-          { 
-            headers: { ...corsHeaders, "Content-Type": "application/json" },
-            status: 200 
-          }
-        );
-      }
-      
-      throw new Error(data.message || "Failed to send email");
+      console.error("Error from Resend API:", data);
+      return new Response(JSON.stringify({ error: data }), {
+        status: res.status,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
+    console.log("Email sent successfully:", data);
     return new Response(JSON.stringify(data), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 200,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
-  } catch (error) {
+  } catch (error: any) {
     console.error("Error in send-email function:", error);
-    return new Response(
-      JSON.stringify({ error: error.message }),
-      {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-        status: 500,
-      }
-    );
+    return new Response(JSON.stringify({ error: error.message }), {
+      status: 500,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
   }
 };
 

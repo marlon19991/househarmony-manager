@@ -1,14 +1,15 @@
 import { useState, useEffect } from "react";
-import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import useProfiles from "@/hooks/useProfiles";
+import { progressService } from "../services/progressService";
+import { supabase } from "@/integrations/supabase/client";
 
 export const useCleaningProgress = () => {
   const [currentAssignee, setCurrentAssignee] = useState<string | null>(null);
   const [completionPercentage, setCompletionPercentage] = useState(0);
   const { profiles } = useProfiles();
 
-  const calculateProgress = async (assignee: string) => {
+  const calculateProgress = async () => {
     try {
       const { data: taskStates, error: taskStatesError } = await supabase
         .from('cleaning_task_states')
@@ -28,17 +29,7 @@ export const useCleaningProgress = () => {
 
   const updateProgress = async (assignee: string, percentage: number) => {
     try {
-      const { error: updateError } = await supabase
-        .from('general_cleaning_progress')
-        .upsert({
-          assignee,
-          completion_percentage: percentage,
-          last_updated: new Date().toISOString()
-        }, {
-          onConflict: 'assignee'
-        });
-
-      if (updateError) throw updateError;
+      await progressService.updateProgress(assignee, percentage);
     } catch (error) {
       console.error('Error al actualizar el progreso:', error);
       toast.error("Error al actualizar el progreso");
@@ -66,12 +57,11 @@ export const useCleaningProgress = () => {
           return;
         }
 
-        const calculatedPercentage = await calculateProgress(progressData.assignee);
+        const calculatedPercentage = await calculateProgress();
         
         setCurrentAssignee(progressData.assignee);
         setCompletionPercentage(calculatedPercentage);
 
-        // Si el porcentaje calculado es diferente al almacenado, actualizarlo
         if (calculatedPercentage !== progressData.completion_percentage) {
           await updateProgress(progressData.assignee, calculatedPercentage);
         }
@@ -89,6 +79,26 @@ export const useCleaningProgress = () => {
     if (profiles.length > 0 && currentAssignee === null) {
       loadProgress();
     }
+
+    // Suscribirse a cambios en tiempo real del progreso
+    const channel = supabase
+      .channel('progress-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'general_cleaning_progress'
+        },
+        () => {
+          loadProgress();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [profiles, currentAssignee]);
 
   return {

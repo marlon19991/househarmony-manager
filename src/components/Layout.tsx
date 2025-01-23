@@ -5,11 +5,11 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
   const location = useLocation();
 
   const navItems = [
-    { path: "/", icon: Home, label: "Home" },
-    { path: "/general-cleaning", icon: Brush, label: "Cleaning" },
-    { path: "/recurring-tasks", icon: CalendarCheck, label: "Recurring Tasks" },
-    { path: "/bills", icon: DollarSign, label: "Bills" },
-    { path: "/settings", icon: Settings, label: "Settings" },
+    { path: "/", icon: Home, label: "Inicio" },
+    { path: "/general-cleaning", icon: Brush, label: "Aseo" },
+    { path: "/recurring-tasks", icon: CalendarCheck, label: "Tareas Periódicas" },
+    { path: "/bills", icon: DollarSign, label: "Facturas" },
+    { path: "/settings", icon: Settings, label: "Ajustes" },
   ];
 
   return (
