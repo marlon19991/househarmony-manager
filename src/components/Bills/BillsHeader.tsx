@@ -9,11 +9,12 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import { BillForm } from "./BillForm";
+import type { Bill } from "./utils/billsLogic";
 
 interface BillsHeaderProps {
   isOpen: boolean;
   setIsOpen: (isOpen: boolean) => void;
-  onAddBill: (bill: any) => void;
+  onAddBill: (bill: Omit<Bill, 'id'>) => void;
 }
 
 export const BillsHeader = ({ isOpen, setIsOpen, onAddBill }: BillsHeaderProps) => {
@@ -21,7 +22,7 @@ export const BillsHeader = ({ isOpen, setIsOpen, onAddBill }: BillsHeaderProps) 
     <div className="flex items-center justify-between">
       <div>
         <h2 className="text-2xl font-bold">Facturas</h2>
-        <p className="text-muted-foreground">Gestiona y organiza tus facturas</p>
+        <p className="text-muted-foreground">Administra y organiza tus facturas</p>
       </div>
       <Sheet open={isOpen} onOpenChange={setIsOpen}>
         <SheetTrigger asChild>

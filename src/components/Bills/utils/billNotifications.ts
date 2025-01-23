@@ -2,118 +2,116 @@ import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { sendBillDueEmail } from "@/utils/emailUtils";
+import type { Bill } from "./billsLogic";
 
-export const handleDueDateNotification = async (
-  billId: number,
-  title: string,
-  amount: number,
-  paymentDueDate: Date,
-  selectedProfiles: string[],
-  profiles: any[]
-) => {
+export const handleDueDateNotification = async (bill: Bill) => {
   try {
-    const { data: existingNotification, error: checkError } = await supabase
+    // Verificar si ya se envió una notificación de vencimiento próximo
+    const { data: existingNotification } = await supabase
       .from('bill_notifications')
       .select()
-      .eq('bill_id', billId)
+      .eq('bill_id', bill.id)
       .eq('notification_type', 'due_date')
       .maybeSingle();
 
-    if (checkError) {
-      console.error('Error checking due date notification:', checkError);
+    if (existingNotification) {
+      console.log('Ya se envió una notificación de vencimiento próximo para esta factura');
       return;
     }
 
-    if (!existingNotification) {
-      const formattedDate = format(paymentDueDate, "dd 'de' MMMM, yyyy", { locale: es });
-      
-      // Send email to each selected profile
-      for (const profileName of selectedProfiles) {
-        const profile = profiles.find(p => p.name === profileName);
-        if (profile?.email) {
-          await sendBillDueEmail(
-            profile.email,
-            profile.name,
-            title,
-            formattedDate,
-            amount
-          );
-        }
-      }
+    // Formatear la fecha de vencimiento
+    const dueDate = format(new Date(bill.payment_due_date), "PPP", { locale: es });
 
-      // Use upsert instead of insert to handle duplicates
-      const { error: upsertError } = await supabase
-        .from('bill_notifications')
-        .upsert({
-          bill_id: billId,
-          notification_type: 'due_date'
-        }, {
-          onConflict: 'bill_id,notification_type'
-        });
+    // Obtener los perfiles asociados a la factura
+    const { data: profiles } = await supabase
+      .from('profiles')
+      .select('name, email')
+      .in('name', bill.selected_profiles);
 
-      if (upsertError) {
-        console.error('Error recording due date notification:', upsertError);
-      }
+    if (!profiles) {
+      console.error('No se encontraron perfiles para enviar notificaciones');
+      return;
     }
+
+    // Enviar correo a cada perfil
+    for (const profile of profiles) {
+      if (!profile.email) continue;
+
+      await sendBillDueEmail(
+        profile.email,
+        profile.name,
+        bill.title,
+        dueDate,
+        bill.amount,
+        false // no está vencida
+      );
+    }
+
+    // Registrar que se envió la notificación
+    await supabase
+      .from('bill_notifications')
+      .insert({
+        bill_id: bill.id,
+        notification_type: 'due_date'
+      });
+
   } catch (error) {
-    console.error('Error handling due date notification:', error);
+    console.error('Error al enviar notificación de vencimiento próximo:', error);
   }
 };
 
-export const handleOverdueNotification = async (
-  billId: number,
-  title: string,
-  amount: number,
-  paymentDueDate: Date,
-  selectedProfiles: string[],
-  profiles: any[]
-) => {
+export const handleOverdueNotification = async (bill: Bill) => {
   try {
-    const { data: existingNotification, error: checkError } = await supabase
+    // Verificar si ya se envió una notificación de vencimiento
+    const { data: existingNotification } = await supabase
       .from('bill_notifications')
       .select()
-      .eq('bill_id', billId)
+      .eq('bill_id', bill.id)
       .eq('notification_type', 'overdue')
       .maybeSingle();
 
-    if (checkError) {
-      console.error('Error checking overdue notification:', checkError);
+    if (existingNotification) {
+      console.log('Ya se envió una notificación de vencimiento para esta factura');
       return;
     }
 
-    if (!existingNotification) {
-      const formattedDate = format(paymentDueDate, "dd 'de' MMMM, yyyy", { locale: es });
-      
-      // Send overdue notification to each selected profile
-      for (const profileName of selectedProfiles) {
-        const profile = profiles.find(p => p.name === profileName);
-        if (profile?.email) {
-          await sendBillDueEmail(
-            profile.email,
-            profile.name,
-            title,
-            formattedDate,
-            amount,
-            true // indicates this is an overdue notification
-          );
-        }
-      }
+    // Formatear la fecha de vencimiento
+    const dueDate = format(new Date(bill.payment_due_date), "PPP", { locale: es });
 
-      // Use upsert instead of insert to handle duplicates
-      const { error: upsertError } = await supabase
-        .from('bill_notifications')
-        .upsert({
-          bill_id: billId,
-          notification_type: 'overdue'
-        }, {
-          onConflict: 'bill_id,notification_type'
-        });
+    // Obtener los perfiles asociados a la factura
+    const { data: profiles } = await supabase
+      .from('profiles')
+      .select('name, email')
+      .in('name', bill.selected_profiles);
 
-      if (upsertError) {
-        console.error('Error recording overdue notification:', upsertError);
-      }
+    if (!profiles) {
+      console.error('No se encontraron perfiles para enviar notificaciones');
+      return;
     }
+
+    // Enviar correo a cada perfil
+    for (const profile of profiles) {
+      if (!profile.email) continue;
+
+      await sendBillDueEmail(
+        profile.email,
+        profile.name,
+        bill.title,
+        dueDate,
+        bill.amount,
+        true // está vencida
+      );
+    }
+
+    // Registrar que se envió la notificación
+    await supabase
+      .from('bill_notifications')
+      .insert({
+        bill_id: bill.id,
+        notification_type: 'overdue'
+      });
+
   } catch (error) {
-    console.error('Error handling overdue notification:', error);
+    console.error('Error al enviar notificación de vencimiento:', error);
   }
 };

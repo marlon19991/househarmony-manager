@@ -24,7 +24,7 @@ export const BillsSection = () => {
     setBills(fetchedBills);
   };
 
-  const handleAddBill = async (newBill: any) => {
+  const handleAddBill = async (newBill: Omit<Bill, 'id'>) => {
     try {
       const createdBill = await createBill(newBill);
       setBills(prevBills => [createdBill, ...prevBills]);

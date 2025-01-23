@@ -18,6 +18,7 @@ interface RecurringTaskFormProps {
   onSubmit: () => void;
   onCancel: () => void;
   initialData?: {
+    id?: number;
     title: string;
     description?: string;
     selectedAssignees: string[];
@@ -70,63 +71,48 @@ export const RecurringTaskForm = ({ onSubmit, onCancel, initialData }: Recurring
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!title.trim()) {
-      toast.error("El título es requerido");
-      return;
-    }
-
-    if (recurrenceType === "specific" && !specificDate) {
-      toast.error("Debes seleccionar una fecha específica");
-      return;
-    }
-
-    if (recurrenceType === "weekly" && !weekdays.some(day => day)) {
-      toast.error("Debes seleccionar al menos un día de la semana");
-      return;
-    }
-
     try {
-      const { data, error } = await supabase
-        .from('recurring_tasks')
-        .upsert({
-          title,
-          description,
-          assignees: selectedAssignees,
-          weekdays: recurrenceType === "weekly" || recurrenceType === "workdays" ? weekdays : new Array(7).fill(false),
-          start_date: recurrenceType === "specific" ? specificDate?.toISOString() : null,
-          icon: initialData?.icon || '📋',
-          recurrence_type: recurrenceType,
-          notification_time: notificationTime
-        })
-        .select()
-        .single();
+      if (!title || !notificationTime || selectedAssignees.length === 0) {
+        toast.error("Por favor completa todos los campos requeridos");
+        return;
+      }
 
-      if (error) throw error;
+      if (recurrenceType === "specific" && !specificDate) {
+        toast.error("Por favor selecciona una fecha específica");
+        return;
+      }
 
-      // Send email to each assignee
-      for (const assigneeName of selectedAssignees) {
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('email')
-          .eq('name', assigneeName)
-          .maybeSingle();
+      if (recurrenceType === "weekly" && !Object.values(weekdays).some(Boolean)) {
+        toast.error("Por favor selecciona al menos un día de la semana");
+        return;
+      }
 
-        if (profile?.email) {
-          const scheduleText = recurrenceType === "specific" 
-            ? format(specificDate!, "PPP", { locale: es })
-            : recurrenceType === "workdays"
-              ? "de lunes a viernes"
-              : getWeekdaysText(weekdays);
+      const taskData = {
+        title,
+        description,
+        notification_time: notificationTime,
+        recurrence_type: recurrenceType,
+        start_date: specificDate ? format(specificDate, 'yyyy-MM-dd') : null,
+        weekdays: recurrenceType === "weekly" ? weekdays : null,
+        assignees: selectedAssignees,
+        icon: initialData?.icon || '📋'
+      };
 
-          await sendTaskAssignmentEmail(
-            profile.email,
-            assigneeName,
-            title,
-            "recurring",
-            scheduleText,
-            notificationTime
-          );
-        }
+      if (initialData?.id) {
+        const { error } = await supabase
+          .from('recurring_tasks')
+          .update(taskData)
+          .eq('id', initialData.id);
+
+        if (error) throw error;
+      } else {
+        const { error } = await supabase
+          .from('recurring_tasks')
+          .insert(taskData)
+          .select()
+          .single();
+
+        if (error) throw error;
       }
 
       onSubmit();

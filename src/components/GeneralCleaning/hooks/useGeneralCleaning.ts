@@ -152,32 +152,41 @@ export const useGeneralCleaning = () => {
       // 1. Actualizar el responsable y reiniciar el progreso en la base de datos
       await updateProgress(newAssignee, 0);
 
-      // 2. Reiniciar todos los estados de las tareas
-      const { error: deleteError } = await supabase
+      // 2. Actualizar todos los estados de las tareas a no completados
+      const { error: updateError } = await supabase
         .from('cleaning_task_states')
-        .delete()
+        .update({
+          completed: false,
+          updated_at: new Date().toISOString()
+        })
         .in('task_id', tasks.map(task => task.id));
 
-      if (deleteError) throw deleteError;
+      if (updateError) throw updateError;
 
-      // 3. Crear nuevos estados para todas las tareas
-      const newStates = tasks.map(task => ({
-        task_id: task.id,
-        completed: false,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      }));
-
-      const { error: insertError } = await supabase
-        .from('cleaning_task_states')
-        .insert(newStates);
-
-      if (insertError) throw insertError;
-
-      // 4. Actualizar el estado local
+      // 3. Actualizar el estado local
       setCurrentAssignee(newAssignee);
       setCompletionPercentage(0);
       setTasks(tasks.map(task => ({ ...task, completed: false })));
+
+      // 4. Enviar notificación por correo al nuevo responsable
+      const newAssigneeProfile = profiles.find(p => p.name === newAssignee);
+      if (newAssigneeProfile?.email) {
+        try {
+          const { error } = await supabase.functions.invoke('send-task-notifications', {
+            body: {
+              assigneeEmail: newAssigneeProfile.email,
+              assigneeName: newAssignee,
+              taskType: "cleaning",
+              message: "Es tu turno para el aseo general"
+            }
+          });
+
+          if (error) throw error;
+        } catch (emailError) {
+          console.error('Error al enviar la notificación por correo:', emailError);
+          // No interrumpimos el flujo si falla el envío del correo
+        }
+      }
 
       toast.success(`Se ha asignado el aseo general a ${newAssignee}`);
     } catch (error) {
@@ -250,6 +259,75 @@ export const useGeneralCleaning = () => {
     }
   };
 
+  // Actualizar una tarea
+  const updateTask = async (taskId: number, description: string, comment: string) => {
+    try {
+      const { error: updateError } = await supabase
+        .from('general_cleaning_tasks')
+        .update({
+          description,
+          comment
+        })
+        .eq('id', taskId);
+
+      if (updateError) throw updateError;
+
+      // Actualizar el estado local
+      setTasks(tasks.map(task =>
+        task.id === taskId
+          ? { ...task, description, comment }
+          : task
+      ));
+
+      toast.success("Tarea actualizada exitosamente");
+      return true;
+    } catch (error) {
+      console.error('Error al actualizar la tarea:', error);
+      toast.error("Error al actualizar la tarea");
+      return false;
+    }
+  };
+
+  // Eliminar una tarea
+  const deleteTask = async (taskId: number) => {
+    try {
+      // 1. Eliminar el estado de la tarea
+      const { error: stateError } = await supabase
+        .from('cleaning_task_states')
+        .delete()
+        .eq('task_id', taskId);
+
+      if (stateError) throw stateError;
+
+      // 2. Eliminar la tarea
+      const { error: taskError } = await supabase
+        .from('general_cleaning_tasks')
+        .delete()
+        .eq('id', taskId);
+
+      if (taskError) throw taskError;
+
+      // 3. Actualizar el estado local
+      const updatedTasks = tasks.filter(task => task.id !== taskId);
+      setTasks(updatedTasks);
+
+      // 4. Recalcular el progreso
+      const completedTasks = updatedTasks.filter(task => task.completed).length;
+      const newPercentage = updatedTasks.length > 0 
+        ? Math.round((completedTasks / updatedTasks.length) * 100)
+        : 0;
+      setCompletionPercentage(newPercentage);
+      await updateProgress(currentAssignee, newPercentage);
+
+      toast.success("Tarea eliminada exitosamente");
+      return true;
+    } catch (error) {
+      console.error('Error al eliminar la tarea:', error);
+      toast.error("Error al eliminar la tarea");
+      return false;
+    }
+  };
+
   // Cargar el estado inicial cuando el componente se monta o cuando cambian los perfiles
   useEffect(() => {
     if (profiles.length > 0) {
@@ -285,6 +363,8 @@ export const useGeneralCleaning = () => {
     updateTaskState,
     changeAssignee,
     loadInitialState,
-    addTask
+    addTask,
+    updateTask,
+    deleteTask
   };
 }; 

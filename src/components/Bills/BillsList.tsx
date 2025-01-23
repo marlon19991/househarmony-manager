@@ -14,8 +14,8 @@ export const BillsList = ({
   onDelete, 
   onToggleStatus
 }: BillsListProps) => {
-  // Filter to only show pending bills
-  const pendingBills = bills.filter(bill => bill.status === "pending");
+  // Filtrar para mostrar solo las facturas pendientes
+  const pendingBills = bills.filter(bill => bill.status === 'pending');
 
   if (!pendingBills.length) {
     return (

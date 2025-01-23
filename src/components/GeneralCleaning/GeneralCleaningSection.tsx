@@ -1,10 +1,12 @@
+import { useState } from "react";
 import { Card } from "@/components/ui/card";
 import TaskList from "./TaskList";
 import AssigneeSelector from "./AssigneeSelector";
 import ProgressDisplay from "./components/ProgressDisplay";
 import { useGeneralCleaning } from "./hooks/useGeneralCleaning";
+import { useCleaningProgress } from "./hooks/useCleaningProgress";
 
-const GeneralCleaningSection = () => {
+export const GeneralCleaningSection = () => {
   const {
     tasks,
     currentAssignee,
@@ -12,8 +14,36 @@ const GeneralCleaningSection = () => {
     isLoading,
     updateTaskState,
     changeAssignee,
-    addTask
+    addTask,
+    updateTask,
+    deleteTask
   } = useGeneralCleaning();
+
+  const [newTask, setNewTask] = useState({ title: "", comment: "" });
+
+  const handleTaskToggle = async (taskId: number) => {
+    const task = tasks.find(t => t.id === taskId);
+    if (!task) return;
+    await updateTaskState(taskId, !task.completed);
+  };
+
+  const handleAddTask = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newTask.title.trim()) return;
+
+    const success = await addTask(newTask.title, newTask.comment);
+    if (success) {
+      setNewTask({ title: "", comment: "" });
+    }
+  };
+
+  const handleUpdateTask = async (taskId: number, description: string, comment: string) => {
+    await updateTask(taskId, description, comment);
+  };
+
+  const handleDeleteTask = async (taskId: number) => {
+    await deleteTask(taskId);
+  };
 
   if (isLoading || currentAssignee === null) {
     return (
@@ -25,21 +55,25 @@ const GeneralCleaningSection = () => {
 
   return (
     <Card className="p-6 space-y-6">
-      <ProgressDisplay completionPercentage={completionPercentage} />
-      <div className="grid gap-6 md:grid-cols-[2fr_1fr]">
-        <TaskList
-          tasks={tasks}
-          currentAssignee={currentAssignee}
-          onTaskStateChange={updateTaskState}
-          addTask={addTask}
-          isDisabled={currentAssignee === "Sin asignar"}
-        />
+      <div className="flex flex-col gap-6 md:flex-row md:items-start md:justify-between">
+        <ProgressDisplay completionPercentage={completionPercentage} />
         <AssigneeSelector
           currentAssignee={currentAssignee}
           onAssigneeChange={changeAssignee}
           completionPercentage={completionPercentage}
         />
       </div>
+      <TaskList
+        tasks={tasks}
+        currentAssignee={currentAssignee}
+        onTaskToggle={handleTaskToggle}
+        onAddTask={handleAddTask}
+        onUpdateTask={handleUpdateTask}
+        onDeleteTask={handleDeleteTask}
+        newTask={newTask}
+        setNewTask={setNewTask}
+        isDisabled={currentAssignee === "Sin asignar"}
+      />
     </Card>
   );
 };
