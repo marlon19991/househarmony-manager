@@ -1,6 +1,8 @@
 // @ts-ignore: Deno types
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { format, addDays } from 'date-fns';
+import { es } from 'date-fns/locale';
 
 declare global {
   interface Window {
@@ -417,26 +419,26 @@ const handler = async (req: Request): Promise<Response> => {
 
         try {
           console.log(`Sending notification to ${profile.name} (${profile.email}) for task:`, task.title);
-          
-          const res = await fetch("https://api.resend.com/emails", {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${RESEND_API_KEY}`,
-            },
-            body: JSON.stringify({
-              from: "LaJause <onboarding@resend.dev>",
-              to: profile.email,
-              subject: `Recordatorio: ${task.title}`,
-              html: `
-                <h1>Hola ${profile.name},</h1>
-                <p>Tienes una tarea programada para hoy:</p>
-                <h2>${task.title}</h2>
-                <p>Hora: ${task.notification_time}</p>
-                <p>Por favor, no olvides completarla.</p>
-              `,
-            }),
-          });
+
+        const res = await fetch("https://api.resend.com/emails", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${RESEND_API_KEY}`,
+          },
+          body: JSON.stringify({
+            from: "LaJause <onboarding@resend.dev>",
+            to: profile.email,
+            subject: `Recordatorio: ${task.title}`,
+            html: `
+              <h1>Hola ${profile.name},</h1>
+              <p>Tienes una tarea programada para hoy:</p>
+              <h2>${task.title}</h2>
+              <p>Hora: ${task.notification_time}</p>
+              <p>Por favor, no olvides completarla.</p>
+            `,
+          }),
+        });
 
           const responseData = await res.text();
           console.log(`Email sending response for ${profile.email}:`, {
@@ -444,7 +446,7 @@ const handler = async (req: Request): Promise<Response> => {
             response: responseData
           });
 
-          if (!res.ok) {
+        if (!res.ok) {
             throw new Error(responseData || "Failed to send email");
           }
 

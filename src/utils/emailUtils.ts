@@ -49,6 +49,13 @@ export const sendBillDueEmail = async (
   isOverdue: boolean
 ) => {
   try {
+    console.log('Enviando correo de notificación de factura:', {
+      to,
+      billTitle,
+      dueDate,
+      isOverdue
+    });
+
     const emailData = {
       to,
       subject: isOverdue 
@@ -79,13 +86,20 @@ export const sendBillDueEmail = async (
       `
     };
 
-    const { error } = await supabase.functions.invoke('send-email', {
+    const { error, data } = await supabase.functions.invoke('send-email', {
       body: emailData
     });
 
     if (error) {
+      console.error('Error al enviar el correo de notificación:', error);
       throw error;
     }
+
+    console.log('Correo enviado exitosamente:', {
+      to,
+      billTitle,
+      response: data
+    });
 
   } catch (error) {
     console.error('Error al enviar el correo de notificación de factura:', error);
