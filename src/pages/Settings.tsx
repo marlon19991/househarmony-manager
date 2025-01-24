@@ -1,4 +1,4 @@
-import { Settings as SettingsIcon, Moon } from "lucide-react";
+import { Settings as SettingsIcon, Moon, Sliders } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import {
@@ -11,14 +11,16 @@ import {
   SidebarMenuButton,
 } from "@/components/ui/sidebar";
 import { ProfilesSection } from "@/components/Settings/ProfilesSection";
+import { GeneralSettingsSection } from "@/components/Settings/GeneralSettingsSection";
 import { useState } from "react";
 
 const Settings = () => {
-  const [currentSection, setCurrentSection] = useState<"profiles" | "appearance">("profiles");
+  const [currentSection, setCurrentSection] = useState<"profiles" | "appearance" | "general">("profiles");
 
   const menuItems = [
     { id: "profiles" as const, label: "Perfiles", icon: SettingsIcon },
     { id: "appearance" as const, label: "Apariencia", icon: Moon },
+    { id: "general" as const, label: "General", icon: Sliders },
   ];
 
   return (
@@ -58,6 +60,7 @@ const Settings = () => {
                   <ThemeToggle />
                 </div>
               )}
+              {currentSection === "general" && <GeneralSettingsSection />}
             </Card>
           </main>
         </div>

@@ -27,7 +27,6 @@ interface RecurringTaskItemProps {
     start_date?: string;
     end_date?: string;
     assignees?: string[];
-    icon?: string;
     recurrence_type?: string;
     notification_time?: string;
   };
@@ -91,7 +90,6 @@ export const RecurringTaskItem = ({ task, onDelete, onUpdate }: RecurringTaskIte
             weekdays: task.weekdays,
             start_date: task.start_date ? new Date(task.start_date) : undefined,
             end_date: task.end_date ? new Date(task.end_date) : undefined,
-            icon: task.icon,
             recurrence_type: task.recurrence_type,
             notification_time: task.notification_time
           }}
@@ -103,35 +101,36 @@ export const RecurringTaskItem = ({ task, onDelete, onUpdate }: RecurringTaskIte
   }
 
   return (
-    <Card className="p-6 hover:bg-accent/5 transition-colors">
-      <div className="flex flex-col space-y-4">
-        <div className="flex items-start justify-between">
-          <div className="flex items-start gap-3">
-            <span className="text-2xl mt-1">{task.icon || '📋'}</span>
-            <div className="space-y-1.5">
-              <h3 className="text-xl font-medium tracking-tight">{task.title}</h3>
-              {task.description && (
-                <p className="text-muted-foreground text-sm leading-relaxed">{task.description}</p>
-              )}
-            </div>
+    <Card className="p-3 hover:bg-accent/5 transition-colors">
+      <div className="flex items-start justify-between gap-3">
+        <div className="flex-1 min-w-0">
+          <h3 className="text-sm font-medium truncate">{task.title}</h3>
+          {task.description && (
+            <p className="text-xs text-muted-foreground mt-0.5 line-clamp-1">{task.description}</p>
+          )}
+          <div className="flex items-center gap-1.5 mt-1.5 text-[11px] text-muted-foreground/70">
+            <Calendar className="h-3 w-3 shrink-0" />
+            <span className="truncate">{getScheduleText()}</span>
           </div>
+        </div>
+        <div className="flex flex-col items-end gap-1.5">
           <div className="flex items-center gap-1">
             <Button
               variant="ghost"
               size="sm"
               onClick={() => setIsEditing(true)}
-              className="text-muted-foreground hover:text-primary"
+              className="h-7 w-7 p-0 text-muted-foreground hover:text-primary"
             >
-              <Pencil className="h-4 w-4" />
+              <Pencil className="h-3.5 w-3.5" />
             </Button>
             <AlertDialog>
               <AlertDialogTrigger asChild>
                 <Button 
                   variant="ghost"
                   size="sm"
-                  className="text-muted-foreground hover:text-destructive"
+                  className="h-7 w-7 p-0 text-muted-foreground hover:text-destructive"
                 >
-                  <Trash2 className="h-4 w-4" />
+                  <Trash2 className="h-3.5 w-3.5" />
                 </Button>
               </AlertDialogTrigger>
               <AlertDialogContent>
@@ -152,25 +151,20 @@ export const RecurringTaskItem = ({ task, onDelete, onUpdate }: RecurringTaskIte
               </AlertDialogContent>
             </AlertDialog>
           </div>
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-sm">
-          <div className="flex items-center gap-2 text-muted-foreground">
-            <Calendar className="h-4 w-4 shrink-0" />
-            <span className="truncate">{getScheduleText()}</span>
+          <div className="flex flex-col items-end gap-1 text-[11px] text-muted-foreground/70">
+            {task.notification_time && (
+              <div className="flex items-center gap-1.5">
+                <Clock className="h-3 w-3 shrink-0" />
+                <span>{task.notification_time}</span>
+              </div>
+            )}
+            {task.assignees && task.assignees.length > 0 && (
+              <div className="flex items-center gap-1.5">
+                <Users className="h-3 w-3 shrink-0" />
+                <span className="truncate max-w-[150px]">{getAssigneesText()}</span>
+              </div>
+            )}
           </div>
-          {task.notification_time && (
-            <div className="flex items-center gap-2 text-muted-foreground">
-              <Clock className="h-4 w-4 shrink-0" />
-              <span>{task.notification_time}</span>
-            </div>
-          )}
-          {task.assignees && task.assignees.length > 0 && (
-            <div className="flex items-center gap-2 text-muted-foreground">
-              <Users className="h-4 w-4 shrink-0" />
-              <span className="truncate">{getAssigneesText()}</span>
-            </div>
-          )}
         </div>
       </div>
     </Card>

@@ -95,7 +95,7 @@ export const RecurringTaskForm = ({ onSubmit, onCancel, initialData }: Recurring
         start_date: specificDate ? format(specificDate, 'yyyy-MM-dd') : null,
         weekdays: recurrenceType === "weekly" ? weekdays : null,
         assignees: selectedAssignees,
-        icon: initialData?.icon || '📋'
+        icon: ""
       };
 
       if (initialData?.id) {
