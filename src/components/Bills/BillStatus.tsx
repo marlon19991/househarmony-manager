@@ -13,7 +13,7 @@ export const BillStatus = ({ dueDate, status }: BillStatusProps) => {
     if (isNaN(dueDateObj.getTime())) {
       console.error('Fecha inválida:', dueDate);
       return (
-        <span className="text-red-500 font-semibold text-base">
+        <span className="text-red-600 font-semibold text-lg">
           Error en fecha
         </span>
       );
@@ -24,7 +24,7 @@ export const BillStatus = ({ dueDate, status }: BillStatusProps) => {
 
     if (status === 'paid') {
       return (
-        <span className="text-green-600 font-semibold text-base">
+        <span className="text-green-600 font-semibold text-lg">
           Pagada
         </span>
       );
@@ -32,7 +32,7 @@ export const BillStatus = ({ dueDate, status }: BillStatusProps) => {
 
     if (daysUntilDue < 0) {
       return (
-        <span className="text-red-600 font-semibold text-base">
+        <span className="text-red-600 font-semibold text-lg">
           Vencida
         </span>
       );
@@ -40,21 +40,21 @@ export const BillStatus = ({ dueDate, status }: BillStatusProps) => {
 
     if (daysUntilDue <= 3) {
       return (
-        <span className="text-yellow-600 font-semibold text-base">
+        <span className="text-yellow-600 font-semibold text-lg">
           Próxima a vencer
         </span>
       );
     }
 
     return (
-      <span className="text-emerald-600 font-semibold text-base">
+      <span className="text-emerald-600 font-semibold text-lg">
         A tiempo
       </span>
     );
   } catch (error) {
     console.error('Error al procesar el estado de la factura:', error);
     return (
-      <span className="text-red-500 font-semibold text-base">
+      <span className="text-red-600 font-semibold text-lg">
         Error
       </span>
     );

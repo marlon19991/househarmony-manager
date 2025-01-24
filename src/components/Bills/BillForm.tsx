@@ -26,7 +26,9 @@ export const BillForm = ({ onSubmit, onCancel, initialData }: BillFormProps) => 
         console.error('Fecha inválida:', date);
         return '';
       }
-      return d.toISOString().split('T')[0];
+      // Ajustar la fecha para que coincida con la zona horaria local
+      const localDate = new Date(d.getTime() + d.getTimezoneOffset() * 60000);
+      return localDate.toISOString().split('T')[0];
     } catch (error) {
       console.error('Error al formatear la fecha:', error);
       return '';
@@ -36,7 +38,7 @@ export const BillForm = ({ onSubmit, onCancel, initialData }: BillFormProps) => 
   const [formData, setFormData] = useState({
     title: initialData?.title || "",
     amount: initialData?.amount || "",
-    due_date: formatDateForInput(initialData?.payment_due_date) || new Date().toISOString().split('T')[0],
+    due_date: formatDateForInput(initialData?.payment_due_date) || formatDateForInput(new Date().toISOString()),
     selectedProfiles: initialData?.selected_profiles || []
   });
 
@@ -53,15 +55,22 @@ export const BillForm = ({ onSubmit, onCancel, initialData }: BillFormProps) => 
     }
 
     try {
-      const dueDate = new Date(formData.due_date);
+      // Crear fecha asegurando que sea la fecha exacta seleccionada
+      const [year, month, day] = formData.due_date.split('-').map(Number);
+      const dueDate = new Date(year, month - 1, day, 23, 59, 59);
+
       if (isNaN(dueDate.getTime())) {
         toast.error("La fecha de vencimiento no es válida");
         return;
       }
 
+      // Ajustar la fecha para que coincida con la zona horaria local
+      const localDueDate = new Date(dueDate.getTime() - dueDate.getTimezoneOffset() * 60000);
+
       onSubmit({
         ...formData,
-        amount: parseFloat(formData.amount.toString())
+        amount: parseFloat(formData.amount.toString()),
+        due_date: localDueDate.toISOString()
       });
 
       if (onCancel) {
