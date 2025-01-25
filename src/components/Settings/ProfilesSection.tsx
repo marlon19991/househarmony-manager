@@ -130,6 +130,7 @@ export const ProfilesSection = () => {
                 <Button
                   variant="ghost"
                   size="icon"
+                  className="text-muted-foreground hover:text-primary-foreground hover:bg-primary"
                   onClick={() => {
                     setEditingProfile(profile);
                     setShowEditDialog(true);
@@ -139,8 +140,12 @@ export const ProfilesSection = () => {
                 </Button>
                 <AlertDialog>
                   <AlertDialogTrigger asChild>
-                    <Button variant="ghost" size="icon">
-                      <UserX className="w-4 h-4 text-destructive" />
+                    <Button 
+                      variant="ghost" 
+                      size="icon"
+                      className="text-muted-foreground hover:text-destructive-foreground hover:bg-destructive"
+                    >
+                      <UserX className="w-4 h-4" />
                     </Button>
                   </AlertDialogTrigger>
                   <AlertDialogContent>
@@ -152,7 +157,10 @@ export const ProfilesSection = () => {
                     </AlertDialogHeader>
                     <AlertDialogFooter>
                       <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                      <AlertDialogAction onClick={() => handleDeleteProfile(profile.id)}>
+                      <AlertDialogAction 
+                        onClick={() => handleDeleteProfile(profile.id)}
+                        className="bg-destructive hover:bg-destructive/90 text-destructive-foreground"
+                      >
                         Eliminar
                       </AlertDialogAction>
                     </AlertDialogFooter>

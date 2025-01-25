@@ -73,6 +73,7 @@ const TaskItem = ({
             size="icon"
             onClick={onStartEditing}
             disabled={isDisabled}
+            className="text-muted-foreground hover:text-primary-foreground hover:bg-primary"
           >
             <Edit2 className="h-4 w-4" />
           </Button>
@@ -81,7 +82,7 @@ const TaskItem = ({
               <Button
                 variant="ghost"
                 size="icon"
-                className="text-destructive"
+                className="text-muted-foreground hover:text-destructive-foreground hover:bg-destructive"
                 disabled={isDisabled}
               >
                 <Trash2 className="h-4 w-4" />
@@ -96,7 +97,12 @@ const TaskItem = ({
               </AlertDialogHeader>
               <AlertDialogFooter>
                 <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                <AlertDialogAction onClick={onDelete}>Eliminar</AlertDialogAction>
+                <AlertDialogAction 
+                  onClick={onDelete}
+                  className="bg-destructive hover:bg-destructive/90 text-destructive-foreground"
+                >
+                  Eliminar
+                </AlertDialogAction>
               </AlertDialogFooter>
             </AlertDialogContent>
           </AlertDialog>

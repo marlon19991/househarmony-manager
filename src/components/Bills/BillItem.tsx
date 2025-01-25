@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Pencil, Trash2, CheckCircle } from "lucide-react";
+import { Pencil, Trash2 } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -17,6 +17,7 @@ import { BillForm } from "./BillForm";
 import { BillStatus } from "./BillStatus";
 import { BillDates } from "./BillDates";
 import { handleDueDateNotification, handleOverdueNotification } from "./utils/billNotifications";
+import { getBillColorScheme } from "./utils/billsLogic";
 import type { Bill } from "./utils/billsLogic";
 import { cn } from "@/lib/utils";
 
@@ -32,7 +33,10 @@ export const BillItem = ({ bill, onUpdate, onDelete, onToggleStatus }: BillItemP
 
   // Verificar notificaciones cuando cambia la factura
   useEffect(() => {
-    checkNotifications();
+    // Solo verificar notificaciones si la factura está pendiente
+    if (bill.status === 'pending') {
+      checkNotifications();
+    }
   }, [bill]);
 
   const checkNotifications = async () => {
@@ -47,12 +51,12 @@ export const BillItem = ({ bill, onUpdate, onDelete, onToggleStatus }: BillItemP
       const threeDaysFromNow = new Date(now);
       threeDaysFromNow.setDate(now.getDate() + 3);
 
-      // Si la fecha de vencimiento está dentro de los próximos 3 días y el estado es pendiente
-      if (dueDate <= threeDaysFromNow && dueDate > now && bill.status === 'pending') {
+      // Si la fecha de vencimiento está dentro de los próximos 3 días
+      if (dueDate <= threeDaysFromNow && dueDate > now) {
         await handleDueDateNotification(bill);
       }
-      // Si la fecha de vencimiento ya pasó y el estado es pendiente
-      else if (dueDate < now && bill.status === 'pending') {
+      // Si la fecha de vencimiento ya pasó
+      else if (dueDate < now) {
         await handleOverdueNotification(bill);
       }
     } catch (error) {
@@ -74,45 +78,11 @@ export const BillItem = ({ bill, onUpdate, onDelete, onToggleStatus }: BillItemP
     await checkNotifications();
   };
 
-  const getBorderColor = () => {
-    const dueDate = new Date(bill.payment_due_date);
-    const now = new Date();
-    const threeDaysFromNow = new Date(now);
-    threeDaysFromNow.setDate(now.getDate() + 3);
-
-    if (bill.status === 'paid') {
-      return 'border-l-green-500';
-    }
-    if (dueDate < now) {
-      return 'border-l-red-500';
-    }
-    if (dueDate <= threeDaysFromNow) {
-      return 'border-l-yellow-500';
-    }
-    return 'border-l-emerald-500';
-  };
-
-  const getStatusColor = () => {
-    const dueDate = new Date(bill.payment_due_date);
-    const now = new Date();
-    const threeDaysFromNow = new Date(now);
-    threeDaysFromNow.setDate(now.getDate() + 3);
-
-    if (bill.status === 'paid') {
-      return 'text-green-600 hover:text-green-700 hover:bg-green-50';
-    }
-    if (dueDate < now) {
-      return 'text-red-600 hover:text-red-700 hover:bg-red-50';
-    }
-    if (dueDate <= threeDaysFromNow) {
-      return 'text-yellow-600 hover:text-yellow-700 hover:bg-yellow-50';
-    }
-    return 'text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50';
-  };
+  const colorScheme = getBillColorScheme(bill.payment_due_date, bill.status);
 
   if (isEditing) {
     return (
-      <Card className="p-4 shadow-sm">
+      <Card className="p-4">
         <BillForm
           initialData={{
             title: bill.title,
@@ -131,7 +101,7 @@ export const BillItem = ({ bill, onUpdate, onDelete, onToggleStatus }: BillItemP
   return (
     <Card className={cn(
       "p-4 border-l-4 shadow-sm hover:shadow-md transition-shadow", 
-      getBorderColor()
+      colorScheme.border
     )}>
       <div className="flex flex-col space-y-4">
         <div className="flex items-start justify-between">
@@ -142,7 +112,14 @@ export const BillItem = ({ bill, onUpdate, onDelete, onToggleStatus }: BillItemP
             </div>
             <div className="flex flex-col sm:flex-row sm:items-center gap-2 text-sm text-muted-foreground">
               <BillDates dueDate={bill.payment_due_date} status={bill.status} />
-              <span className="font-medium text-base">${bill.amount.toLocaleString('es-CO')}</span>
+              <span className="font-medium text-base">
+                ${new Intl.NumberFormat('es-CO', {
+                  style: 'decimal',
+                  minimumFractionDigits: 0,
+                  maximumFractionDigits: 0,
+                  useGrouping: true
+                }).format(Math.round(bill.amount))}
+              </span>
             </div>
             {bill.selected_profiles && bill.selected_profiles.length > 0 && (
               <p className="text-sm text-muted-foreground mt-1">
@@ -157,7 +134,7 @@ export const BillItem = ({ bill, onUpdate, onDelete, onToggleStatus }: BillItemP
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="text-muted-foreground hover:text-primary"
+                    className="text-muted-foreground hover:text-primary-foreground hover:bg-primary"
                   >
                     Pagar Factura
                   </Button>
@@ -173,7 +150,7 @@ export const BillItem = ({ bill, onUpdate, onDelete, onToggleStatus }: BillItemP
                     <AlertDialogCancel>Cancelar</AlertDialogCancel>
                     <AlertDialogAction 
                       onClick={() => onToggleStatus(bill.id)}
-                      className="bg-primary hover:bg-primary/90"
+                      className="bg-primary hover:bg-primary/90 text-primary-foreground"
                     >
                       Confirmar Pago
                     </AlertDialogAction>
@@ -185,7 +162,7 @@ export const BillItem = ({ bill, onUpdate, onDelete, onToggleStatus }: BillItemP
               variant="ghost"
               size="icon"
               onClick={() => setIsEditing(true)}
-              className="text-muted-foreground hover:text-primary"
+              className="text-muted-foreground hover:text-primary-foreground hover:bg-primary"
             >
               <Pencil className="h-4 w-4" />
             </Button>
@@ -194,7 +171,7 @@ export const BillItem = ({ bill, onUpdate, onDelete, onToggleStatus }: BillItemP
                 <Button 
                   variant="ghost" 
                   size="icon" 
-                  className="text-muted-foreground hover:text-destructive"
+                  className="text-muted-foreground hover:text-destructive-foreground hover:bg-destructive"
                 >
                   <Trash2 className="h-4 w-4" />
                 </Button>
@@ -210,6 +187,7 @@ export const BillItem = ({ bill, onUpdate, onDelete, onToggleStatus }: BillItemP
                   <AlertDialogCancel>Cancelar</AlertDialogCancel>
                   <AlertDialogAction 
                     onClick={() => onDelete(bill.id)}
+                    className="bg-destructive hover:bg-destructive/90 text-destructive-foreground"
                   >
                     Eliminar
                   </AlertDialogAction>

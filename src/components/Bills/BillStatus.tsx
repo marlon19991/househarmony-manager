@@ -1,6 +1,5 @@
-import { Badge } from "@/components/ui/badge";
-import { differenceInDays } from "date-fns";
-import { cn } from "@/lib/utils";
+import { differenceInDays, startOfDay } from "date-fns";
+import { getBillColorScheme } from "./utils/billsLogic";
 
 interface BillStatusProps {
   dueDate: string;
@@ -9,7 +8,7 @@ interface BillStatusProps {
 
 export const BillStatus = ({ dueDate, status }: BillStatusProps) => {
   try {
-    const dueDateObj = new Date(dueDate);
+    const dueDateObj = startOfDay(new Date(dueDate));
     if (isNaN(dueDateObj.getTime())) {
       console.error('Fecha inválida:', dueDate);
       return (
@@ -19,9 +18,6 @@ export const BillStatus = ({ dueDate, status }: BillStatusProps) => {
       );
     }
 
-    const today = new Date();
-    const daysUntilDue = differenceInDays(dueDateObj, today);
-
     if (status === 'paid') {
       return (
         <span className="text-green-600 font-semibold text-lg">
@@ -30,7 +26,10 @@ export const BillStatus = ({ dueDate, status }: BillStatusProps) => {
       );
     }
 
-    if (daysUntilDue < 0) {
+    const today = startOfDay(new Date());
+    const daysUntilDue = differenceInDays(dueDateObj, today);
+
+    if (today > dueDateObj) {
       return (
         <span className="text-red-600 font-semibold text-lg">
           Vencida
