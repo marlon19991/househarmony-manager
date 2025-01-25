@@ -11,12 +11,16 @@ export default defineConfig(({ mode }) => ({
     strictPort: false,
   },
   plugins: [
-    react(),
+    react({
+      jsxRuntime: 'automatic',
+      jsxImportSource: 'react',
+    }),
     mode === 'development' && componentTagger(),
   ].filter(Boolean),
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
+      "react/jsx-runtime": "react/jsx-runtime.js"
     },
   },
   optimizeDeps: {
@@ -25,7 +29,8 @@ export default defineConfig(({ mode }) => ({
       '@supabase/postgrest-js',
       '@supabase/realtime-js',
       '@supabase/storage-js',
-      '@supabase/functions-js'
+      '@supabase/functions-js',
+      '@tanstack/react-query'
     ],
     esbuildOptions: {
       target: 'es2020'
@@ -39,7 +44,17 @@ export default defineConfig(({ mode }) => ({
       transformMixedEsModules: true,
       include: [
         /node_modules\/@supabase/,
+        /node_modules\/@tanstack/,
       ]
     },
+    rollupOptions: {
+      external: ['react/jsx-runtime'],
+      output: {
+        manualChunks: {
+          'react-vendor': ['react', 'react-dom'],
+          'query': ['@tanstack/react-query']
+        }
+      }
+    }
   },
 }));
