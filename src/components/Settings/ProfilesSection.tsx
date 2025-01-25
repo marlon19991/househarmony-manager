@@ -81,7 +81,7 @@ export const ProfilesSection = () => {
   }
 
   return (
-    <div className="container max-w-4xl mx-auto p-4 space-y-6">
+    <div className="space-y-6">
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold">Perfiles</h1>
         <Sheet>
@@ -107,59 +107,65 @@ export const ProfilesSection = () => {
         </Sheet>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {profiles.map((profile) => (
           <Card key={profile.id} className="p-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <Avatar>
-                  <AvatarImage src={profile.icon} alt={profile.name} />
-                  <AvatarFallback><User /></AvatarFallback>
-                </Avatar>
-                <div className="space-y-1">
-                  <span className="font-medium">{profile.name}</span>
-                  {profile.email && (
-                    <p className="text-sm text-muted-foreground">{profile.email}</p>
-                  )}
-                  {profile.whatsapp_number && (
-                    <p className="text-sm text-muted-foreground">{profile.whatsapp_number}</p>
-                  )}
-                </div>
+            <div className="flex flex-col items-center space-y-4">
+              <Avatar className="h-20 w-20">
+                <AvatarImage src={profile.icon} alt={profile.name} />
+                <AvatarFallback>
+                  <User className="h-10 w-10" />
+                </AvatarFallback>
+              </Avatar>
+              <div className="text-center space-y-1.5">
+                <h3 className="font-semibold text-lg">{profile.name}</h3>
+                {profile.email && (
+                  <p className="text-sm text-muted-foreground break-all">
+                    {profile.email}
+                  </p>
+                )}
+                {profile.whatsapp_number && (
+                  <p className="text-sm text-muted-foreground">
+                    {profile.whatsapp_number}
+                  </p>
+                )}
               </div>
-              <div className="flex gap-2">
+              <div className="flex gap-2 mt-4">
                 <Button
-                  variant="ghost"
+                  variant="outline"
                   size="icon"
-                  className="text-muted-foreground hover:text-primary-foreground hover:bg-primary"
                   onClick={() => {
                     setEditingProfile(profile);
                     setShowEditDialog(true);
                   }}
+                  className="h-8 w-8"
                 >
-                  <Settings className="w-4 h-4" />
+                  <Settings className="h-4 w-4" />
                 </Button>
                 <AlertDialog>
                   <AlertDialogTrigger asChild>
-                    <Button 
-                      variant="ghost" 
+                    <Button
+                      variant="outline"
                       size="icon"
-                      className="text-muted-foreground hover:text-destructive-foreground hover:bg-destructive"
+                      className="h-8 w-8 text-destructive hover:text-destructive-foreground hover:bg-destructive"
                     >
-                      <UserX className="w-4 h-4" />
+                      <UserX className="h-4 w-4" />
                     </Button>
                   </AlertDialogTrigger>
                   <AlertDialogContent>
                     <AlertDialogHeader>
-                      <AlertDialogTitle>¿Estás seguro?</AlertDialogTitle>
+                      <AlertDialogTitle>¿Eliminar perfil?</AlertDialogTitle>
                       <AlertDialogDescription>
-                        Esta acción no se puede deshacer. Se eliminará permanentemente este perfil.
+                        Esta acción no se puede deshacer. Se eliminará el perfil permanentemente.
                       </AlertDialogDescription>
                     </AlertDialogHeader>
-                    <AlertDialogFooter>
-                      <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                      <AlertDialogAction 
+                    <AlertDialogFooter className="flex-col sm:flex-row gap-2">
+                      <AlertDialogCancel className="w-full sm:w-auto">
+                        Cancelar
+                      </AlertDialogCancel>
+                      <AlertDialogAction
                         onClick={() => handleDeleteProfile(profile.id)}
-                        className="bg-destructive hover:bg-destructive/90 text-destructive-foreground"
+                        className="w-full sm:w-auto bg-destructive hover:bg-destructive/90 text-destructive-foreground"
                       >
                         Eliminar
                       </AlertDialogAction>
@@ -177,7 +183,7 @@ export const ProfilesSection = () => {
           <DialogHeader>
             <DialogTitle>Editar Perfil</DialogTitle>
             <DialogDescription>
-              Modifica los detalles del perfil
+              Modifica los datos del perfil.
             </DialogDescription>
           </DialogHeader>
           {editingProfile && (
