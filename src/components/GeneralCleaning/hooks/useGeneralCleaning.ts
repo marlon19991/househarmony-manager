@@ -4,6 +4,7 @@ import { toast } from "sonner";
 import { Task } from "../types/Task";
 import useProfiles from "@/hooks/useProfiles";
 import { sendTaskAssignmentEmail } from "@/utils/emailUtils";
+import { useSettings } from "@/hooks/useSettings";
 
 export const useGeneralCleaning = () => {
   const [tasks, setTasks] = useState<Task[]>([]);
@@ -11,6 +12,7 @@ export const useGeneralCleaning = () => {
   const [completionPercentage, setCompletionPercentage] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const { profiles } = useProfiles();
+  const { maxCleaningTasks } = useSettings();
 
   // Cargar todo el estado inicial
   const loadInitialState = async () => {
@@ -199,6 +201,12 @@ export const useGeneralCleaning = () => {
   // Agregar una nueva tarea
   const addTask = async (description: string, comment: string) => {
     try {
+      // Verificar el límite de tareas
+      if (tasks.length >= maxCleaningTasks) {
+        toast.error(`Has alcanzado el límite de ${maxCleaningTasks} tareas. Puedes cambiar este límite en la sección de ajustes.`);
+        return false;
+      }
+
       // 1. Crear la tarea
       const { data: newTaskData, error: taskError } = await supabase
         .from('general_cleaning_tasks')
