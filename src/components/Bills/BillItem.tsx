@@ -104,15 +104,15 @@ export const BillItem = ({ bill, onUpdate, onDelete, onToggleStatus }: BillItemP
       colorScheme.border
     )}>
       <div className="flex flex-col space-y-4">
-        <div className="flex items-start justify-between">
-          <div className="flex-1">
-            <div className="flex items-center gap-3 mb-2">
+        <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
+          <div className="flex-1 min-w-0">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-2 mb-2">
               <BillStatus dueDate={bill.payment_due_date} status={bill.status} />
-              <h3 className="font-medium text-lg">{bill.title}</h3>
+              <h3 className="font-medium text-lg line-clamp-1">{bill.title}</h3>
             </div>
-            <div className="flex flex-col sm:flex-row sm:items-center gap-2 text-sm text-muted-foreground">
+            <div className="flex flex-col gap-2 text-sm text-muted-foreground">
               <BillDates dueDate={bill.payment_due_date} status={bill.status} />
-              <span className="font-medium text-base">
+              <span className="font-medium text-base text-primary">
                 ${new Intl.NumberFormat('es-CO', {
                   style: 'decimal',
                   minimumFractionDigits: 0,
@@ -120,37 +120,38 @@ export const BillItem = ({ bill, onUpdate, onDelete, onToggleStatus }: BillItemP
                   useGrouping: true
                 }).format(Math.round(bill.amount))}
               </span>
+              {bill.selected_profiles && bill.selected_profiles.length > 0 && (
+                <p className="text-sm text-muted-foreground line-clamp-1">
+                  Asignado a: {bill.selected_profiles.join(", ")}
+                </p>
+              )}
             </div>
-            {bill.selected_profiles && bill.selected_profiles.length > 0 && (
-              <p className="text-sm text-muted-foreground mt-1">
-                Asignado a: {bill.selected_profiles.join(", ")}
-              </p>
-            )}
           </div>
-          <div className="flex items-center space-x-2 ml-4">
+          
+          <div className="flex flex-row sm:flex-row items-center justify-end gap-2">
             {bill.status === 'pending' && (
               <AlertDialog>
                 <AlertDialogTrigger asChild>
                   <Button
-                    variant="ghost"
+                    variant="outline"
                     size="sm"
-                    className="text-muted-foreground hover:text-primary-foreground hover:bg-primary"
+                    className="w-full sm:w-auto text-primary hover:text-primary-foreground hover:bg-primary"
                   >
                     Pagar Factura
                   </Button>
                 </AlertDialogTrigger>
-                <AlertDialogContent>
+                <AlertDialogContent className="sm:max-w-[425px]">
                   <AlertDialogHeader>
                     <AlertDialogTitle>¿Confirmar pago de factura?</AlertDialogTitle>
                     <AlertDialogDescription>
                       Al marcar esta factura como pagada, se creará automáticamente la factura del próximo mes.
                     </AlertDialogDescription>
                   </AlertDialogHeader>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                  <AlertDialogFooter className="flex-col sm:flex-row gap-2">
+                    <AlertDialogCancel className="w-full sm:w-auto">Cancelar</AlertDialogCancel>
                     <AlertDialogAction 
                       onClick={() => onToggleStatus(bill.id)}
-                      className="bg-primary hover:bg-primary/90 text-primary-foreground"
+                      className="w-full sm:w-auto bg-primary hover:bg-primary/90 text-primary-foreground"
                     >
                       Confirmar Pago
                     </AlertDialogAction>
@@ -158,42 +159,46 @@ export const BillItem = ({ bill, onUpdate, onDelete, onToggleStatus }: BillItemP
                 </AlertDialogContent>
               </AlertDialog>
             )}
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => setIsEditing(true)}
-              className="text-muted-foreground hover:text-primary-foreground hover:bg-primary"
-            >
-              <Pencil className="h-4 w-4" />
-            </Button>
-            <AlertDialog>
-              <AlertDialogTrigger asChild>
-                <Button 
-                  variant="ghost" 
-                  size="icon" 
-                  className="text-muted-foreground hover:text-destructive-foreground hover:bg-destructive"
-                >
-                  <Trash2 className="h-4 w-4" />
-                </Button>
-              </AlertDialogTrigger>
-              <AlertDialogContent>
-                <AlertDialogHeader>
-                  <AlertDialogTitle>¿Estás seguro?</AlertDialogTitle>
-                  <AlertDialogDescription>
-                    Esta acción no se puede deshacer. Se eliminará la factura permanentemente.
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                  <AlertDialogAction 
-                    onClick={() => onDelete(bill.id)}
-                    className="bg-destructive hover:bg-destructive/90 text-destructive-foreground"
+            
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={() => setIsEditing(true)}
+                className="h-8 w-8"
+              >
+                <Pencil className="h-4 w-4" />
+              </Button>
+              
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button 
+                    variant="outline"
+                    size="icon"
+                    className="h-8 w-8 text-destructive hover:text-destructive-foreground hover:bg-destructive"
                   >
-                    Eliminar
-                  </AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent className="sm:max-w-[425px]">
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>¿Estás seguro?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      Esta acción no se puede deshacer. Se eliminará la factura permanentemente.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter className="flex-col sm:flex-row gap-2">
+                    <AlertDialogCancel className="w-full sm:w-auto">Cancelar</AlertDialogCancel>
+                    <AlertDialogAction 
+                      onClick={() => onDelete(bill.id)}
+                      className="w-full sm:w-auto bg-destructive hover:bg-destructive/90 text-destructive-foreground"
+                    >
+                      Eliminar
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            </div>
           </div>
         </div>
       </div>

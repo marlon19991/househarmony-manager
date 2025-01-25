@@ -54,26 +54,30 @@ export const GeneralCleaningSection = () => {
   }
 
   return (
-    <Card className="p-6 space-y-6">
-      <div className="flex flex-col gap-6 md:flex-row md:items-start md:justify-between">
-        <ProgressDisplay completionPercentage={completionPercentage} />
-        <AssigneeSelector
+    <Card className="p-4 sm:p-6 space-y-6">
+      <div className="flex flex-col gap-6">
+        <div className="flex flex-col gap-6">
+          <ProgressDisplay completionPercentage={completionPercentage} />
+          <div className="w-full max-w-sm">
+            <AssigneeSelector
+              currentAssignee={currentAssignee}
+              onAssigneeChange={changeAssignee}
+              completionPercentage={completionPercentage}
+            />
+          </div>
+        </div>
+        <TaskList
+          tasks={tasks}
           currentAssignee={currentAssignee}
-          onAssigneeChange={changeAssignee}
-          completionPercentage={completionPercentage}
+          onTaskToggle={handleTaskToggle}
+          onAddTask={handleAddTask}
+          onUpdateTask={handleUpdateTask}
+          onDeleteTask={handleDeleteTask}
+          newTask={newTask}
+          setNewTask={setNewTask}
+          isDisabled={currentAssignee === "Sin asignar"}
         />
       </div>
-      <TaskList
-        tasks={tasks}
-        currentAssignee={currentAssignee}
-        onTaskToggle={handleTaskToggle}
-        onAddTask={handleAddTask}
-        onUpdateTask={handleUpdateTask}
-        onDeleteTask={handleDeleteTask}
-        newTask={newTask}
-        setNewTask={setNewTask}
-        isDisabled={currentAssignee === "Sin asignar"}
-      />
     </Card>
   );
 };
