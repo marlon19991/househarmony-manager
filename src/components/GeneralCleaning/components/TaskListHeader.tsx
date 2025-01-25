@@ -27,13 +27,14 @@ const TaskListHeader = ({
   isDisabled
 }: TaskListHeaderProps) => {
   return (
-    <div className="flex items-center justify-between">
-      <div className="text-lg font-semibold">
-        Responsable actual: {currentAssignee}
+    <div className="flex flex-col sm:flex-row sm:items-center gap-4 sm:justify-between">
+      <div className="text-base sm:text-lg font-semibold">
+        <span className="text-muted-foreground">Responsable actual:</span>{" "}
+        <span className="font-medium">{currentAssignee}</span>
       </div>
       <Sheet>
         <SheetTrigger asChild>
-          <Button size="sm" disabled={isDisabled}>
+          <Button size="sm" disabled={isDisabled} className="w-full sm:w-auto">
             <Plus className="w-4 h-4 mr-2" />
             Agregar Tarea
           </Button>

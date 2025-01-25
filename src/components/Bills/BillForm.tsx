@@ -83,55 +83,63 @@ export const BillForm = ({ onSubmit, onCancel, initialData }: BillFormProps) => 
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4 mt-4">
-      <div>
-        <Label htmlFor="title">Título</Label>
+    <form onSubmit={handleSubmit} className="space-y-4 mt-4 w-full max-w-lg mx-auto px-4 sm:px-0">
+      <div className="space-y-2">
+        <Label htmlFor="title" className="text-sm font-medium">Título</Label>
         <Input
           id="title"
           value={formData.title}
           onChange={(e) => setFormData({ ...formData, title: e.target.value })}
           placeholder="Ingresa el título de la factura"
+          className="w-full"
         />
       </div>
 
-      <div>
-        <Label htmlFor="amount">Monto</Label>
+      <div className="space-y-2">
+        <Label htmlFor="amount" className="text-sm font-medium">Monto</Label>
         <Input
           id="amount"
           type="number"
           value={formData.amount}
           onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
           placeholder="Ingresa el monto"
+          className="w-full"
         />
       </div>
 
-      <div>
-        <Label htmlFor="due_date">Fecha de vencimiento</Label>
+      <div className="space-y-2">
+        <Label htmlFor="due_date" className="text-sm font-medium">Fecha de vencimiento</Label>
         <Input
           id="due_date"
           type="date"
           value={formData.due_date}
           onChange={(e) => setFormData({ ...formData, due_date: e.target.value })}
+          className="w-full"
         />
       </div>
 
-      <div>
-        <Label>Asignar a</Label>
+      <div className="space-y-2">
+        <Label className="text-sm font-medium">Asignar a</Label>
         <AssigneeField
-          selectedAssignees={formData.selectedProfiles}
-          onChange={(assignees) => setFormData({ ...formData, selectedProfiles: assignees })}
+          selectedProfiles={formData.selectedProfiles}
+          onChange={(profiles) => setFormData({ ...formData, selectedProfiles: profiles })}
         />
       </div>
 
-      <div className="flex justify-end space-x-2 pt-4">
+      <div className="flex flex-col sm:flex-row gap-3 mt-6">
+        <Button type="submit" className="w-full sm:w-auto">
+          Guardar
+        </Button>
         {onCancel && (
-          <Button type="button" variant="outline" onClick={onCancel}>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={onCancel}
+            className="w-full sm:w-auto"
+          >
             Cancelar
           </Button>
         )}
-        <Button type="submit">
-          {initialData ? 'Actualizar' : 'Crear'} Factura
-        </Button>
       </div>
     </form>
   );

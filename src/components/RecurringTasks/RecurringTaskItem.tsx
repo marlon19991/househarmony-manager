@@ -43,7 +43,8 @@ interface RecurringTaskItemProps {
 export const RecurringTaskItem = ({ task, onDelete, onUpdate }: RecurringTaskItemProps) => {
   const [isEditing, setIsEditing] = useState(false);
 
-  const handleUpdate = () => {
+  const handleUpdate = (updatedTask: any) => {
+    onUpdate(task.id, updatedTask);
     setIsEditing(false);
   };
 
@@ -99,6 +100,8 @@ export const RecurringTaskItem = ({ task, onDelete, onUpdate }: RecurringTaskIte
     return (
       <Card className="p-4">
         <RecurringTaskForm
+          onSubmit={handleUpdate}
+          onCancel={() => setIsEditing(false)}
           initialData={{
             id: task.id,
             title: task.title,
@@ -111,8 +114,6 @@ export const RecurringTaskItem = ({ task, onDelete, onUpdate }: RecurringTaskIte
             recurrence_type: task.recurrence_type,
             notification_time: task.notification_time
           }}
-          onSubmit={handleUpdate}
-          onCancel={() => setIsEditing(false)}
         />
       </Card>
     );
@@ -120,82 +121,84 @@ export const RecurringTaskItem = ({ task, onDelete, onUpdate }: RecurringTaskIte
 
   return (
     <Card className="p-4">
-      <div className="space-y-3">
-        <div className="flex items-start justify-between gap-4">
-          <div className="flex-1 min-w-0">
-            <h3 className="font-medium text-base">{task.title}</h3>
-            {task.description && (
-              <p className="text-sm text-muted-foreground mt-1 leading-relaxed">{task.description}</p>
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div className="flex-1 min-w-0">
+          <h3 className="text-lg font-semibold truncate mb-2">{task.title}</h3>
+          
+          <div className="space-y-2 text-sm text-muted-foreground">
+            <div className="flex items-center gap-2">
+              <Calendar className="h-4 w-4" />
+              <span className="flex-1 truncate">{getScheduleText()}</span>
+            </div>
+            
+            {task.notification_time && (
+              <div className="flex items-center gap-2">
+                <Clock className="h-4 w-4" />
+                <span>{format(new Date(`2000-01-01T${task.notification_time}`), 'h:mm a')}</span>
+              </div>
             )}
-          </div>
-          <div className="flex items-center gap-2 shrink-0">
-            <Button
-              variant="ghost"
-              size="icon"
-              className="text-muted-foreground hover:text-primary-foreground hover:bg-primary"
-              onClick={() => setIsEditing(true)}
-            >
-              <Pencil className="h-4 w-4" />
-            </Button>
-            <AlertDialog>
-              <AlertDialogTrigger asChild>
-                <Button 
-                  variant="ghost"
-                  size="icon"
-                  className="text-muted-foreground hover:text-destructive-foreground hover:bg-destructive"
-                >
-                  <Trash2 className="h-4 w-4" />
-                </Button>
-              </AlertDialogTrigger>
-              <AlertDialogContent>
-                <AlertDialogHeader>
-                  <AlertDialogTitle>¿Estás seguro?</AlertDialogTitle>
-                  <AlertDialogDescription>
-                    Esta acción no se puede deshacer. Se eliminará la tarea periódica permanentemente.
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                  <AlertDialogAction 
-                    onClick={() => onDelete(task.id)}
-                    className="bg-destructive hover:bg-destructive/90 text-destructive-foreground"
-                  >
-                    Eliminar
-                  </AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
+            
+            <div className="flex items-center gap-2">
+              <Users className="h-4 w-4" />
+              <span className="flex-1 truncate">{getAssigneesText()}</span>
+            </div>
           </div>
         </div>
 
-        <div className="flex items-center justify-between text-sm text-muted-foreground">
-          <div className="flex items-center gap-1.5">
-            <Calendar className="h-3.5 w-3.5" />
-            <span>{getScheduleText()}</span>
-          </div>
-          <div className="flex items-center gap-4">
-            {task.notification_time && (
-              <div className="flex items-center gap-1.5">
-                <Clock className="h-3.5 w-3.5" />
-                <span>{task.notification_time}</span>
-              </div>
-            )}
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <div className="flex items-center gap-1.5 cursor-help">
-                    <Users className="h-3.5 w-3.5" />
-                    <span>{getAssigneesText()}</span>
-                  </div>
-                </TooltipTrigger>
-                {task.assignees && task.assignees.length > 3 && (
-                  <TooltipContent>
-                    <p>{task.assignees.join(", ")}</p>
-                  </TooltipContent>
-                )}
-              </Tooltip>
-            </TooltipProvider>
-          </div>
+        <div className="flex flex-row sm:flex-col gap-2 w-full sm:w-auto justify-end">
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="h-8 w-8"
+                  onClick={() => setIsEditing(true)}
+                >
+                  <Pencil className="h-4 w-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Editar tarea</p>
+              </TooltipContent>
+            </Tooltip>
+
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      className="h-8 w-8"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>¿Estás seguro?</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        Esta acción no se puede deshacer. Esto eliminará permanentemente la tarea recurrente.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter className="flex-col sm:flex-row gap-2">
+                      <AlertDialogCancel className="w-full sm:w-auto">Cancelar</AlertDialogCancel>
+                      <AlertDialogAction
+                        className="w-full sm:w-auto"
+                        onClick={() => onDelete(task.id)}
+                      >
+                        Eliminar
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Eliminar tarea</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
         </div>
       </div>
     </Card>
