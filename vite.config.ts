@@ -28,11 +28,13 @@ export default defineConfig(({ mode }) => ({
       '@supabase/functions-js'
     ],
     esbuildOptions: {
-      target: 'esnext'
+      target: 'es2020'
     }
   },
   build: {
-    target: 'esnext',
+    target: 'es2020',
+    outDir: 'dist',
+    sourcemap: true,
     commonjsOptions: {
       transformMixedEsModules: true,
       include: [
