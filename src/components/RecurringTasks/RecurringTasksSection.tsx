@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { RecurringTaskForm } from "./RecurringTaskForm";
 import { RecurringTaskItem } from "./RecurringTaskItem";
 import { supabase } from "@/integrations/supabase/client";
+import { Card } from "@/components/ui/card";
 
 export const RecurringTasksSection = () => {
   const [tasks, setTasks] = useState<any[]>([]);
@@ -52,7 +53,7 @@ export const RecurringTasksSection = () => {
 
   const handleAddTask = () => {
     setIsAddingTask(false);
-    fetchTasks(); // Refresh tasks after adding
+    fetchTasks();
   };
 
   const handleUpdateTask = async (taskId: number, updatedTask: any) => {
@@ -76,7 +77,7 @@ export const RecurringTasksSection = () => {
       if (error) throw error;
 
       toast.success("Tarea actualizada exitosamente");
-      await fetchTasks(); // Refresh tasks after update
+      await fetchTasks();
     } catch (error) {
       console.error('Error updating task:', error);
       toast.error("Error al actualizar la tarea");
@@ -94,7 +95,7 @@ export const RecurringTasksSection = () => {
       if (error) throw error;
 
       toast.success("Tarea periódica eliminada exitosamente");
-      await fetchTasks(); // Refresh tasks after deletion
+      await fetchTasks();
     } catch (error) {
       console.error('Error deleting task:', error);
       toast.error("Error al eliminar la tarea");
@@ -102,33 +103,39 @@ export const RecurringTasksSection = () => {
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-bold">Tareas Periódicas</h2>
-        <Button onClick={() => setIsAddingTask(true)}>
+    <div className="max-w-4xl mx-auto">
+      <div className="flex items-center justify-between mb-8">
+        <h2 className="text-2xl font-semibold tracking-tight">Tareas Periódicas</h2>
+        <Button onClick={() => setIsAddingTask(true)} size="sm">
           <Plus className="h-4 w-4 mr-2" />
           Nueva Tarea
         </Button>
       </div>
 
       {isAddingTask && (
-        <div className="bg-card p-4 rounded-lg border">
+        <Card className="mb-6 p-4">
           <RecurringTaskForm
             onSubmit={handleAddTask}
             onCancel={() => setIsAddingTask(false)}
           />
-        </div>
+        </Card>
       )}
 
-      <div className="space-y-4">
-        {tasks.map((task) => (
-          <RecurringTaskItem
-            key={task.id}
-            task={task}
-            onDelete={handleDeleteTask}
-            onUpdate={handleUpdateTask}
-          />
-        ))}
+      <div className="space-y-3">
+        {tasks.length === 0 ? (
+          <div className="text-center py-12 text-muted-foreground">
+            No hay tareas periódicas configuradas
+          </div>
+        ) : (
+          tasks.map((task) => (
+            <RecurringTaskItem
+              key={task.id}
+              task={task}
+              onDelete={handleDeleteTask}
+              onUpdate={handleUpdateTask}
+            />
+          ))
+        )}
       </div>
     </div>
   );

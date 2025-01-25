@@ -16,7 +16,12 @@ import { Calendar, Trash2, Pencil, Clock, Users } from "lucide-react";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { RecurringTaskForm } from "./RecurringTaskForm";
-import { cn } from "@/lib/utils";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 interface RecurringTaskItemProps {
   task: {
@@ -43,6 +48,17 @@ export const RecurringTaskItem = ({ task, onDelete, onUpdate }: RecurringTaskIte
   };
 
   const getWeekdaysText = (weekdays: boolean[]) => {
+    // Si todos los días están seleccionados
+    if (weekdays.every(day => day)) {
+      return "Todos los días";
+    }
+
+    // Si son los días de lunes a viernes
+    if (weekdays[1] && weekdays[2] && weekdays[3] && weekdays[4] && weekdays[5] && !weekdays[0] && !weekdays[6]) {
+      return "De lunes a viernes";
+    }
+
+    // Para otros casos, mostrar los días seleccionados
     const days = ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
     const selectedDays = weekdays
       .map((selected, index) => selected ? days[index] : null)
@@ -52,7 +68,7 @@ export const RecurringTaskItem = ({ task, onDelete, onUpdate }: RecurringTaskIte
     if (selectedDays.length === 1) return `Cada ${selectedDays[0]}`;
     
     const lastDay = selectedDays.pop();
-    return `Cada ${selectedDays.join(", ")} y ${lastDay}`;
+    return `${selectedDays.join(", ")} y ${lastDay}`;
   };
 
   const getScheduleText = () => {
@@ -71,9 +87,9 @@ export const RecurringTaskItem = ({ task, onDelete, onUpdate }: RecurringTaskIte
   };
 
   const getAssigneesText = () => {
-    if (!task.assignees || task.assignees.length === 0) return null;
+    if (!task.assignees || task.assignees.length === 0) return "Sin asignados";
     
-    if (task.assignees.length <= 4) {
+    if (task.assignees.length <= 3) {
       return task.assignees.join(", ");
     }
     return `${task.assignees.length} asignados`;
@@ -103,24 +119,21 @@ export const RecurringTaskItem = ({ task, onDelete, onUpdate }: RecurringTaskIte
   }
 
   return (
-    <Card className="p-6 hover:bg-accent/5 transition-colors">
-      <div className="flex flex-col space-y-4">
-        <div className="flex items-start justify-between">
-          <div className="flex items-start gap-3">
-            <span className="text-2xl mt-1">{task.icon || '📋'}</span>
-            <div className="space-y-1.5">
-              <h3 className="text-xl font-medium tracking-tight">{task.title}</h3>
-              {task.description && (
-                <p className="text-muted-foreground text-sm leading-relaxed">{task.description}</p>
-              )}
-            </div>
+    <Card className="p-4">
+      <div className="space-y-3">
+        <div className="flex items-start justify-between gap-4">
+          <div className="flex-1 min-w-0">
+            <h3 className="font-medium text-base">{task.title}</h3>
+            {task.description && (
+              <p className="text-sm text-muted-foreground mt-1 leading-relaxed">{task.description}</p>
+            )}
           </div>
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-2 shrink-0">
             <Button
               variant="ghost"
-              size="sm"
+              size="icon"
+              className="text-muted-foreground hover:text-primary-foreground hover:bg-primary"
               onClick={() => setIsEditing(true)}
-              className="text-muted-foreground hover:text-primary"
             >
               <Pencil className="h-4 w-4" />
             </Button>
@@ -128,8 +141,8 @@ export const RecurringTaskItem = ({ task, onDelete, onUpdate }: RecurringTaskIte
               <AlertDialogTrigger asChild>
                 <Button 
                   variant="ghost"
-                  size="sm"
-                  className="text-muted-foreground hover:text-destructive"
+                  size="icon"
+                  className="text-muted-foreground hover:text-destructive-foreground hover:bg-destructive"
                 >
                   <Trash2 className="h-4 w-4" />
                 </Button>
@@ -145,6 +158,7 @@ export const RecurringTaskItem = ({ task, onDelete, onUpdate }: RecurringTaskIte
                   <AlertDialogCancel>Cancelar</AlertDialogCancel>
                   <AlertDialogAction 
                     onClick={() => onDelete(task.id)}
+                    className="bg-destructive hover:bg-destructive/90 text-destructive-foreground"
                   >
                     Eliminar
                   </AlertDialogAction>
@@ -154,23 +168,34 @@ export const RecurringTaskItem = ({ task, onDelete, onUpdate }: RecurringTaskIte
           </div>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-sm">
-          <div className="flex items-center gap-2 text-muted-foreground">
-            <Calendar className="h-4 w-4 shrink-0" />
-            <span className="truncate">{getScheduleText()}</span>
+        <div className="flex items-center justify-between text-sm text-muted-foreground">
+          <div className="flex items-center gap-1.5">
+            <Calendar className="h-3.5 w-3.5" />
+            <span>{getScheduleText()}</span>
           </div>
-          {task.notification_time && (
-            <div className="flex items-center gap-2 text-muted-foreground">
-              <Clock className="h-4 w-4 shrink-0" />
-              <span>{task.notification_time}</span>
-            </div>
-          )}
-          {task.assignees && task.assignees.length > 0 && (
-            <div className="flex items-center gap-2 text-muted-foreground">
-              <Users className="h-4 w-4 shrink-0" />
-              <span className="truncate">{getAssigneesText()}</span>
-            </div>
-          )}
+          <div className="flex items-center gap-4">
+            {task.notification_time && (
+              <div className="flex items-center gap-1.5">
+                <Clock className="h-3.5 w-3.5" />
+                <span>{task.notification_time}</span>
+              </div>
+            )}
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div className="flex items-center gap-1.5 cursor-help">
+                    <Users className="h-3.5 w-3.5" />
+                    <span>{getAssigneesText()}</span>
+                  </div>
+                </TooltipTrigger>
+                {task.assignees && task.assignees.length > 3 && (
+                  <TooltipContent>
+                    <p>{task.assignees.join(", ")}</p>
+                  </TooltipContent>
+                )}
+              </Tooltip>
+            </TooltipProvider>
+          </div>
         </div>
       </div>
     </Card>

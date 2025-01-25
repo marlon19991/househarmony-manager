@@ -49,6 +49,11 @@ export const sendBillDueEmail = async (
   isOverdue: boolean
 ) => {
   try {
+    // Validar el correo electrónico
+    if (!to || !to.includes('@') || !to.includes('.')) {
+      throw new Error('Correo electrónico inválido');
+    }
+
     console.log('Enviando correo de notificación de factura:', {
       to,
       billTitle,
@@ -92,7 +97,7 @@ export const sendBillDueEmail = async (
 
     if (error) {
       console.error('Error al enviar el correo de notificación:', error);
-      throw error;
+      throw new Error(`Error al enviar el correo: ${error.message}`);
     }
 
     console.log('Correo enviado exitosamente:', {

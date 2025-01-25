@@ -1,5 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
-import { addMonths } from "date-fns";
+import { addMonths, startOfDay, differenceInDays } from "date-fns";
 import { toast } from "sonner";
 
 export interface Bill {
@@ -11,6 +11,82 @@ export interface Bill {
   selected_profiles: string[];
   split_between?: number;
 }
+
+export type BillColorScheme = {
+  text: string;
+  border: string;
+  hover: string;
+  background: string;
+};
+
+export const getBillColorScheme = (dueDate: string, status: string): BillColorScheme => {
+  try {
+    const dueDateObj = startOfDay(new Date(dueDate));
+    const now = startOfDay(new Date());
+    const threeDaysFromNow = startOfDay(new Date(now));
+    threeDaysFromNow.setDate(now.getDate() + 3);
+
+    // Si la factura está pagada, siempre mostrar verde
+    if (status === 'paid') {
+      return {
+        text: 'text-green-600',
+        border: 'border-l-green-500',
+        hover: 'hover:text-green-700 hover:bg-green-50',
+        background: 'bg-green-50'
+      };
+    }
+
+    // Si la factura está pendiente, el color depende de la fecha
+    if (status === 'pending') {
+      // Si la fecha ya pasó (vencida)
+      if (now > dueDateObj) {
+        return {
+          text: 'text-red-600',
+          border: 'border-l-red-500',
+          hover: 'hover:text-red-700 hover:bg-red-50',
+          background: 'bg-red-50'
+        };
+      }
+
+      // Si está próxima a vencer (3 días o menos)
+      const daysUntilDue = differenceInDays(dueDateObj, now);
+      if (daysUntilDue <= 3) {
+        return {
+          text: 'text-yellow-600',
+          border: 'border-l-yellow-500',
+          hover: 'hover:text-yellow-700 hover:bg-yellow-50',
+          background: 'bg-yellow-50'
+        };
+      }
+
+      // Si está a tiempo (más de 3 días)
+      return {
+        text: 'text-emerald-600',
+        border: 'border-l-emerald-500',
+        hover: 'hover:text-emerald-700 hover:bg-emerald-50',
+        background: 'bg-emerald-50'
+      };
+    }
+
+    // Por defecto (en caso de estado desconocido)
+    return {
+      text: 'text-gray-600',
+      border: 'border-l-gray-500',
+      hover: 'hover:text-gray-700 hover:bg-gray-50',
+      background: 'bg-gray-50'
+    };
+
+  } catch (error) {
+    console.error('Error al obtener el esquema de colores:', error);
+    // Esquema de colores por defecto en caso de error
+    return {
+      text: 'text-gray-600',
+      border: 'border-l-gray-500',
+      hover: 'hover:text-gray-700 hover:bg-gray-50',
+      background: 'bg-gray-50'
+    };
+  }
+};
 
 export const fetchBills = async () => {
   try {

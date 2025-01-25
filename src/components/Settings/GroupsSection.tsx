@@ -164,14 +164,19 @@ export const GroupsSection = () => {
                     <Button
                       variant="ghost"
                       size="icon"
+                      className="text-muted-foreground hover:text-primary-foreground hover:bg-primary"
                       onClick={() => setEditingGroup(group)}
                     >
                       <Pencil className="h-4 w-4" />
                     </Button>
                     <AlertDialog>
                       <AlertDialogTrigger asChild>
-                        <Button variant="ghost" size="icon">
-                          <Trash2 className="h-4 w-4 text-destructive" />
+                        <Button 
+                          variant="ghost" 
+                          size="icon"
+                          className="text-muted-foreground hover:text-destructive-foreground hover:bg-destructive"
+                        >
+                          <Trash2 className="h-4 w-4" />
                         </Button>
                       </AlertDialogTrigger>
                       <AlertDialogContent>
@@ -183,7 +188,10 @@ export const GroupsSection = () => {
                         </AlertDialogHeader>
                         <AlertDialogFooter>
                           <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                          <AlertDialogAction onClick={() => handleDeleteGroup(group.id)}>
+                          <AlertDialogAction 
+                            onClick={() => handleDeleteGroup(group.id)}
+                            className="bg-destructive hover:bg-destructive/90 text-destructive-foreground"
+                          >
                             Eliminar
                           </AlertDialogAction>
                         </AlertDialogFooter>
