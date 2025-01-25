@@ -1,4 +1,4 @@
-import { Settings as SettingsIcon, Moon } from "lucide-react";
+import { Settings as SettingsIcon, Moon, ClipboardList } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import {
@@ -11,14 +11,18 @@ import {
   SidebarMenuButton,
 } from "@/components/ui/sidebar";
 import { ProfilesSection } from "@/components/Settings/ProfilesSection";
+import { TaskLimitSection } from "@/components/Settings/TaskLimitSection";
 import { useState } from "react";
 
+type Section = "profiles" | "appearance" | "tasks";
+
 const Settings = () => {
-  const [currentSection, setCurrentSection] = useState<"profiles" | "appearance">("profiles");
+  const [currentSection, setCurrentSection] = useState<Section>("profiles");
 
   const menuItems = [
     { id: "profiles" as const, label: "Perfiles", icon: SettingsIcon },
     { id: "appearance" as const, label: "Apariencia", icon: Moon },
+    { id: "tasks" as const, label: "Tareas", icon: ClipboardList },
   ];
 
   return (
@@ -58,6 +62,7 @@ const Settings = () => {
                   <ThemeToggle />
                 </div>
               )}
+              {currentSection === "tasks" && <TaskLimitSection />}
             </Card>
           </main>
         </div>
