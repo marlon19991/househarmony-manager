@@ -14,13 +14,17 @@ export default defineConfig(({ mode }) => ({
     react({
       jsxRuntime: 'automatic',
       jsxImportSource: 'react',
+      babel: {
+        plugins: [
+          ['@babel/plugin-transform-react-jsx', { runtime: 'automatic' }]
+        ]
+      }
     }),
     mode === 'development' && componentTagger(),
   ].filter(Boolean),
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
-      "react/jsx-runtime": "react/jsx-runtime.js"
     },
   },
   optimizeDeps: {
@@ -30,7 +34,10 @@ export default defineConfig(({ mode }) => ({
       '@supabase/realtime-js',
       '@supabase/storage-js',
       '@supabase/functions-js',
-      '@tanstack/react-query'
+      '@tanstack/react-query',
+      'react',
+      'react-dom',
+      'react/jsx-runtime'
     ],
     esbuildOptions: {
       target: 'es2020'
@@ -48,11 +55,17 @@ export default defineConfig(({ mode }) => ({
       ]
     },
     rollupOptions: {
-      external: ['react/jsx-runtime'],
       output: {
-        manualChunks: {
-          'react-vendor': ['react', 'react-dom'],
-          'query': ['@tanstack/react-query']
+        manualChunks: (id) => {
+          if (id.includes('node_modules')) {
+            if (id.includes('@tanstack/react-query')) {
+              return 'vendor-query';
+            }
+            if (id.includes('react')) {
+              return 'vendor-react';
+            }
+            return 'vendor';
+          }
         }
       }
     }
