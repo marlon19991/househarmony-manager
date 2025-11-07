@@ -14,8 +14,11 @@ export const RecurringTasksSection = () => {
   useEffect(() => {
     fetchTasks();
 
-    const channel = supabase
-      .channel('recurring-tasks-changes')
+    // Crear canal con nombre único para evitar conflictos
+    const channelName = `recurring-tasks-changes_${Date.now()}`;
+    const channel = supabase.channel(channelName);
+
+    channel
       .on(
         'postgres_changes',
         {
@@ -23,13 +26,22 @@ export const RecurringTasksSection = () => {
           schema: 'public',
           table: 'recurring_tasks'
         },
-        () => {
+        (payload) => {
+          console.log('Cambio en recurring_tasks:', payload);
           fetchTasks();
         }
       )
-      .subscribe();
+      .subscribe((status) => {
+        if (status === 'SUBSCRIBED') {
+          console.log('Suscripción activa:', channelName);
+        } else if (status === 'CHANNEL_ERROR') {
+          console.error('Error en la suscripción:', channelName);
+        }
+      });
 
+    // Cleanup: desuscribirse cuando el componente se desmonte
     return () => {
+      console.log('Desuscribiéndose del canal:', channelName);
       supabase.removeChannel(channel);
     };
   }, []);

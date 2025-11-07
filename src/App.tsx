@@ -13,11 +13,23 @@ import Bills from "./pages/Bills";
 import RecurringTasks from "./pages/RecurringTasks";
 import { useInitializeProfiles } from "./hooks/useProfiles";
 
+// Configuración de React Query según mejores prácticas
+// https://tanstack.com/query/latest/docs/react/guides/important-defaults
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      staleTime: 5 * 60 * 1000, // 5 minutes
-      retry: 1,
+      staleTime: 5 * 60 * 1000, // 5 minutes - datos considerados frescos
+      gcTime: 10 * 60 * 1000, // 10 minutes - tiempo de cache (antes cacheTime)
+      retry: 1, // Reintentar una vez en caso de error
+      refetchOnWindowFocus: false, // No refetch al cambiar de pestaña
+      refetchOnReconnect: true, // Refetch al reconectar
+      refetchOnMount: true, // Refetch al montar el componente
+    },
+    mutations: {
+      retry: 1, // Reintentar mutaciones una vez en caso de error
+      onError: (error) => {
+        console.error('Error en mutación:', error);
+      },
     },
   },
 });

@@ -125,13 +125,22 @@ export const useGeneralCleaning = () => {
       );
       setTasks(updatedTasks);
 
-      // 3. Calcular y actualizar el progreso
-      const completedTasks = updatedTasks.filter(task => task.completed).length;
-      const newPercentage = Math.round((completedTasks / updatedTasks.length) * 100);
-      setCompletionPercentage(newPercentage);
+      // 3. Calcular y actualizar el progreso solo si hay un responsable asignado
+      if (currentAssignee !== "Sin asignar" && updatedTasks.length > 0) {
+        const completedTasks = updatedTasks.filter(task => task.completed).length;
+        const newPercentage = Math.round((completedTasks / updatedTasks.length) * 100);
+        setCompletionPercentage(newPercentage);
 
-      // 4. Actualizar el progreso en la base de datos
-      await updateProgress(currentAssignee, newPercentage);
+        // 4. Actualizar el progreso en la base de datos
+        await updateProgress(currentAssignee, newPercentage);
+      } else {
+        // Si no hay responsable, solo actualizar el estado local
+        const completedTasks = updatedTasks.filter(task => task.completed).length;
+        const newPercentage = updatedTasks.length > 0 
+          ? Math.round((completedTasks / updatedTasks.length) * 100)
+          : 0;
+        setCompletionPercentage(newPercentage);
+      }
 
       return true;
     } catch (error) {
@@ -170,22 +179,43 @@ export const useGeneralCleaning = () => {
       setCompletionPercentage(0);
       setTasks(tasks.map(task => ({ ...task, completed: false })));
 
-      // 4. Enviar notificación por correo al nuevo responsable
+      // 4. Enviar notificación por correo al nuevo responsable (opcional en desarrollo local)
       const newAssigneeProfile = profiles.find(p => p.name === newAssignee);
       if (newAssigneeProfile?.email) {
         try {
-          const { error } = await supabase.functions.invoke('send-task-notifications', {
-            body: {
-              assigneeEmail: newAssigneeProfile.email,
-              assigneeName: newAssignee,
-              taskType: "cleaning",
-              message: "Es tu turno para el aseo general"
-            }
-          });
+          // Detectar si estamos en desarrollo local
+          const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || '';
+          const isLocal = supabaseUrl.includes('localhost') || 
+                         supabaseUrl.includes('127.0.0.1') ||
+                         supabaseUrl.includes('local');
+          
+          if (isLocal) {
+            console.log('📧 [Desarrollo Local] Notificación de tarea omitida (normal en desarrollo)');
+          } else {
+            const { error } = await supabase.functions.invoke('send-task-notifications', {
+              body: {
+                assigneeEmail: newAssigneeProfile.email,
+                assigneeName: newAssignee,
+                taskType: "cleaning",
+                message: "Es tu turno para el aseo general"
+              }
+            });
 
-          if (error) throw error;
-        } catch (emailError) {
-          console.error('Error al enviar la notificación por correo:', emailError);
+            if (error) {
+              console.warn('⚠️ No se pudo enviar la notificación (esto es normal en desarrollo local):', error.message);
+            }
+          }
+        } catch (emailError: any) {
+          // En desarrollo local, estos errores son esperados y no deben interrumpir el flujo
+          const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || '';
+          const isLocal = supabaseUrl.includes('localhost') || 
+                         supabaseUrl.includes('127.0.0.1');
+          
+          if (isLocal) {
+            console.log('📧 [Desarrollo Local] Función de notificación no disponible (normal en desarrollo)');
+          } else {
+            console.warn('⚠️ Error al enviar la notificación por correo:', emailError?.message || emailError);
+          }
           // No interrumpimos el flujo si falla el envío del correo
         }
       }
@@ -239,16 +269,22 @@ export const useGeneralCleaning = () => {
       };
       setTasks([...tasks, newTask]);
 
-      // 4. Recalcular el progreso
-      const completedTasks = tasks.filter(task => task.completed).length;
-      const newPercentage = Math.round((completedTasks / (tasks.length + 1)) * 100);
-      setCompletionPercentage(newPercentage);
-      await updateProgress(currentAssignee, newPercentage);
+      // 4. Recalcular el progreso solo si hay un responsable asignado
+      if (currentAssignee !== "Sin asignar") {
+        const completedTasks = tasks.filter(task => task.completed).length;
+        const newPercentage = Math.round((completedTasks / (tasks.length + 1)) * 100);
+        setCompletionPercentage(newPercentage);
+        await updateProgress(currentAssignee, newPercentage);
+      } else {
+        // Si no hay responsable, mantener el progreso en 0
+        setCompletionPercentage(0);
+      }
 
-      // 5. Notificar al responsable actual si existe
+      // 5. Notificar al responsable actual si existe (opcional, no crítico)
       if (currentAssignee !== "Sin asignar") {
         const assignee = profiles.find(p => p.name === currentAssignee);
         if (assignee?.email) {
+          // sendTaskAssignmentEmail ya maneja errores silenciosamente
           await sendTaskAssignmentEmail(
             assignee.email,
             currentAssignee,
@@ -256,6 +292,10 @@ export const useGeneralCleaning = () => {
             "cleaning"
           );
         }
+      } else {
+        // Mostrar mensaje informativo si no hay responsable
+        toast.success("Tarea agregada exitosamente. Recuerda asignar un responsable para un mejor seguimiento.");
+        return true;
       }
 
       toast.success("Tarea agregada exitosamente");
@@ -343,25 +383,65 @@ export const useGeneralCleaning = () => {
     }
   }, [profiles]);
 
-  // Suscribirse a cambios en las tareas y estados
+  // Suscribirse a cambios en las tareas y estados con mejor manejo
   useEffect(() => {
-    const tasksSubscription = supabase
-      .channel('general_cleaning_changes')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'general_cleaning_tasks' }, () => {
-        loadInitialState();
-      })
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'cleaning_task_states' }, () => {
-        loadInitialState();
-      })
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'general_cleaning_progress' }, () => {
-        loadInitialState();
-      })
-      .subscribe();
+    // Crear canal con nombre único para evitar conflictos
+    const channelName = `general_cleaning_changes_${Date.now()}`;
+    const channel = supabase.channel(channelName);
 
+    // Configurar listeners para cambios en tiempo real
+    channel
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'general_cleaning_tasks',
+        },
+        (payload) => {
+          console.log('Cambio en general_cleaning_tasks:', payload);
+          loadInitialState();
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'cleaning_task_states',
+        },
+        (payload) => {
+          console.log('Cambio en cleaning_task_states:', payload);
+          loadInitialState();
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'general_cleaning_progress',
+        },
+        (payload) => {
+          console.log('Cambio en general_cleaning_progress:', payload);
+          loadInitialState();
+        }
+      )
+      .subscribe((status) => {
+        if (status === 'SUBSCRIBED') {
+          console.log('Suscripción activa:', channelName);
+        } else if (status === 'CHANNEL_ERROR') {
+          console.error('Error en la suscripción:', channelName);
+        }
+      });
+
+    // Cleanup: desuscribirse cuando el componente se desmonte
     return () => {
-      tasksSubscription.unsubscribe();
+      console.log('Desuscribiéndose del canal:', channelName);
+      supabase.removeChannel(channel);
     };
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // loadInitialState se mantiene estable y no necesita estar en deps
 
   return {
     tasks,

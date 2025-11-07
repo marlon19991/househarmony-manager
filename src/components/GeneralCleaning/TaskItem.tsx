@@ -56,7 +56,7 @@ const TaskItem = ({
           <Checkbox
             checked={task.completed}
             onCheckedChange={onToggle}
-            disabled={isDisabled}
+            disabled={false}
           />
           <div>
             <p className={`font-medium ${task.completed ? 'line-through text-gray-500' : ''}`}>
@@ -72,7 +72,7 @@ const TaskItem = ({
             variant="ghost"
             size="icon"
             onClick={onStartEditing}
-            disabled={isDisabled}
+            disabled={false}
             className="text-muted-foreground hover:text-primary-foreground hover:bg-primary"
           >
             <Edit2 className="h-4 w-4" />
@@ -83,7 +83,7 @@ const TaskItem = ({
                 variant="ghost"
                 size="icon"
                 className="text-muted-foreground hover:text-destructive-foreground hover:bg-destructive"
-                disabled={isDisabled}
+                disabled={false}
               >
                 <Trash2 className="h-4 w-4" />
               </Button>

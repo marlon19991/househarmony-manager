@@ -1,5 +1,15 @@
 import { supabase } from "@/integrations/supabase/client";
 
+// Detectar si estamos en desarrollo local
+const isLocalDevelopment = () => {
+  const url = import.meta.env.VITE_SUPABASE_URL || '';
+  return url.includes('localhost') || url.includes('127.0.0.1') || url.includes('local');
+};
+
+/**
+ * Envía un correo electrónico de asignación de tarea
+ * En desarrollo local, esta función es opcional y no lanzará errores
+ */
 export const sendTaskAssignmentEmail = async (
   email: string,
   assignee: string,
@@ -8,6 +18,17 @@ export const sendTaskAssignmentEmail = async (
   scheduleText?: string,
   notificationTime?: string
 ) => {
+  // En desarrollo local, las Edge Functions pueden no estar disponibles
+  if (isLocalDevelopment()) {
+    console.log('📧 [Desarrollo Local] Notificación de email omitida:', {
+      to: email,
+      assignee,
+      taskTitle,
+      taskType
+    });
+    return; // Salir silenciosamente en desarrollo local
+  }
+
   try {
     const emailData = {
       to: email,
@@ -30,16 +51,25 @@ export const sendTaskAssignmentEmail = async (
     });
 
     if (error) {
-      console.error('Error al enviar el correo electrónico:', error);
-      throw error;
+      // En desarrollo, solo loguear sin lanzar error
+      console.warn('⚠️ No se pudo enviar el correo electrónico (esto es normal en desarrollo local):', error.message);
+      return;
     }
-  } catch (error) {
-    console.error('Error al enviar el correo electrónico:', error);
-    // No volvemos a lanzar el error para evitar que se detenga el flujo de la aplicación
-    // La tarea se guardará aunque falle el envío del correo
+  } catch (error: any) {
+    // En desarrollo local, los errores de funciones son esperados
+    if (isLocalDevelopment()) {
+      console.log('📧 [Desarrollo Local] Función de email no disponible (normal en desarrollo)');
+      return;
+    }
+    // En producción, loguear pero no interrumpir el flujo
+    console.warn('⚠️ Error al enviar el correo electrónico:', error?.message || error);
   }
 };
 
+/**
+ * Envía un correo electrónico de notificación de factura
+ * En desarrollo local, esta función es opcional y no lanzará errores
+ */
 export const sendBillDueEmail = async (
   to: string,
   userName: string,
@@ -48,18 +78,23 @@ export const sendBillDueEmail = async (
   amount: number,
   isOverdue: boolean
 ) => {
-  try {
-    // Validar el correo electrónico
-    if (!to || !to.includes('@') || !to.includes('.')) {
-      throw new Error('Correo electrónico inválido');
-    }
-
-    console.log('Enviando correo de notificación de factura:', {
+  // En desarrollo local, las Edge Functions pueden no estar disponibles
+  if (isLocalDevelopment()) {
+    console.log('📧 [Desarrollo Local] Notificación de factura omitida:', {
       to,
       billTitle,
       dueDate,
       isOverdue
     });
+    return; // Salir silenciosamente en desarrollo local
+  }
+
+  try {
+    // Validar el correo electrónico
+    if (!to || !to.includes('@') || !to.includes('.')) {
+      console.warn('⚠️ Correo electrónico inválido:', to);
+      return;
+    }
 
     const emailData = {
       to,
@@ -96,18 +131,22 @@ export const sendBillDueEmail = async (
     });
 
     if (error) {
-      console.error('Error al enviar el correo de notificación:', error);
-      throw new Error(`Error al enviar el correo: ${error.message}`);
+      console.warn('⚠️ No se pudo enviar el correo de notificación (esto es normal en desarrollo local):', error.message);
+      return; // No lanzar error, solo loguear
     }
 
-    console.log('Correo enviado exitosamente:', {
+    console.log('✅ Correo enviado exitosamente:', {
       to,
-      billTitle,
-      response: data
+      billTitle
     });
 
-  } catch (error) {
-    console.error('Error al enviar el correo de notificación de factura:', error);
-    throw error;
+  } catch (error: any) {
+    // En desarrollo local, los errores de funciones son esperados
+    if (isLocalDevelopment()) {
+      console.log('📧 [Desarrollo Local] Función de email no disponible (normal en desarrollo)');
+      return;
+    }
+    // En producción, loguear pero no interrumpir el flujo
+    console.warn('⚠️ Error al enviar el correo de notificación de factura:', error?.message || error);
   }
 };

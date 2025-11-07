@@ -3,12 +3,16 @@ import { Checkbox } from "@/components/ui/checkbox";
 import useProfiles from "@/hooks/useProfiles";
 
 interface AssigneeFieldProps {
-  selectedAssignees: string[];
+  selectedAssignees?: string[];
+  selectedProfiles?: string[]; // Alias para compatibilidad con BillForm
   onChange: (assignees: string[]) => void;
 }
 
-export const AssigneeField = ({ selectedAssignees, onChange }: AssigneeFieldProps) => {
+export const AssigneeField = ({ selectedAssignees, selectedProfiles, onChange }: AssigneeFieldProps) => {
   const { profiles } = useProfiles();
+
+  // Asegurar que selectedAssignees siempre sea un array, usando el alias si está disponible
+  const safeSelectedAssignees = selectedAssignees || selectedProfiles || [];
 
   const handleToggleAll = (checked: boolean) => {
     onChange(checked ? profiles.map(p => p.name) : []);
@@ -17,12 +21,12 @@ export const AssigneeField = ({ selectedAssignees, onChange }: AssigneeFieldProp
   const handleToggleAssignee = (assignee: string, checked: boolean) => {
     onChange(
       checked
-        ? [...selectedAssignees, assignee]
-        : selectedAssignees.filter(a => a !== assignee)
+        ? [...safeSelectedAssignees, assignee]
+        : safeSelectedAssignees.filter(a => a !== assignee)
     );
   };
 
-  const allSelected = profiles.length > 0 && selectedAssignees.length === profiles.length;
+  const allSelected = profiles.length > 0 && safeSelectedAssignees.length === profiles.length;
 
   return (
     <div className="space-y-4">
@@ -42,7 +46,7 @@ export const AssigneeField = ({ selectedAssignees, onChange }: AssigneeFieldProp
           <div key={profile.id} className="flex items-center space-x-2">
             <Checkbox
               id={`assignee-${profile.id}`}
-              checked={selectedAssignees.includes(profile.name)}
+              checked={safeSelectedAssignees.includes(profile.name)}
               onCheckedChange={(checked) => handleToggleAssignee(profile.name, checked as boolean)}
             />
             <Label htmlFor={`assignee-${profile.id}`} className="text-sm font-normal">

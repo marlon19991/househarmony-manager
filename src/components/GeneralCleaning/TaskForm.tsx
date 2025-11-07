@@ -14,14 +14,14 @@ const TaskForm = ({ newTask, setNewTask, onSubmit, isDisabled }: TaskFormProps) 
     <form onSubmit={onSubmit} className="space-y-4">
       <div className="space-y-2">
         <label htmlFor="title" className="text-sm font-medium">
-          Descripción
+          Descripción <span className="text-red-500">*</span>
         </label>
         <Input
           id="title"
           value={newTask.title}
           onChange={(e) => setNewTask({ ...newTask, title: e.target.value })}
           placeholder="Descripción de la tarea"
-          disabled={isDisabled}
+          disabled={false}
         />
       </div>
       <div className="space-y-2">
@@ -33,13 +33,13 @@ const TaskForm = ({ newTask, setNewTask, onSubmit, isDisabled }: TaskFormProps) 
           value={newTask.comment}
           onChange={(e) => setNewTask({ ...newTask, comment: e.target.value })}
           placeholder="Agregar un comentario"
-          disabled={isDisabled}
+          disabled={false}
         />
       </div>
       <Button 
         type="submit" 
         className="w-full"
-        disabled={isDisabled || !newTask.title.trim()}
+        disabled={!newTask.title.trim()}
       >
         Agregar Tarea
       </Button>

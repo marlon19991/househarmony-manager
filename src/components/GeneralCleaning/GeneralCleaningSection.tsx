@@ -75,7 +75,7 @@ export const GeneralCleaningSection = () => {
           onDeleteTask={handleDeleteTask}
           newTask={newTask}
           setNewTask={setNewTask}
-          isDisabled={currentAssignee === "Sin asignar"}
+          isDisabled={false}
         />
       </div>
     </Card>
