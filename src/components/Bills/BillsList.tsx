@@ -1,3 +1,4 @@
+import { memo, useMemo } from "react";
 import { BillItem } from "./BillItem";
 import type { Bill } from "./utils/billsLogic";
 
@@ -8,14 +9,16 @@ interface BillsListProps {
   onToggleStatus: (id: number) => void;
 }
 
-export const BillsList = ({ 
-  bills, 
-  onUpdate, 
-  onDelete, 
+export const BillsList = memo(({
+  bills,
+  onUpdate,
+  onDelete,
   onToggleStatus
 }: BillsListProps) => {
-  // Filtrar para mostrar solo las facturas pendientes
-  const pendingBills = bills.filter(bill => bill.status === 'pending');
+  const pendingBills = useMemo(
+    () => bills.filter((bill) => bill.status === "pending"),
+    [bills]
+  );
 
   if (!pendingBills.length) {
     return (
@@ -38,4 +41,6 @@ export const BillsList = ({
       ))}
     </div>
   );
-};
+});
+
+BillsList.displayName = "BillsList";

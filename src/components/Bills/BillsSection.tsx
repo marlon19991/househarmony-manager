@@ -1,88 +1,51 @@
-import { useState, useEffect } from "react";
-import { toast } from "sonner";
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
 import { BillsHeader } from "./BillsHeader";
 import { BillsList } from "./BillsList";
-import { 
-  fetchBills, 
-  createBill, 
-  updateBill, 
-  deleteBill, 
-  toggleBillStatus,
-  type Bill 
-} from "./utils/billsLogic";
+import { useBills } from "./hooks/useBills";
+import type { Bill, BillFormInput } from "./utils/billsLogic";
+import { toast } from "sonner";
 
 export const BillsSection = () => {
-  const [bills, setBills] = useState<Bill[]>([]);
   const [isOpen, setIsOpen] = useState(false);
+  const {
+    billsQuery,
+    createBillMutation,
+    updateBillMutation,
+    deleteBillMutation,
+    toggleBillStatusMutation,
+    refetchBills,
+  } = useBills();
 
-  useEffect(() => {
-    loadBills();
-  }, []);
+  const bills = billsQuery.data ?? [];
 
-  const loadBills = async () => {
-    const fetchedBills = await fetchBills();
-    setBills(fetchedBills);
+  const handleAddBill = (newBill: BillFormInput) => {
+    createBillMutation.mutate(newBill, {
+      onSuccess: () => {
+        setIsOpen(false);
+      },
+    });
   };
 
-  const handleAddBill = async (newBill: Omit<Bill, 'id'>) => {
-    try {
-      const createdBill = await createBill(newBill);
-      setBills(prevBills => [createdBill, ...prevBills]);
-      setIsOpen(false);
-      toast.success("Factura agregada exitosamente");
-    } catch (error) {
-      // Error already handled in createBill
-    }
+  const handleUpdateBill = (updatedBill: Bill) => {
+    updateBillMutation.mutate(updatedBill);
   };
 
-  const handleUpdateBill = async (updatedBill: Bill) => {
-    try {
-      await updateBill(updatedBill);
-      setBills(prevBills => 
-        prevBills.map(bill => bill.id === updatedBill.id ? updatedBill : bill)
-      );
-      toast.success("Factura actualizada exitosamente");
-    } catch (error) {
-      // Error already handled in updateBill
-    }
+  const handleDeleteBill = (billId: number) => {
+    deleteBillMutation.mutate(billId);
   };
 
-  const handleDeleteBill = async (billId: number) => {
-    try {
-      await deleteBill(billId);
-      setBills(prevBills => prevBills.filter(bill => bill.id !== billId));
-      toast.success("Factura eliminada exitosamente");
-    } catch (error) {
-      // Error already handled in deleteBill
-    }
-  };
-
-  const handleToggleBillStatus = async (billId: number) => {
-    const bill = bills.find(b => b.id === billId);
+  const handleToggleBillStatus = (billId: number) => {
+    const bill = bills.find((b) => b.id === billId);
     if (!bill) return;
 
-    try {
-      const { newStatus, nextMonthBill } = await toggleBillStatus(bill);
-      
-      setBills(prevBills => {
-        const updatedBills = prevBills.map(b => {
-          if (b.id === billId) {
-            return { ...b, status: newStatus };
-          }
-          return b;
-        });
-
-        if (nextMonthBill) {
-          return [...updatedBills, nextMonthBill];
-        }
-
-        return updatedBills;
-      });
-      
-      toast.success(`Factura marcada como ${newStatus === "paid" ? "pagada" : "pendiente"}`);
-    } catch (error) {
-      // Error already handled in toggleBillStatus
-    }
+    toggleBillStatusMutation.mutate(bill, {
+      onSuccess: ({ newStatus }) => {
+        toast.success(
+          `Factura marcada como ${newStatus === "paid" ? "pagada" : "pendiente"}`
+        );
+      },
+    });
   };
 
   return (
@@ -92,12 +55,36 @@ export const BillsSection = () => {
         setIsOpen={setIsOpen}
         onAddBill={handleAddBill}
       />
-      <BillsList
-        bills={bills}
-        onUpdate={handleUpdateBill}
-        onDelete={handleDeleteBill}
-        onToggleStatus={handleToggleBillStatus}
-      />
+      {billsQuery.isLoading && (
+        <div className="rounded-lg border border-dashed p-6 text-center text-sm text-muted-foreground">
+          Cargando facturas...
+        </div>
+      )}
+
+      {billsQuery.isError && (
+        <div className="flex flex-col items-start gap-3 rounded-lg border border-destructive/30 bg-destructive/5 p-4 text-sm">
+          <p className="font-medium text-destructive">
+            No pudimos cargar las facturas.
+          </p>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => refetchBills()}
+            disabled={billsQuery.isFetching}
+          >
+            Reintentar
+          </Button>
+        </div>
+      )}
+
+      {!billsQuery.isLoading && !billsQuery.isError && (
+        <BillsList
+          bills={bills}
+          onUpdate={handleUpdateBill}
+          onDelete={handleDeleteBill}
+          onToggleStatus={handleToggleBillStatus}
+        />
+      )}
     </div>
   );
 };

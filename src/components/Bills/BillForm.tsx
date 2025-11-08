@@ -1,12 +1,15 @@
-import { useState } from "react";
+import { Controller, useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { AssigneeField } from "@/components/RecurringTasks/FormFields/AssigneeField";
 import { toast } from "sonner";
+import type { BillFormInput } from "./utils/billsLogic";
 
 interface BillFormProps {
-  onSubmit: (bill: any) => void;
+  onSubmit: (bill: BillFormInput) => void;
   onCancel?: () => void;
   initialData?: {
     title: string;
@@ -17,46 +20,61 @@ interface BillFormProps {
   };
 }
 
+const billFormSchema = z.object({
+  title: z.string().trim().min(1, "El título es requerido"),
+  amount: z
+    .number({ invalid_type_error: "Ingresa un monto válido" })
+    .positive("El monto debe ser mayor a 0"),
+  due_date: z
+    .string()
+    .refine((value) => {
+      const date = new Date(value);
+      return !isNaN(date.getTime());
+    }, "Selecciona una fecha válida"),
+  selectedProfiles: z.array(z.string()).min(1, "Selecciona al menos un perfil"),
+});
+
+type BillFormValues = z.infer<typeof billFormSchema>;
+
 export const BillForm = ({ onSubmit, onCancel, initialData }: BillFormProps) => {
   const formatDateForInput = (date: string | undefined) => {
-    if (!date) return '';
+    if (!date) return "";
     try {
       const d = new Date(date);
       if (isNaN(d.getTime())) {
-        console.error('Fecha inválida:', date);
-        return '';
+        console.error("Fecha inválida:", date);
+        return "";
       }
-      // Ajustar la fecha para que coincida con la zona horaria local
       const localDate = new Date(d.getTime() + d.getTimezoneOffset() * 60000);
-      return localDate.toISOString().split('T')[0];
+      return localDate.toISOString().split("T")[0];
     } catch (error) {
-      console.error('Error al formatear la fecha:', error);
-      return '';
+      console.error("Error al formatear la fecha:", error);
+      return "";
     }
   };
 
-  const [formData, setFormData] = useState({
-    title: initialData?.title || "",
-    amount: initialData?.amount || "",
-    due_date: formatDateForInput(initialData?.payment_due_date) || formatDateForInput(new Date().toISOString()),
-    selectedProfiles: initialData?.selected_profiles || []
+  const defaultValues: BillFormValues = {
+    title: initialData?.title ?? "",
+    amount: initialData?.amount ?? 0,
+    due_date:
+      formatDateForInput(initialData?.payment_due_date) ||
+      formatDateForInput(new Date().toISOString()),
+    selectedProfiles: initialData?.selected_profiles ?? [],
+  };
+
+  const {
+    register,
+    control,
+    handleSubmit,
+    formState: { errors, isSubmitting },
+  } = useForm<BillFormValues>({
+    resolver: zodResolver(billFormSchema),
+    defaultValues,
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!formData.title || !formData.amount || !formData.due_date) {
-      toast.error("Por favor completa todos los campos requeridos");
-      return;
-    }
-
-    if (formData.selectedProfiles.length === 0) {
-      toast.error("Por favor selecciona al menos un perfil");
-      return;
-    }
-
+  const processSubmit = (data: BillFormValues) => {
     try {
-      // Crear fecha asegurando que sea la fecha exacta seleccionada
-      const [year, month, day] = formData.due_date.split('-').map(Number);
+      const [year, month, day] = data.due_date.split("-").map(Number);
       const dueDate = new Date(year, month - 1, day, 23, 59, 59);
 
       if (isNaN(dueDate.getTime())) {
@@ -64,70 +82,96 @@ export const BillForm = ({ onSubmit, onCancel, initialData }: BillFormProps) => 
         return;
       }
 
-      // Ajustar la fecha para que coincida con la zona horaria local
-      const localDueDate = new Date(dueDate.getTime() - dueDate.getTimezoneOffset() * 60000);
+      const localDueDate = new Date(
+        dueDate.getTime() - dueDate.getTimezoneOffset() * 60000
+      );
 
       onSubmit({
-        ...formData,
-        amount: parseFloat(formData.amount.toString()),
-        due_date: localDueDate.toISOString()
+        title: data.title.trim(),
+        amount: data.amount,
+        due_date: localDueDate.toISOString(),
+        selectedProfiles: data.selectedProfiles,
       });
 
-      if (onCancel) {
-        onCancel();
-      }
+      onCancel?.();
     } catch (error) {
-      console.error('Error al procesar el formulario:', error);
-      toast.error('Error al procesar el formulario');
+      console.error("Error al procesar el formulario:", error);
+      toast.error("Error al procesar el formulario");
     }
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4 mt-4 w-full max-w-lg mx-auto px-4 sm:px-0">
+    <form
+      onSubmit={handleSubmit(processSubmit)}
+      className="space-y-4 mt-4 w-full max-w-lg mx-auto px-4 sm:px-0"
+    >
       <div className="space-y-2">
-        <Label htmlFor="title" className="text-sm font-medium">Título</Label>
+        <Label htmlFor="title" className="text-sm font-medium">
+          Título
+        </Label>
         <Input
           id="title"
-          value={formData.title}
-          onChange={(e) => setFormData({ ...formData, title: e.target.value })}
           placeholder="Ingresa el título de la factura"
           className="w-full"
+          {...register("title")}
         />
+        {errors.title && (
+          <p className="text-sm text-destructive">{errors.title.message}</p>
+        )}
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="amount" className="text-sm font-medium">Monto</Label>
+        <Label htmlFor="amount" className="text-sm font-medium">
+          Monto
+        </Label>
         <Input
           id="amount"
           type="number"
-          value={formData.amount}
-          onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
           placeholder="Ingresa el monto"
           className="w-full"
+          {...register("amount", { valueAsNumber: true })}
         />
+        {errors.amount && (
+          <p className="text-sm text-destructive">{errors.amount.message}</p>
+        )}
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="due_date" className="text-sm font-medium">Fecha de vencimiento</Label>
+        <Label htmlFor="due_date" className="text-sm font-medium">
+          Fecha de vencimiento
+        </Label>
         <Input
           id="due_date"
           type="date"
-          value={formData.due_date}
-          onChange={(e) => setFormData({ ...formData, due_date: e.target.value })}
           className="w-full"
+          {...register("due_date")}
         />
+        {errors.due_date && (
+          <p className="text-sm text-destructive">{errors.due_date.message}</p>
+        )}
       </div>
 
       <div className="space-y-2">
         <Label className="text-sm font-medium">Asignar a</Label>
-        <AssigneeField
-          selectedProfiles={formData.selectedProfiles}
-          onChange={(profiles) => setFormData({ ...formData, selectedProfiles: profiles })}
+        <Controller
+          control={control}
+          name="selectedProfiles"
+          render={({ field }) => (
+            <AssigneeField
+              selectedProfiles={field.value}
+              onChange={field.onChange}
+            />
+          )}
         />
+        {errors.selectedProfiles && (
+          <p className="text-sm text-destructive">
+            {errors.selectedProfiles.message}
+          </p>
+        )}
       </div>
 
       <div className="flex flex-col sm:flex-row gap-3 mt-6">
-        <Button type="submit" className="w-full sm:w-auto">
+        <Button type="submit" className="w-full sm:w-auto" disabled={isSubmitting}>
           Guardar
         </Button>
         {onCancel && (

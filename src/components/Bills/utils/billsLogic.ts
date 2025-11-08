@@ -2,15 +2,24 @@ import { supabase } from "@/integrations/supabase/client";
 import { addMonths, startOfDay, differenceInDays } from "date-fns";
 import { toast } from "sonner";
 
+export type BillStatus = "pending" | "paid";
+
 export interface Bill {
   id: number;
   title: string;
   amount: number;
   payment_due_date: string;
-  status: string;
+  status: BillStatus;
   selected_profiles: string[];
   split_between?: number;
 }
+
+export type BillFormInput = {
+  title: string;
+  amount: number;
+  due_date: string;
+  selectedProfiles: string[];
+};
 
 export type BillColorScheme = {
   text: string;
@@ -19,7 +28,17 @@ export type BillColorScheme = {
   background: string;
 };
 
-export const getBillColorScheme = (dueDate: string, status: string): BillColorScheme => {
+const mapBillRecord = (bill: any): Bill => ({
+  id: bill.id,
+  title: bill.title,
+  amount: bill.amount,
+  payment_due_date: bill.payment_due_date,
+  status: (bill.status as BillStatus) ?? "pending",
+  selected_profiles: bill.selected_profiles || [],
+  split_between: bill.split_between,
+});
+
+export const getBillColorScheme = (dueDate: string, status: BillStatus): BillColorScheme => {
   try {
     const dueDateObj = startOfDay(new Date(dueDate));
     const now = startOfDay(new Date());
@@ -88,7 +107,7 @@ export const getBillColorScheme = (dueDate: string, status: string): BillColorSc
   }
 };
 
-export const fetchBills = async () => {
+export const fetchBills = async (): Promise<Bill[]> => {
   try {
     const { data, error } = await supabase
       .from('bills')
@@ -98,15 +117,7 @@ export const fetchBills = async () => {
     if (error) throw error;
     if (!data) return [];
 
-    return data.map(bill => ({
-      id: bill.id,
-      title: bill.title,
-      amount: bill.amount,
-      payment_due_date: bill.payment_due_date,
-      status: bill.status,
-      selected_profiles: bill.selected_profiles || [],
-      split_between: bill.split_between
-    }));
+    return data.map(mapBillRecord);
   } catch (error) {
     console.error('Error fetching bills:', error);
     toast.error('Error al cargar las facturas');
@@ -114,7 +125,7 @@ export const fetchBills = async () => {
   }
 };
 
-export const createBill = async (newBill: any) => {
+export const createBill = async (newBill: BillFormInput): Promise<Bill> => {
   try {
     const { data, error } = await supabase
       .from('bills')
@@ -132,15 +143,7 @@ export const createBill = async (newBill: any) => {
     if (error) throw error;
     if (!data) throw new Error('No data returned from insert');
 
-    return {
-      id: data.id,
-      title: data.title,
-      amount: data.amount,
-      payment_due_date: data.payment_due_date,
-      status: data.status,
-      selected_profiles: data.selected_profiles || [],
-      split_between: data.split_between
-    };
+    return mapBillRecord(data);
   } catch (error) {
     console.error('Error adding bill:', error);
     toast.error('Error al agregar la factura');
@@ -148,7 +151,7 @@ export const createBill = async (newBill: any) => {
   }
 };
 
-export const updateBill = async (updatedBill: Bill) => {
+export const updateBill = async (updatedBill: Bill): Promise<void> => {
   try {
     const { error } = await supabase
       .from('bills')
@@ -163,7 +166,7 @@ export const updateBill = async (updatedBill: Bill) => {
       .eq('id', updatedBill.id);
 
     if (error) throw error;
-    return true;
+    return;
   } catch (error) {
     console.error('Error updating bill:', error);
     toast.error('Error al actualizar la factura');
@@ -171,7 +174,7 @@ export const updateBill = async (updatedBill: Bill) => {
   }
 };
 
-export const deleteBill = async (billId: number) => {
+export const deleteBill = async (billId: number): Promise<void> => {
   try {
     // First, delete all associated notifications
     const { error: notificationsError } = await supabase
@@ -188,7 +191,7 @@ export const deleteBill = async (billId: number) => {
       .eq('id', billId);
 
     if (error) throw error;
-    return true;
+    return;
   } catch (error) {
     console.error('Error deleting bill:', error);
     toast.error('Error al eliminar la factura');
@@ -196,7 +199,7 @@ export const deleteBill = async (billId: number) => {
   }
 };
 
-export const createNextMonthBill = async (currentBill: Bill) => {
+export const createNextMonthBill = async (currentBill: Bill): Promise<Bill> => {
   const nextMonthDate = addMonths(new Date(currentBill.payment_due_date), 1);
   
   try {
@@ -216,15 +219,7 @@ export const createNextMonthBill = async (currentBill: Bill) => {
     if (error) throw error;
     if (!data) throw new Error('No data returned from insert');
 
-    return {
-      id: data.id,
-      title: data.title,
-      amount: data.amount,
-      payment_due_date: data.payment_due_date,
-      status: data.status,
-      selected_profiles: data.selected_profiles || [],
-      split_between: data.split_between
-    };
+    return mapBillRecord(data);
   } catch (error) {
     console.error('Error creating next month bill:', error);
     toast.error('Error al crear la factura para el próximo mes');
@@ -232,8 +227,10 @@ export const createNextMonthBill = async (currentBill: Bill) => {
   }
 };
 
-export const toggleBillStatus = async (bill: Bill) => {
-  const newStatus = bill.status === "paid" ? "pending" : "paid";
+export const toggleBillStatus = async (
+  bill: Bill
+): Promise<{ newStatus: BillStatus; nextMonthBill: Bill | null }> => {
+  const newStatus: BillStatus = bill.status === "paid" ? "pending" : "paid";
   
   try {
     const { error } = await supabase

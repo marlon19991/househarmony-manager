@@ -1,3 +1,4 @@
+import { memo } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -27,7 +28,7 @@ interface TaskItemProps {
   isDisabled: boolean;
 }
 
-const TaskItem = ({
+const TaskItemComponent = ({
   task,
   isEditing,
   onToggle,
@@ -56,7 +57,7 @@ const TaskItem = ({
           <Checkbox
             checked={task.completed}
             onCheckedChange={onToggle}
-            disabled={false}
+            disabled={isDisabled}
           />
           <div>
             <p className={`font-medium ${task.completed ? 'line-through text-gray-500' : ''}`}>
@@ -72,8 +73,9 @@ const TaskItem = ({
             variant="ghost"
             size="icon"
             onClick={onStartEditing}
-            disabled={false}
+            disabled={isDisabled}
             className="text-muted-foreground hover:text-primary-foreground hover:bg-primary"
+            aria-label="Editar tarea"
           >
             <Edit2 className="h-4 w-4" />
           </Button>
@@ -83,7 +85,8 @@ const TaskItem = ({
                 variant="ghost"
                 size="icon"
                 className="text-muted-foreground hover:text-destructive-foreground hover:bg-destructive"
-                disabled={false}
+                disabled={isDisabled}
+                aria-label="Eliminar tarea"
               >
                 <Trash2 className="h-4 w-4" />
               </Button>
@@ -112,4 +115,7 @@ const TaskItem = ({
   );
 };
 
-export default TaskItem;
+const MemoTaskItem = memo(TaskItemComponent);
+MemoTaskItem.displayName = "TaskItem";
+
+export default MemoTaskItem;

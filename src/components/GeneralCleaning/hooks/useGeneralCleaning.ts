@@ -1,4 +1,5 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Task } from "../types/Task";
@@ -6,102 +7,144 @@ import useProfiles from "@/hooks/useProfiles";
 import { sendTaskAssignmentEmail } from "@/utils/emailUtils";
 import { useSettings } from "@/hooks/useSettings";
 
+const GENERAL_CLEANING_QUERY_KEY = ["general-cleaning-state"] as const;
+
+type GeneralCleaningState = {
+  tasks: Task[];
+  assignee: string;
+  completionPercentage: number;
+  storedCompletionPercentage: number;
+  hasProgressRecord: boolean;
+};
+
+const fetchGeneralCleaningState = async (
+  validProfiles: string[]
+): Promise<GeneralCleaningState> => {
+  // 1. Cargar el responsable actual y su progreso
+  const { data: progressData, error: progressError } = await supabase
+    .from("general_cleaning_progress")
+    .select("*")
+    .order("last_updated", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (progressError) throw progressError;
+
+  // 2. Cargar todas las tareas
+  const { data: tasksData, error: tasksError } = await supabase
+    .from("general_cleaning_tasks")
+    .select("*")
+    .order("created_at", { ascending: true });
+
+  if (tasksError) throw tasksError;
+
+  // 3. Cargar todos los estados de las tareas
+  const { data: taskStates, error: statesError } = await supabase
+    .from("cleaning_task_states")
+    .select("*");
+
+  if (statesError) throw statesError;
+
+  const combinedTasks: Task[] = (tasksData || []).map((task: any) => ({
+    id: task.id,
+    description: task.description,
+    comment: task.comment,
+    completed:
+      taskStates?.find((state: any) => state.task_id === task.id)?.completed ||
+      false,
+  }));
+
+  const completedTasks = combinedTasks.filter((task) => task.completed).length;
+  const computedPercentage =
+    combinedTasks.length > 0
+      ? Math.round((completedTasks / combinedTasks.length) * 100)
+      : 0;
+
+  const rawAssignee = progressData?.assignee ?? "Sin asignar";
+  const assigneeExists =
+    rawAssignee === "Sin asignar" || validProfiles.includes(rawAssignee);
+  const assignee = assigneeExists ? rawAssignee : "Sin asignar";
+
+  return {
+    tasks: combinedTasks,
+    assignee,
+    completionPercentage: computedPercentage,
+    storedCompletionPercentage: progressData?.completion_percentage ?? 0,
+    hasProgressRecord: Boolean(progressData),
+  };
+};
+
+const updateProgressRecord = async (assignee: string, percentage: number) => {
+  const { error: updateError } = await supabase
+    .from("general_cleaning_progress")
+    .upsert(
+      {
+        assignee,
+        completion_percentage: percentage,
+        last_updated: new Date().toISOString(),
+      },
+      {
+        onConflict: "assignee",
+      }
+    );
+
+  if (updateError) throw updateError;
+};
+
 export const useGeneralCleaning = () => {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [currentAssignee, setCurrentAssignee] = useState<string>("Sin asignar");
   const [completionPercentage, setCompletionPercentage] = useState(0);
-  const [isLoading, setIsLoading] = useState(true);
   const { profiles } = useProfiles();
   const { maxCleaningTasks } = useSettings();
+  const queryClient = useQueryClient();
 
-  // Cargar todo el estado inicial
-  const loadInitialState = async () => {
-    try {
-      setIsLoading(true);
+  const profileNames = profiles
+    .map((profile) => profile.name)
+    .filter((name): name is string => Boolean(name));
+  const profileKey = [...profileNames].sort().join("|");
 
-      // 1. Cargar el responsable actual y su progreso
-      const { data: progressData, error: progressError } = await supabase
-        .from('general_cleaning_progress')
-        .select('*')
-        .order('last_updated', { ascending: false })
-        .limit(1)
-        .maybeSingle();
+  const generalCleaningQuery = useQuery({
+    queryKey: [...GENERAL_CLEANING_QUERY_KEY, profileKey],
+    queryFn: () => fetchGeneralCleaningState(profileNames),
+    enabled: profiles.length > 0,
+  });
 
-      if (progressError) throw progressError;
+  const refreshCleaningState = useCallback(
+    () =>
+      queryClient.invalidateQueries({ queryKey: GENERAL_CLEANING_QUERY_KEY }),
+    [queryClient]
+  );
 
-      // 2. Cargar todas las tareas
-      const { data: tasksData, error: tasksError } = await supabase
-        .from('general_cleaning_tasks')
-        .select('*')
-        .order('created_at', { ascending: true });
+  useEffect(() => {
+    if (!generalCleaningQuery.data) return;
 
-      if (tasksError) throw tasksError;
+    const {
+      tasks: fetchedTasks,
+      assignee,
+      completionPercentage: computedPercentage,
+      storedCompletionPercentage,
+      hasProgressRecord,
+    } = generalCleaningQuery.data;
 
-      // 3. Cargar todos los estados de las tareas
-      const { data: taskStates, error: statesError } = await supabase
-        .from('cleaning_task_states')
-        .select('*');
+    setTasks(fetchedTasks);
+    setCurrentAssignee(assignee);
+    setCompletionPercentage(computedPercentage);
 
-      if (statesError) throw statesError;
-
-      // Combinar tareas con sus estados
-      const combinedTasks = tasksData.map(task => ({
-        ...task,
-        completed: taskStates?.find(state => state.task_id === task.id)?.completed || false
-      }));
-
-      setTasks(combinedTasks);
-
-      // Establecer el estado inicial
-      if (progressData) {
-        const assigneeExists = progressData.assignee === "Sin asignar" || 
-                             profiles.some(profile => profile.name === progressData.assignee);
-        
-        const finalAssignee = assigneeExists ? progressData.assignee : "Sin asignar";
-        setCurrentAssignee(finalAssignee);
-        
-        // Calcular el porcentaje real basado en las tareas completadas
-        const completedTasks = combinedTasks.filter(task => task.completed).length;
-        const percentage = combinedTasks.length > 0 ? Math.round((completedTasks / combinedTasks.length) * 100) : 0;
-        setCompletionPercentage(percentage);
-        
-        // Si el porcentaje calculado es diferente al almacenado, actualizarlo
-        if (percentage !== progressData.completion_percentage) {
-          await updateProgress(finalAssignee, percentage);
+    const syncProgress = async () => {
+      try {
+        if (!hasProgressRecord) {
+          await updateProgressRecord("Sin asignar", 0);
+        } else if (computedPercentage !== storedCompletionPercentage) {
+          await updateProgressRecord(assignee, computedPercentage);
         }
-      } else {
-        // Si no hay datos de progreso, crear un registro inicial
-        await updateProgress("Sin asignar", 0);
-        setCurrentAssignee("Sin asignar");
-        setCompletionPercentage(0);
+      } catch (error) {
+        console.error("Error al sincronizar el progreso:", error);
       }
-    } catch (error) {
-      console.error('Error al cargar el estado inicial:', error);
-      toast.error("Error al cargar el estado inicial");
-    } finally {
-      setIsLoading(false);
-    }
-  };
+    };
 
-  // Actualizar el progreso en la base de datos
-  const updateProgress = async (assignee: string, percentage: number) => {
-    try {
-      const { error: updateError } = await supabase
-        .from('general_cleaning_progress')
-        .upsert({
-          assignee,
-          completion_percentage: percentage,
-          last_updated: new Date().toISOString()
-        }, {
-          onConflict: 'assignee'
-        });
-
-      if (updateError) throw updateError;
-    } catch (error) {
-      console.error('Error al actualizar el progreso:', error);
-      throw error;
-    }
-  };
+    void syncProgress();
+  }, [generalCleaningQuery.data]);
 
   // Actualizar el estado de una tarea
   const updateTaskState = async (taskId: number, completed: boolean) => {
@@ -132,7 +175,7 @@ export const useGeneralCleaning = () => {
         setCompletionPercentage(newPercentage);
 
         // 4. Actualizar el progreso en la base de datos
-        await updateProgress(currentAssignee, newPercentage);
+        await updateProgressRecord(currentAssignee, newPercentage);
       } else {
         // Si no hay responsable, solo actualizar el estado local
         const completedTasks = updatedTasks.filter(task => task.completed).length;
@@ -142,6 +185,7 @@ export const useGeneralCleaning = () => {
         setCompletionPercentage(newPercentage);
       }
 
+      void refreshCleaningState();
       return true;
     } catch (error) {
       console.error('Error al actualizar el estado de la tarea:', error);
@@ -161,7 +205,7 @@ export const useGeneralCleaning = () => {
       }
 
       // 1. Actualizar el responsable y reiniciar el progreso en la base de datos
-      await updateProgress(newAssignee, 0);
+      await updateProgressRecord(newAssignee, 0);
 
       // 2. Actualizar todos los estados de las tareas a no completados
       const { error: updateError } = await supabase
@@ -221,10 +265,11 @@ export const useGeneralCleaning = () => {
       }
 
       toast.success(`Se ha asignado el aseo general a ${newAssignee}`);
+      void refreshCleaningState();
     } catch (error) {
       console.error('Error al cambiar el responsable:', error);
       toast.error("Error al cambiar el responsable");
-      await loadInitialState();
+      await refreshCleaningState();
     }
   };
 
@@ -274,7 +319,7 @@ export const useGeneralCleaning = () => {
         const completedTasks = tasks.filter(task => task.completed).length;
         const newPercentage = Math.round((completedTasks / (tasks.length + 1)) * 100);
         setCompletionPercentage(newPercentage);
-        await updateProgress(currentAssignee, newPercentage);
+        await updateProgressRecord(currentAssignee, newPercentage);
       } else {
         // Si no hay responsable, mantener el progreso en 0
         setCompletionPercentage(0);
@@ -295,10 +340,12 @@ export const useGeneralCleaning = () => {
       } else {
         // Mostrar mensaje informativo si no hay responsable
         toast.success("Tarea agregada exitosamente. Recuerda asignar un responsable para un mejor seguimiento.");
+        void refreshCleaningState();
         return true;
       }
 
       toast.success("Tarea agregada exitosamente");
+      void refreshCleaningState();
       return true;
     } catch (error) {
       console.error('Error al agregar la tarea:', error);
@@ -328,6 +375,7 @@ export const useGeneralCleaning = () => {
       ));
 
       toast.success("Tarea actualizada exitosamente");
+      void refreshCleaningState();
       return true;
     } catch (error) {
       console.error('Error al actualizar la tarea:', error);
@@ -365,9 +413,10 @@ export const useGeneralCleaning = () => {
         ? Math.round((completedTasks / updatedTasks.length) * 100)
         : 0;
       setCompletionPercentage(newPercentage);
-      await updateProgress(currentAssignee, newPercentage);
+      await updateProgressRecord(currentAssignee, newPercentage);
 
       toast.success("Tarea eliminada exitosamente");
+      void refreshCleaningState();
       return true;
     } catch (error) {
       console.error('Error al eliminar la tarea:', error);
@@ -375,13 +424,6 @@ export const useGeneralCleaning = () => {
       return false;
     }
   };
-
-  // Cargar el estado inicial cuando el componente se monta o cuando cambian los perfiles
-  useEffect(() => {
-    if (profiles.length > 0) {
-      loadInitialState();
-    }
-  }, [profiles]);
 
   // Suscribirse a cambios en las tareas y estados con mejor manejo
   useEffect(() => {
@@ -400,7 +442,7 @@ export const useGeneralCleaning = () => {
         },
         (payload) => {
           console.log('Cambio en general_cleaning_tasks:', payload);
-          loadInitialState();
+          void refreshCleaningState();
         }
       )
       .on(
@@ -412,7 +454,7 @@ export const useGeneralCleaning = () => {
         },
         (payload) => {
           console.log('Cambio en cleaning_task_states:', payload);
-          loadInitialState();
+          void refreshCleaningState();
         }
       )
       .on(
@@ -424,7 +466,7 @@ export const useGeneralCleaning = () => {
         },
         (payload) => {
           console.log('Cambio en general_cleaning_progress:', payload);
-          loadInitialState();
+          void refreshCleaningState();
         }
       )
       .subscribe((status) => {
@@ -440,8 +482,12 @@ export const useGeneralCleaning = () => {
       console.log('Desuscribiéndose del canal:', channelName);
       supabase.removeChannel(channel);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // loadInitialState se mantiene estable y no necesita estar en deps
+  }, [refreshCleaningState]);
+
+  const isLoading =
+    generalCleaningQuery.isLoading ||
+    (generalCleaningQuery.isFetching && !generalCleaningQuery.data) ||
+    profiles.length === 0;
 
   return {
     tasks,
@@ -450,9 +496,8 @@ export const useGeneralCleaning = () => {
     isLoading,
     updateTaskState,
     changeAssignee,
-    loadInitialState,
     addTask,
     updateTask,
     deleteTask
   };
-}; 
+};

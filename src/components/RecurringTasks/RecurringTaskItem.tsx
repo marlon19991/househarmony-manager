@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { memo, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import {
@@ -22,79 +22,79 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import type { RecurringTask, RecurringTaskPayload } from "./hooks/useRecurringTasks";
 
 interface RecurringTaskItemProps {
-  task: {
-    id: number;
-    title: string;
-    description?: string;
-    weekdays?: boolean[];
-    start_date?: string;
-    end_date?: string;
-    assignees?: string[];
-    icon?: string;
-    recurrence_type?: string;
-    notification_time?: string;
-  };
+  task: RecurringTask;
   onDelete: (id: number) => void;
-  onUpdate: (id: number, task: any) => void;
+  onUpdate: (id: number, task: RecurringTaskPayload) => void;
 }
 
-export const RecurringTaskItem = ({ task, onDelete, onUpdate }: RecurringTaskItemProps) => {
+const RecurringTaskItemComponent = ({ task, onDelete, onUpdate }: RecurringTaskItemProps) => {
   const [isEditing, setIsEditing] = useState(false);
 
-  const handleUpdate = (updatedTask: any) => {
+  const handleUpdate = (updatedTask: RecurringTaskPayload) => {
     onUpdate(task.id, updatedTask);
     setIsEditing(false);
   };
 
-  const getWeekdaysText = (weekdays: boolean[]) => {
-    // Si todos los días están seleccionados
-    if (weekdays.every(day => day)) {
+  const weekdaysText = useMemo(() => {
+    if (!task.weekdays) return "";
+    if (task.weekdays.every((day) => day)) {
       return "Todos los días";
     }
-
-    // Si son los días de lunes a viernes
-    if (weekdays[1] && weekdays[2] && weekdays[3] && weekdays[4] && weekdays[5] && !weekdays[0] && !weekdays[6]) {
+    if (
+      task.weekdays[1] &&
+      task.weekdays[2] &&
+      task.weekdays[3] &&
+      task.weekdays[4] &&
+      task.weekdays[5] &&
+      !task.weekdays[0] &&
+      !task.weekdays[6]
+    ) {
       return "De lunes a viernes";
     }
 
-    // Para otros casos, mostrar los días seleccionados
     const days = ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
-    const selectedDays = weekdays
-      .map((selected, index) => selected ? days[index] : null)
-      .filter(Boolean);
-    
-    if (selectedDays.length === 0) return "";
+    const selectedDays = task.weekdays
+      .map((selected, index) => (selected ? days[index] : null))
+      .filter(Boolean) as string[];
+
+    if (!selectedDays.length) return "";
     if (selectedDays.length === 1) return `Cada ${selectedDays[0]}`;
-    
     const lastDay = selectedDays.pop();
     return `${selectedDays.join(", ")} y ${lastDay}`;
-  };
+  }, [task.weekdays]);
 
-  const getScheduleText = () => {
+  const scheduleText = useMemo(() => {
     if (!task.recurrence_type) return "Sin programación";
 
     switch (task.recurrence_type) {
       case "specific":
-        return task.start_date ? format(new Date(task.start_date), "PPP", { locale: es }) : "Fecha no especificada";
+        return task.start_date
+          ? format(new Date(task.start_date), "PPP", { locale: es })
+          : "Fecha no especificada";
       case "workdays":
         return "De lunes a viernes";
       case "weekly":
-        return task.weekdays ? getWeekdaysText(task.weekdays) : "Sin días seleccionados";
+        return task.weekdays ? weekdaysText : "Sin días seleccionados";
       default:
         return "Sin programación";
     }
-  };
+  }, [task.recurrence_type, task.start_date, task.weekdays, weekdaysText]);
 
-  const getAssigneesText = () => {
+  const formattedNotificationTime = useMemo(() => {
+    if (!task.notification_time) return "";
+    return format(new Date(`2000-01-01T${task.notification_time}`), "h:mm a");
+  }, [task.notification_time]);
+
+  const assigneesText = useMemo(() => {
     if (!task.assignees || task.assignees.length === 0) return "Sin asignados";
-    
     if (task.assignees.length <= 3) {
       return task.assignees.join(", ");
     }
     return `${task.assignees.length} asignados`;
-  };
+  }, [task.assignees]);
 
   if (isEditing) {
     return (
@@ -128,19 +128,19 @@ export const RecurringTaskItem = ({ task, onDelete, onUpdate }: RecurringTaskIte
           <div className="space-y-2 text-sm text-muted-foreground">
             <div className="flex items-center gap-2">
               <Calendar className="h-4 w-4" />
-              <span className="flex-1 truncate">{getScheduleText()}</span>
+              <span className="flex-1 truncate">{scheduleText}</span>
             </div>
             
-            {task.notification_time && (
+            {formattedNotificationTime && (
               <div className="flex items-center gap-2">
                 <Clock className="h-4 w-4" />
-                <span>{format(new Date(`2000-01-01T${task.notification_time}`), 'h:mm a')}</span>
+                <span>{formattedNotificationTime}</span>
               </div>
             )}
             
             <div className="flex items-center gap-2">
               <Users className="h-4 w-4" />
-              <span className="flex-1 truncate">{getAssigneesText()}</span>
+              <span className="flex-1 truncate">{assigneesText}</span>
             </div>
           </div>
         </div>
@@ -154,6 +154,7 @@ export const RecurringTaskItem = ({ task, onDelete, onUpdate }: RecurringTaskIte
                   size="icon"
                   className="h-8 w-8"
                   onClick={() => setIsEditing(true)}
+                  aria-label="Editar tarea"
                 >
                   <Pencil className="h-4 w-4" />
                 </Button>
@@ -198,3 +199,6 @@ export const RecurringTaskItem = ({ task, onDelete, onUpdate }: RecurringTaskIte
     </Card>
   );
 };
+
+export const RecurringTaskItem = memo(RecurringTaskItemComponent);
+RecurringTaskItem.displayName = "RecurringTaskItem";

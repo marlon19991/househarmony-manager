@@ -9,12 +9,12 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import { BillForm } from "./BillForm";
-import type { Bill } from "./utils/billsLogic";
+import type { BillFormInput } from "./utils/billsLogic";
 
 interface BillsHeaderProps {
   isOpen: boolean;
   setIsOpen: (isOpen: boolean) => void;
-  onAddBill: (bill: Omit<Bill, 'id'>) => void;
+  onAddBill: (bill: BillFormInput) => void;
 }
 
 export const BillsHeader = ({ isOpen, setIsOpen, onAddBill }: BillsHeaderProps) => {

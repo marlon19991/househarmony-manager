@@ -12,6 +12,7 @@ import GeneralCleaning from "./pages/GeneralCleaning";
 import Bills from "./pages/Bills";
 import RecurringTasks from "./pages/RecurringTasks";
 import { useInitializeProfiles } from "./hooks/useProfiles";
+import ErrorBoundary from "./components/ErrorBoundary";
 
 // Configuración de React Query según mejores prácticas
 // https://tanstack.com/query/latest/docs/react/guides/important-defaults
@@ -59,7 +60,9 @@ const App = () => {
             <Toaster />
             <Sonner />
             <BrowserRouter>
-              <AppRoutes />
+              <ErrorBoundary>
+                <AppRoutes />
+              </ErrorBoundary>
             </BrowserRouter>
           </TooltipProvider>
         </ThemeProvider>

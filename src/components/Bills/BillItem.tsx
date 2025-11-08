@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { memo, useEffect, useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Pencil, Trash2 } from "lucide-react";
@@ -18,7 +18,7 @@ import { BillStatus } from "./BillStatus";
 import { BillDates } from "./BillDates";
 import { handleDueDateNotification, handleOverdueNotification } from "./utils/billNotifications";
 import { getBillColorScheme } from "./utils/billsLogic";
-import type { Bill } from "./utils/billsLogic";
+import type { Bill, BillFormInput } from "./utils/billsLogic";
 import { cn } from "@/lib/utils";
 
 interface BillItemProps {
@@ -28,7 +28,7 @@ interface BillItemProps {
   onToggleStatus: (id: number) => void;
 }
 
-export const BillItem = ({ bill, onUpdate, onDelete, onToggleStatus }: BillItemProps) => {
+const BillItemComponent = ({ bill, onUpdate, onDelete, onToggleStatus }: BillItemProps) => {
   const [isEditing, setIsEditing] = useState(false);
 
   // Verificar notificaciones cuando cambia la factura
@@ -64,7 +64,7 @@ export const BillItem = ({ bill, onUpdate, onDelete, onToggleStatus }: BillItemP
     }
   };
 
-  const handleUpdate = async (updatedData: any) => {
+  const handleUpdate = async (updatedData: BillFormInput) => {
     const updatedBill: Bill = {
       ...bill,
       title: updatedData.title,
@@ -166,6 +166,7 @@ export const BillItem = ({ bill, onUpdate, onDelete, onToggleStatus }: BillItemP
                 size="icon"
                 onClick={() => setIsEditing(true)}
                 className="h-8 w-8"
+                aria-label="Editar factura"
               >
                 <Pencil className="h-4 w-4" />
               </Button>
@@ -176,6 +177,7 @@ export const BillItem = ({ bill, onUpdate, onDelete, onToggleStatus }: BillItemP
                     variant="outline"
                     size="icon"
                     className="h-8 w-8 text-destructive hover:text-destructive-foreground hover:bg-destructive"
+                    aria-label="Eliminar factura"
                   >
                     <Trash2 className="h-4 w-4" />
                   </Button>
@@ -205,3 +207,6 @@ export const BillItem = ({ bill, onUpdate, onDelete, onToggleStatus }: BillItemP
     </Card>
   );
 };
+
+export const BillItem = memo(BillItemComponent);
+BillItem.displayName = "BillItem";
