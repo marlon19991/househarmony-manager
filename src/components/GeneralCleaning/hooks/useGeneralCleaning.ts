@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -6,6 +6,9 @@ import { Task } from "../types/Task";
 import useProfiles from "@/hooks/useProfiles";
 import { sendTaskAssignmentEmail } from "@/utils/emailUtils";
 import { useSettings } from "@/hooks/useSettings";
+import { useSupabaseCrud } from "@/hooks/useSupabaseCrud";
+import { useRealtimeSubscription } from "@/hooks/useRealtimeSubscription";
+import { logger } from "@/utils/logger";
 
 const GENERAL_CLEANING_QUERY_KEY = ["general-cleaning-state"] as const;
 
@@ -116,6 +119,30 @@ export const useGeneralCleaning = () => {
     [queryClient]
   );
 
+  const handleRealtimeInvalidate = useCallback(() => {
+    void refreshCleaningState();
+  }, [refreshCleaningState]);
+
+  const realtimeConfigs = useMemo(
+    () => [
+      { table: "general_cleaning_tasks", callback: handleRealtimeInvalidate },
+      { table: "cleaning_task_states", callback: handleRealtimeInvalidate },
+      { table: "general_cleaning_progress", callback: handleRealtimeInvalidate },
+    ],
+    [handleRealtimeInvalidate]
+  );
+
+  useRealtimeSubscription("general_cleaning_changes", realtimeConfigs);
+
+  const { createMutation: createTaskMutation, deleteMutation: deleteTaskMutation } =
+    useSupabaseCrud<{ description: string; comment?: string }, never, number>({
+      table: "general_cleaning_tasks",
+      queryKey: GENERAL_CLEANING_QUERY_KEY,
+      toastMessages: {
+        deleteSuccess: "Tarea eliminada exitosamente",
+      },
+    });
+
   useEffect(() => {
     if (!generalCleaningQuery.data) return;
 
@@ -139,7 +166,7 @@ export const useGeneralCleaning = () => {
           await updateProgressRecord(assignee, computedPercentage);
         }
       } catch (error) {
-        console.error("Error al sincronizar el progreso:", error);
+        logger.error("Error al sincronizar el progreso", { error });
       }
     };
 
@@ -188,7 +215,7 @@ export const useGeneralCleaning = () => {
       void refreshCleaningState();
       return true;
     } catch (error) {
-      console.error('Error al actualizar el estado de la tarea:', error);
+      logger.error("Error al actualizar el estado de la tarea", { error });
       toast.error("Error al actualizar el estado de la tarea");
       return false;
     }
@@ -234,7 +261,7 @@ export const useGeneralCleaning = () => {
                          supabaseUrl.includes('local');
           
           if (isLocal) {
-            console.log('📧 [Desarrollo Local] Notificación de tarea omitida (normal en desarrollo)');
+            logger.info("📧 [Desarrollo Local] Notificación de tarea omitida (normal en desarrollo)");
           } else {
             const { error } = await supabase.functions.invoke('send-task-notifications', {
               body: {
@@ -246,7 +273,7 @@ export const useGeneralCleaning = () => {
             });
 
             if (error) {
-              console.warn('⚠️ No se pudo enviar la notificación (esto es normal en desarrollo local):', error.message);
+              logger.warn('⚠️ No se pudo enviar la notificación (esto es normal en desarrollo local)', { error });
             }
           }
         } catch (emailError: any) {
@@ -256,9 +283,9 @@ export const useGeneralCleaning = () => {
                          supabaseUrl.includes('127.0.0.1');
           
           if (isLocal) {
-            console.log('📧 [Desarrollo Local] Función de notificación no disponible (normal en desarrollo)');
+            logger.info('📧 [Desarrollo Local] Función de notificación no disponible (normal en desarrollo)');
           } else {
-            console.warn('⚠️ Error al enviar la notificación por correo:', emailError?.message || emailError);
+            logger.warn('⚠️ Error al enviar la notificación por correo', { error: emailError });
           }
           // No interrumpimos el flujo si falla el envío del correo
         }
@@ -267,7 +294,7 @@ export const useGeneralCleaning = () => {
       toast.success(`Se ha asignado el aseo general a ${newAssignee}`);
       void refreshCleaningState();
     } catch (error) {
-      console.error('Error al cambiar el responsable:', error);
+      logger.error('Error al cambiar el responsable', { error });
       toast.error("Error al cambiar el responsable");
       await refreshCleaningState();
     }
@@ -283,17 +310,14 @@ export const useGeneralCleaning = () => {
       }
 
       // 1. Crear la tarea
-      const { data: newTaskData, error: taskError } = await supabase
-        .from('general_cleaning_tasks')
-        .insert({
-          description,
-          comment,
-          created_at: new Date().toISOString()
-        })
-        .select()
-        .single();
+      const newTaskData = await createTaskMutation.mutateAsync({
+        description,
+        comment,
+      });
 
-      if (taskError) throw taskError;
+      if (!newTaskData || typeof newTaskData !== "object" || !("id" in newTaskData)) {
+        throw new Error("No se pudo crear la tarea");
+      }
 
       // 2. Crear el estado inicial de la tarea
       const { error: stateError } = await supabase
@@ -309,15 +333,18 @@ export const useGeneralCleaning = () => {
 
       // 3. Actualizar el estado local
       const newTask = {
-        ...newTaskData,
-        completed: false
+        ...(newTaskData as Task),
+        completed: false,
       };
-      setTasks([...tasks, newTask]);
+      const updatedTasks = [...tasks, newTask];
+      setTasks(updatedTasks);
 
       // 4. Recalcular el progreso solo si hay un responsable asignado
       if (currentAssignee !== "Sin asignar") {
-        const completedTasks = tasks.filter(task => task.completed).length;
-        const newPercentage = Math.round((completedTasks / (tasks.length + 1)) * 100);
+        const completedTasks = updatedTasks.filter(task => task.completed).length;
+        const newPercentage = updatedTasks.length > 0
+          ? Math.round((completedTasks / updatedTasks.length) * 100)
+          : 0;
         setCompletionPercentage(newPercentage);
         await updateProgressRecord(currentAssignee, newPercentage);
       } else {
@@ -344,11 +371,10 @@ export const useGeneralCleaning = () => {
         return true;
       }
 
-      toast.success("Tarea agregada exitosamente");
       void refreshCleaningState();
       return true;
     } catch (error) {
-      console.error('Error al agregar la tarea:', error);
+      logger.error('Error al agregar la tarea', { error });
       toast.error("Error al crear la tarea");
       return false;
     }
@@ -378,7 +404,7 @@ export const useGeneralCleaning = () => {
       void refreshCleaningState();
       return true;
     } catch (error) {
-      console.error('Error al actualizar la tarea:', error);
+      logger.error('Error al actualizar la tarea', { error });
       toast.error("Error al actualizar la tarea");
       return false;
     }
@@ -396,12 +422,7 @@ export const useGeneralCleaning = () => {
       if (stateError) throw stateError;
 
       // 2. Eliminar la tarea
-      const { error: taskError } = await supabase
-        .from('general_cleaning_tasks')
-        .delete()
-        .eq('id', taskId);
-
-      if (taskError) throw taskError;
+      await deleteTaskMutation.mutateAsync(taskId);
 
       // 3. Actualizar el estado local
       const updatedTasks = tasks.filter(task => task.id !== taskId);
@@ -415,74 +436,14 @@ export const useGeneralCleaning = () => {
       setCompletionPercentage(newPercentage);
       await updateProgressRecord(currentAssignee, newPercentage);
 
-      toast.success("Tarea eliminada exitosamente");
       void refreshCleaningState();
       return true;
     } catch (error) {
-      console.error('Error al eliminar la tarea:', error);
+      logger.error('Error al eliminar la tarea', { error });
       toast.error("Error al eliminar la tarea");
       return false;
     }
   };
-
-  // Suscribirse a cambios en las tareas y estados con mejor manejo
-  useEffect(() => {
-    // Crear canal con nombre único para evitar conflictos
-    const channelName = `general_cleaning_changes_${Date.now()}`;
-    const channel = supabase.channel(channelName);
-
-    // Configurar listeners para cambios en tiempo real
-    channel
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'general_cleaning_tasks',
-        },
-        (payload) => {
-          console.log('Cambio en general_cleaning_tasks:', payload);
-          void refreshCleaningState();
-        }
-      )
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'cleaning_task_states',
-        },
-        (payload) => {
-          console.log('Cambio en cleaning_task_states:', payload);
-          void refreshCleaningState();
-        }
-      )
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'general_cleaning_progress',
-        },
-        (payload) => {
-          console.log('Cambio en general_cleaning_progress:', payload);
-          void refreshCleaningState();
-        }
-      )
-      .subscribe((status) => {
-        if (status === 'SUBSCRIBED') {
-          console.log('Suscripción activa:', channelName);
-        } else if (status === 'CHANNEL_ERROR') {
-          console.error('Error en la suscripción:', channelName);
-        }
-      });
-
-    // Cleanup: desuscribirse cuando el componente se desmonte
-    return () => {
-      console.log('Desuscribiéndose del canal:', channelName);
-      supabase.removeChannel(channel);
-    };
-  }, [refreshCleaningState]);
 
   const isLoading =
     generalCleaningQuery.isLoading ||

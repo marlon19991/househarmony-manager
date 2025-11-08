@@ -1,4 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
+import { logger } from "@/utils/logger";
 
 // Detectar si estamos en desarrollo local
 const isLocalDevelopment = () => {
@@ -20,7 +21,7 @@ export const sendTaskAssignmentEmail = async (
 ) => {
   // En desarrollo local, las Edge Functions pueden no estar disponibles
   if (isLocalDevelopment()) {
-    console.log('📧 [Desarrollo Local] Notificación de email omitida:', {
+    logger.info('📧 [Desarrollo Local] Notificación de email omitida', {
       to: email,
       assignee,
       taskTitle,
@@ -52,17 +53,17 @@ export const sendTaskAssignmentEmail = async (
 
     if (error) {
       // En desarrollo, solo loguear sin lanzar error
-      console.warn('⚠️ No se pudo enviar el correo electrónico (esto es normal en desarrollo local):', error.message);
+      logger.warn('⚠️ No se pudo enviar el correo electrónico (esto es normal en desarrollo local)', { error });
       return;
     }
   } catch (error: any) {
     // En desarrollo local, los errores de funciones son esperados
     if (isLocalDevelopment()) {
-      console.log('📧 [Desarrollo Local] Función de email no disponible (normal en desarrollo)');
+      logger.info('📧 [Desarrollo Local] Función de email no disponible (normal en desarrollo)');
       return;
     }
     // En producción, loguear pero no interrumpir el flujo
-    console.warn('⚠️ Error al enviar el correo electrónico:', error?.message || error);
+    logger.warn('⚠️ Error al enviar el correo electrónico', { error });
   }
 };
 
@@ -80,7 +81,7 @@ export const sendBillDueEmail = async (
 ) => {
   // En desarrollo local, las Edge Functions pueden no estar disponibles
   if (isLocalDevelopment()) {
-    console.log('📧 [Desarrollo Local] Notificación de factura omitida:', {
+    logger.info('📧 [Desarrollo Local] Notificación de factura omitida', {
       to,
       billTitle,
       dueDate,
@@ -92,7 +93,7 @@ export const sendBillDueEmail = async (
   try {
     // Validar el correo electrónico
     if (!to || !to.includes('@') || !to.includes('.')) {
-      console.warn('⚠️ Correo electrónico inválido:', to);
+      logger.warn('⚠️ Correo electrónico inválido', { to });
       return;
     }
 
@@ -126,16 +127,16 @@ export const sendBillDueEmail = async (
       `
     };
 
-    const { error, data } = await supabase.functions.invoke('send-email', {
+    const { error } = await supabase.functions.invoke('send-email', {
       body: emailData
     });
 
     if (error) {
-      console.warn('⚠️ No se pudo enviar el correo de notificación (esto es normal en desarrollo local):', error.message);
+      logger.warn('⚠️ No se pudo enviar el correo de notificación (esto es normal en desarrollo local)', { error });
       return; // No lanzar error, solo loguear
     }
 
-    console.log('✅ Correo enviado exitosamente:', {
+    logger.info('✅ Correo enviado exitosamente', {
       to,
       billTitle
     });
@@ -143,10 +144,10 @@ export const sendBillDueEmail = async (
   } catch (error: any) {
     // En desarrollo local, los errores de funciones son esperados
     if (isLocalDevelopment()) {
-      console.log('📧 [Desarrollo Local] Función de email no disponible (normal en desarrollo)');
+      logger.info('📧 [Desarrollo Local] Función de email no disponible (normal en desarrollo)');
       return;
     }
     // En producción, loguear pero no interrumpir el flujo
-    console.warn('⚠️ Error al enviar el correo de notificación de factura:', error?.message || error);
+    logger.warn('⚠️ Error al enviar el correo de notificación de factura', { error });
   }
 };

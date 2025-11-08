@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 import { BillsHeader } from "./BillsHeader";
 import { BillsList } from "./BillsList";
 import { useBills } from "./hooks/useBills";
@@ -56,8 +57,10 @@ export const BillsSection = () => {
         onAddBill={handleAddBill}
       />
       {billsQuery.isLoading && (
-        <div className="rounded-lg border border-dashed p-6 text-center text-sm text-muted-foreground">
-          Cargando facturas...
+        <div className="space-y-3">
+          {[...Array(3)].map((_, index) => (
+            <Skeleton key={index} className="h-24 w-full rounded-lg" />
+          ))}
         </div>
       )}
 

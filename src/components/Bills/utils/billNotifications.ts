@@ -4,6 +4,7 @@ import { es } from "date-fns/locale";
 import { sendBillDueEmail } from "@/utils/emailUtils";
 import type { Bill } from "./billsLogic";
 import { toast } from "sonner";
+import { logger } from "@/utils/logger";
 
 export const handleDueDateNotification = async (bill: Bill) => {
   try {
@@ -16,7 +17,7 @@ export const handleDueDateNotification = async (bill: Bill) => {
       .maybeSingle();
 
     if (existingNotification) {
-      console.log('Ya se envió una notificación de vencimiento próximo para esta factura');
+      logger.info('Ya se envió una notificación de vencimiento próximo para esta factura', { billId: bill.id });
       return;
     }
 
@@ -30,13 +31,13 @@ export const handleDueDateNotification = async (bill: Bill) => {
       .in('name', bill.selected_profiles);
 
     if (profilesError) {
-      console.error('Error al obtener perfiles:', profilesError);
+      logger.error('Error al obtener perfiles', { error: profilesError });
       toast.error('Error al obtener información de los responsables');
       return;
     }
 
     if (!profiles || profiles.length === 0) {
-      console.error('No se encontraron perfiles para enviar notificaciones');
+      logger.warn('No se encontraron perfiles para enviar notificaciones', { billId: bill.id });
       return;
     }
 
@@ -47,7 +48,7 @@ export const handleDueDateNotification = async (bill: Bill) => {
     // Enviar correo a cada perfil
     for (const profile of profiles) {
       if (!profile.email) {
-        console.log(`El perfil ${profile.name} no tiene correo configurado`);
+        logger.info('El perfil no tiene correo configurado', { profile: profile.name });
         continue;
       }
 
@@ -62,7 +63,7 @@ export const handleDueDateNotification = async (bill: Bill) => {
         );
         successCount++;
       } catch (error) {
-        console.error(`Error al enviar correo a ${profile.email}:`, error);
+        logger.error('Error al enviar correo', { email: profile.email, error });
         failedCount++;
         failedEmails.push(profile.name);
       }
@@ -93,7 +94,7 @@ export const handleDueDateNotification = async (bill: Bill) => {
     }
 
   } catch (error) {
-    console.error('Error al enviar notificación de vencimiento próximo:', error);
+    logger.error('Error al enviar notificación de vencimiento próximo', { error, billId: bill.id });
     toast.error('Error al enviar notificaciones');
   }
 };
@@ -109,7 +110,7 @@ export const handleOverdueNotification = async (bill: Bill) => {
       .maybeSingle();
 
     if (existingNotification) {
-      console.log('Ya se envió una notificación de vencimiento para esta factura');
+      logger.info('Ya se envió una notificación de vencimiento para esta factura', { billId: bill.id });
       return;
     }
 
@@ -123,13 +124,13 @@ export const handleOverdueNotification = async (bill: Bill) => {
       .in('name', bill.selected_profiles);
 
     if (profilesError) {
-      console.error('Error al obtener perfiles:', profilesError);
+      logger.error('Error al obtener perfiles', { error: profilesError });
       toast.error('Error al obtener información de los responsables');
       return;
     }
 
     if (!profiles || profiles.length === 0) {
-      console.error('No se encontraron perfiles para enviar notificaciones');
+      logger.warn('No se encontraron perfiles para enviar notificaciones', { billId: bill.id });
       return;
     }
 
@@ -140,7 +141,7 @@ export const handleOverdueNotification = async (bill: Bill) => {
     // Enviar correo a cada perfil
     for (const profile of profiles) {
       if (!profile.email) {
-        console.log(`El perfil ${profile.name} no tiene correo configurado`);
+        logger.info('El perfil no tiene correo configurado', { profile: profile.name });
         continue;
       }
 
@@ -155,7 +156,7 @@ export const handleOverdueNotification = async (bill: Bill) => {
         );
         successCount++;
       } catch (error) {
-        console.error(`Error al enviar correo a ${profile.email}:`, error);
+        logger.error('Error al enviar correo', { email: profile.email, error });
         failedCount++;
         failedEmails.push(profile.name);
       }
@@ -186,7 +187,7 @@ export const handleOverdueNotification = async (bill: Bill) => {
     }
 
   } catch (error) {
-    console.error('Error al enviar notificación de vencimiento:', error);
+    logger.error('Error al enviar notificación de vencimiento', { error, billId: bill.id });
     toast.error('Error al enviar notificaciones de vencimiento');
   }
 };

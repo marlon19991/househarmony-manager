@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Plus } from "lucide-react";
 import { RecurringTaskForm } from "./RecurringTaskForm";
 import { RecurringTaskItem } from "./RecurringTaskItem";
@@ -54,8 +55,10 @@ export const RecurringTasksSection = () => {
       )}
 
       {tasksQuery.isLoading && (
-        <div className="rounded-lg border border-dashed p-6 text-center text-sm text-muted-foreground">
-          Cargando tareas periódicas...
+        <div className="space-y-3">
+          {[...Array(3)].map((_, index) => (
+            <Skeleton key={index} className="h-24 w-full rounded-lg" />
+          ))}
         </div>
       )}
 

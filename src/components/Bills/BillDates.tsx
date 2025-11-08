@@ -1,5 +1,6 @@
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
+import { logger } from "@/utils/logger";
 
 interface BillDatesProps {
   dueDate: string;
@@ -10,7 +11,7 @@ export const BillDates = ({ dueDate, status }: BillDatesProps) => {
   try {
     const dueDateObj = new Date(dueDate);
     if (isNaN(dueDateObj.getTime())) {
-      console.error('Fecha inválida:', dueDate);
+      logger.error('Fecha inválida', { dueDate });
       return <span>Fecha no válida</span>;
     }
 
@@ -22,7 +23,7 @@ export const BillDates = ({ dueDate, status }: BillDatesProps) => {
 
     return <span>Vence el {formattedDueDate}</span>;
   } catch (error) {
-    console.error('Error al formatear las fechas:', error);
+    logger.error('Error al formatear las fechas', { error, dueDate });
     return <span>Error al procesar las fechas</span>;
   }
 };

@@ -20,6 +20,7 @@ import { handleDueDateNotification, handleOverdueNotification } from "./utils/bi
 import { getBillColorScheme } from "./utils/billsLogic";
 import type { Bill, BillFormInput } from "./utils/billsLogic";
 import { cn } from "@/lib/utils";
+import { logger } from "@/utils/logger";
 
 interface BillItemProps {
   bill: Bill;
@@ -43,7 +44,7 @@ const BillItemComponent = ({ bill, onUpdate, onDelete, onToggleStatus }: BillIte
     try {
       const dueDate = new Date(bill.payment_due_date);
       if (isNaN(dueDate.getTime())) {
-        console.error('Fecha de vencimiento inválida:', bill.payment_due_date);
+        logger.error('Fecha de vencimiento inválida', { dueDate: bill.payment_due_date, billId: bill.id });
         return;
       }
 
@@ -60,7 +61,7 @@ const BillItemComponent = ({ bill, onUpdate, onDelete, onToggleStatus }: BillIte
         await handleOverdueNotification(bill);
       }
     } catch (error) {
-      console.error('Error al verificar notificaciones:', error);
+      logger.error('Error al verificar notificaciones de factura', { error, billId: bill.id });
     }
   };
 

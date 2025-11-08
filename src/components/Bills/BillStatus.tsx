@@ -1,5 +1,5 @@
 import { differenceInDays, startOfDay } from "date-fns";
-import { getBillColorScheme } from "./utils/billsLogic";
+import { logger } from "@/utils/logger";
 
 interface BillStatusProps {
   dueDate: string;
@@ -10,7 +10,7 @@ export const BillStatus = ({ dueDate, status }: BillStatusProps) => {
   try {
     const dueDateObj = startOfDay(new Date(dueDate));
     if (isNaN(dueDateObj.getTime())) {
-      console.error('Fecha inválida:', dueDate);
+      logger.error('Fecha inválida', { dueDate });
       return (
         <span className="text-red-600 font-semibold text-lg">
           Error en fecha
@@ -51,7 +51,7 @@ export const BillStatus = ({ dueDate, status }: BillStatusProps) => {
       </span>
     );
   } catch (error) {
-    console.error('Error al procesar el estado de la factura:', error);
+    logger.error('Error al procesar el estado de la factura', { error, dueDate, status });
     return (
       <span className="text-red-600 font-semibold text-lg">
         Error
