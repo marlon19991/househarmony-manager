@@ -41,10 +41,13 @@ export const BillsSection = () => {
     if (!bill) return;
 
     toggleBillStatusMutation.mutate(bill, {
-      onSuccess: ({ newStatus }) => {
-        toast.success(
-          `Factura marcada como ${newStatus === "paid" ? "pagada" : "pendiente"}`
-        );
+      onSuccess: (updatedBill) => {
+        const formattedDate = new Date(updatedBill.payment_due_date).toLocaleDateString("es-CO", {
+          day: "2-digit",
+          month: "long",
+          year: "numeric",
+        });
+        toast.success(`Factura actualizada. Nuevo vencimiento: ${formattedDate}`);
       },
     });
   };

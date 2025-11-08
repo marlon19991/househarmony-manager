@@ -56,14 +56,12 @@ export const useBills = () => {
     },
   });
 
-  const toggleBillStatusMutation = useMutation<
-    { newStatus: BillStatus; nextMonthBill: Bill | null },
-    Error,
-    Bill
-  >({
+  const toggleBillStatusMutation = useMutation<Bill, Error, Bill>({
     mutationFn: toggleBillStatus,
-    onSuccess: () => {
-      void invalidateBills();
+    onSuccess: (updatedBill) => {
+      queryClient.setQueryData<Bill[] | undefined>(BILLS_QUERY_KEY, (oldBills) =>
+        oldBills?.map((bill) => (bill.id === updatedBill.id ? updatedBill : bill)) ?? oldBills
+      );
     },
   });
 

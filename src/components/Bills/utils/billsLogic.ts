@@ -199,53 +199,40 @@ export const deleteBill = async (billId: number): Promise<void> => {
   }
 };
 
-export const createNextMonthBill = async (currentBill: Bill): Promise<Bill> => {
-  const nextMonthDate = addMonths(new Date(currentBill.payment_due_date), 1);
-  
+export const toggleBillStatus = async (bill: Bill): Promise<Bill> => {
+  if (bill.status !== "pending") {
+    const { data, error } = await supabase
+      .from("bills")
+      .update({ status: "pending" })
+      .eq("id", bill.id)
+      .select()
+      .single();
+
+    if (error || !data) {
+      throw error || new Error("No data returned from update");
+    }
+
+    return mapBillRecord(data);
+  }
+
+  const nextMonthDate = addMonths(new Date(bill.payment_due_date), 1);
+
   try {
     const { data, error } = await supabase
       .from('bills')
-      .insert({
-        title: currentBill.title,
-        amount: currentBill.amount,
+      .update({
         payment_due_date: nextMonthDate.toISOString(),
         status: 'pending',
-        selected_profiles: currentBill.selected_profiles,
-        split_between: currentBill.split_between
       })
+      .eq('id', bill.id)
       .select()
       .single();
 
     if (error) throw error;
-    if (!data) throw new Error('No data returned from insert');
+    if (!data) throw new Error('No data returned from update');
 
+    toast.success('Factura pagada. Fecha actualizada al próximo mes');
     return mapBillRecord(data);
-  } catch (error) {
-    console.error('Error creating next month bill:', error);
-    toast.error('Error al crear la factura para el próximo mes');
-    throw error;
-  }
-};
-
-export const toggleBillStatus = async (
-  bill: Bill
-): Promise<{ newStatus: BillStatus; nextMonthBill: Bill | null }> => {
-  const newStatus: BillStatus = bill.status === "paid" ? "pending" : "paid";
-  
-  try {
-    const { error } = await supabase
-      .from('bills')
-      .update({ status: newStatus } as any)
-      .eq('id', bill.id);
-
-    if (error) throw error;
-
-    let nextMonthBill = null;
-    if (newStatus === "paid") {
-      nextMonthBill = await createNextMonthBill(bill);
-    }
-
-    return { newStatus, nextMonthBill };
   } catch (error) {
     console.error('Error updating bill status:', error);
     toast.error('Error al actualizar el estado de la factura');

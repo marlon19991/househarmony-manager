@@ -145,7 +145,7 @@ const BillItemComponent = ({ bill, onUpdate, onDelete, onToggleStatus }: BillIte
                   <AlertDialogHeader>
                     <AlertDialogTitle>¿Confirmar pago de factura?</AlertDialogTitle>
                     <AlertDialogDescription>
-                      Al marcar esta factura como pagada, se creará automáticamente la factura del próximo mes.
+                      Al confirmar, la fecha de vencimiento se moverá automáticamente al próximo mes en este mismo registro.
                     </AlertDialogDescription>
                   </AlertDialogHeader>
                   <AlertDialogFooter className="flex-col sm:flex-row gap-2">
