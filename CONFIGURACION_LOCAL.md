@@ -97,9 +97,28 @@ Crea un archivo `.env` en la raíz del proyecto:
 VITE_SUPABASE_URL=http://localhost:54321
 VITE_SUPABASE_ANON_KEY=tu-anon-key-aqui
 
+# Stripe (suscripciones)
+STRIPE_SECRET_KEY=sk_test_xxx
+STRIPE_PRICE_ID=price_xxx
+STRIPE_STARTER_PRICE_ID=price_starter_xxx
+STRIPE_CHECKOUT_SUCCESS_URL=http://localhost:5173/pricing/success
+STRIPE_CHECKOUT_CANCEL_URL=http://localhost:5173/pricing/cancel
+VITE_STRIPE_PRO_PRICE_ID=price_xxx
+VITE_STRIPE_STARTER_PRICE_ID=price_starter_xxx
+STRIPE_WEBHOOK_SECRET=whsec_xxx
+SUPABASE_SERVICE_ROLE_KEY=tu-service-role-key
+
 # Para producción (comentar en desarrollo local)
 # VITE_SUPABASE_URL=https://pyepibmlwqjeeaakzsfl.supabase.co
 # VITE_SUPABASE_ANON_KEY=tu-clave-produccion
+# STRIPE_SECRET_KEY=sk_live_xxx
+# STRIPE_STARTER_PRICE_ID=price_live_starter_xxx
+# STRIPE_CHECKOUT_SUCCESS_URL=https://tu-dominio.com/pricing/success
+# STRIPE_CHECKOUT_CANCEL_URL=https://tu-dominio.com/pricing
+# VITE_STRIPE_PRO_PRICE_ID=price_live_xxx
+# VITE_STRIPE_STARTER_PRICE_ID=price_live_starter_xxx
+# STRIPE_WEBHOOK_SECRET=whsec_live_xxx
+# SUPABASE_SERVICE_ROLE_KEY=tu-service-role-key-produccion
 ```
 
 #### 6. Conectar Supabase Local a tu Base de Datos
@@ -279,4 +298,3 @@ Abre http://localhost:8080 y verifica que la aplicación funciona.
 ```bash
 supabase logs
 ```
-
