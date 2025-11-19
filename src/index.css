@@ -4,72 +4,83 @@
 
 @layer base {
   :root {
-    --background: 240 10% 3.9%;
-    --foreground: 0 0% 98%;
+    /* Light Mode - Clean, Bright, Professional */
+    --background: 0 0% 100%;
+    /* Pure white */
+    --foreground: 222 47% 11%;
+    /* Deep slate for text */
 
-    --card: 240 10% 3.9%;
-    --card-foreground: 0 0% 98%;
+    --card: 0 0% 100%;
+    --card-foreground: 222 47% 11%;
 
-    --popover: 240 10% 3.9%;
-    --popover-foreground: 0 0% 98%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222 47% 11%;
 
-    --primary: 263.4 70% 50.4%;
-    --primary-foreground: 210 40% 98%;
+    --primary: 262 83% 58%;
+    /* Vibrant Violet */
+    --primary-foreground: 0 0% 100%;
 
-    --secondary: 240 3.7% 15.9%;
-    --secondary-foreground: 0 0% 98%;
+    --secondary: 210 40% 96.1%;
+    --secondary-foreground: 222 47% 11%;
 
-    --muted: 240 3.7% 15.9%;
-    --muted-foreground: 240 5% 64.9%;
+    --muted: 210 40% 96.1%;
+    --muted-foreground: 215 20% 35%;
+    /* Darker for better contrast */
 
-    --accent: 240 3.7% 15.9%;
-    --accent-foreground: 0 0% 98%;
+    --accent: 210 40% 96.1%;
+    --accent-foreground: 222 47% 11%;
 
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 0 0% 98%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 100%;
 
-    --border: 240 3.7% 15.9%;
-    --input: 240 3.7% 15.9%;
-    --ring: 240 4.9% 83.9%;
+    --border: 214.3 31.8% 85%;
+    /* More visible borders */
+    --input: 214.3 31.8% 91.4%;
+    --ring: 262 83% 58%;
 
-    --radius: 0.75rem;
+    --radius: 1rem;
 
-    /* Custom Glass Vars */
-    --glass-border: 240 3.7% 15.9%;
-    --glass-bg: 240 10% 3.9% / 0.6;
+    /* Glass Vars - Light Mode (Frosted Ice) */
+    --glass-border: 214.3 31.8% 85%;
+    --glass-bg: 0 0% 100% / 0.8;
+    --glass-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.15);
   }
 
   .dark {
+    /* Dark Mode - Deep Space, Neon Accents */
     --background: 240 10% 3.9%;
-    --foreground: 0 0% 98%;
+    /* Deepest Navy/Black */
+    --foreground: 210 40% 98%;
 
     --card: 240 10% 3.9%;
-    --card-foreground: 0 0% 98%;
+    --card-foreground: 210 40% 98%;
 
     --popover: 240 10% 3.9%;
-    --popover-foreground: 0 0% 98%;
+    --popover-foreground: 210 40% 98%;
 
     --primary: 263.4 70% 50.4%;
     --primary-foreground: 210 40% 98%;
 
     --secondary: 240 3.7% 15.9%;
-    --secondary-foreground: 0 0% 98%;
+    --secondary-foreground: 210 40% 98%;
 
     --muted: 240 3.7% 15.9%;
     --muted-foreground: 240 5% 64.9%;
 
     --accent: 240 3.7% 15.9%;
-    --accent-foreground: 0 0% 98%;
+    --accent-foreground: 210 40% 98%;
 
     --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 0 0% 98%;
+    --destructive-foreground: 210 40% 98%;
 
     --border: 240 3.7% 15.9%;
     --input: 240 3.7% 15.9%;
-    --ring: 240 4.9% 83.9%;
-    
+    --ring: 263.4 70% 50.4%;
+
+    /* Glass Vars - Dark Mode (Deep Space Glass) */
     --glass-border: 240 3.7% 15.9%;
     --glass-bg: 240 10% 3.9% / 0.6;
+    --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
   }
 }
 
@@ -77,6 +88,7 @@
   * {
     @apply border-border;
   }
+
   body {
     @apply bg-background text-foreground antialiased selection:bg-primary/20 selection:text-primary;
     font-feature-settings: "rlig" 1, "calt" 1;
@@ -84,23 +96,28 @@
 }
 
 @layer utilities {
+
+  /* Adaptive Glass Panel */
   .glass-panel {
-    @apply bg-background/60 backdrop-blur-xl border border-white/10 shadow-xl;
-  }
-  
-  .glass-button {
-    @apply bg-primary/90 hover:bg-primary text-primary-foreground shadow-lg shadow-primary/20 backdrop-blur-sm transition-all duration-300 hover:scale-[1.02] active:scale-[0.98];
+    @apply bg-background/70 backdrop-blur-xl border border-border/50 shadow-xl transition-all duration-300;
+    /* Light mode specific tweaks if needed can go here or use vars */
   }
 
+  /* Adaptive Glass Button */
+  .glass-button {
+    @apply bg-primary text-primary-foreground shadow-lg shadow-primary/25 hover:shadow-primary/40 backdrop-blur-sm transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] border border-white/10;
+  }
+
+  /* Adaptive Glass Card */
   .glass-card {
-    @apply bg-card/50 backdrop-blur-md border border-white/5 hover:bg-card/60 transition-colors duration-300;
+    @apply bg-card/40 backdrop-blur-md border border-border/50 hover:bg-card/60 hover:border-primary/20 transition-all duration-300 shadow-sm hover:shadow-md;
   }
-  
+
   .text-gradient {
-    @apply bg-clip-text text-transparent bg-gradient-to-r from-white to-white/60;
+    @apply bg-clip-text text-transparent bg-gradient-to-r from-foreground to-foreground/60;
   }
-  
+
   .text-gradient-primary {
-    @apply bg-clip-text text-transparent bg-gradient-to-r from-primary via-purple-400 to-pink-400;
+    @apply bg-clip-text text-transparent bg-gradient-to-r from-primary via-purple-500 to-pink-500;
   }
 }

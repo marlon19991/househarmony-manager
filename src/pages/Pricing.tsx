@@ -98,7 +98,7 @@ const Pricing = () => {
         <p className="text-primary/80 text-sm font-semibold tracking-wide uppercase">
           Planes & Suscripciones
         </p>
-        <h1 className="text-3xl font-bold tracking-tight sm:text-4xl text-white">
+        <h1 className="text-3xl font-bold tracking-tight sm:text-4xl text-foreground">
           Escala la organización de tu casa
         </h1>
         <p className="text-muted-foreground text-base max-w-2xl mx-auto">
@@ -127,10 +127,10 @@ const Pricing = () => {
                 <p className="text-sm font-semibold text-primary uppercase tracking-wide mb-2">
                   {plan.highlighted ? "Más popular" : "Plan"}
                 </p>
-                <h2 className="text-2xl font-bold text-white">{plan.name}</h2>
+                <h2 className="text-2xl font-bold text-foreground">{plan.name}</h2>
                 <p className="text-muted-foreground mt-2">{plan.description}</p>
               </div>
-              <div className="text-4xl font-bold text-white">{plan.priceLabel}</div>
+              <div className="text-4xl font-bold text-foreground">{plan.priceLabel}</div>
               <ul className="space-y-3">
                 {plan.features.map((feature) => (
                   <li key={feature} className="flex items-center gap-3 text-sm text-muted-foreground">

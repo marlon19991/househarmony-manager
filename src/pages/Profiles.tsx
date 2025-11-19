@@ -84,7 +84,7 @@ const Profiles = () => {
   return (
     <div className="container max-w-4xl mx-auto p-4 space-y-6 animate-fade-in">
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold text-white">Perfiles</h1>
+        <h1 className="text-2xl font-bold text-foreground">Perfiles</h1>
         <Sheet>
           <SheetTrigger asChild>
             <Button className="glass-button">
@@ -155,7 +155,7 @@ const Profiles = () => {
                   className="bg-white/5 border-white/10"
                 />
               ) : (
-                <span className="font-medium text-white">{profile.name}</span>
+                <span className="font-medium text-foreground">{profile.name}</span>
               )}
             </div>
             <div className="flex gap-2">
@@ -179,13 +179,13 @@ const Profiles = () => {
                 </AlertDialogTrigger>
                 <AlertDialogContent className="glass-panel border border-white/10">
                   <AlertDialogHeader>
-                    <AlertDialogTitle className="text-white">¿Estás seguro?</AlertDialogTitle>
+                    <AlertDialogTitle className="text-foreground">¿Estás seguro?</AlertDialogTitle>
                     <AlertDialogDescription>
                       Esta acción no se puede deshacer. Se eliminará permanentemente este perfil.
                     </AlertDialogDescription>
                   </AlertDialogHeader>
                   <AlertDialogFooter>
-                    <AlertDialogCancel className="bg-transparent border-white/10 hover:bg-white/5 text-white">Cancelar</AlertDialogCancel>
+                    <AlertDialogCancel className="bg-transparent border-border hover:bg-accent text-foreground">Cancelar</AlertDialogCancel>
                     <AlertDialogAction onClick={() => handleDeleteProfile(profile.id)} className="bg-destructive hover:bg-destructive/90">
                       Eliminar
                     </AlertDialogAction>

@@ -37,7 +37,7 @@ export const RecurringTasksSection = () => {
   return (
     <div className="max-w-4xl mx-auto animate-fade-in">
       <div className="flex items-center justify-between mb-8">
-        <h2 className="text-2xl font-bold text-white tracking-tight">Tareas Periódicas</h2>
+        <h2 className="text-2xl font-bold text-foreground tracking-tight">Tareas Periódicas</h2>
         <Button
           onClick={() => setIsAddingTask(true)}
           size="sm"

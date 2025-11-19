@@ -43,7 +43,7 @@ const Sidebar = ({ isCollapsed, setIsCollapsed }: SidebarProps) => {
             {/* Sidebar Container */}
             <aside
                 className={cn(
-                    "fixed top-0 left-0 z-40 h-screen transition-all duration-300 ease-in-out glass-panel border-r border-white/10",
+                    "fixed top-0 left-0 z-40 h-screen transition-all duration-300 ease-in-out glass-panel border-r border-border/50",
                     isCollapsed && !isMobileOpen ? "w-20" : "w-64",
                     isMobileOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"
                 )}
@@ -82,8 +82,8 @@ const Sidebar = ({ isCollapsed, setIsCollapsed }: SidebarProps) => {
                                     className={cn(
                                         "flex items-center gap-3 px-3 py-3 rounded-xl transition-all duration-300 group relative overflow-hidden",
                                         isActive
-                                            ? "bg-primary/10 text-primary shadow-[0_0_20px_rgba(124,58,237,0.1)]"
-                                            : "text-muted-foreground hover:text-foreground hover:bg-white/5",
+                                            ? "bg-primary/10 text-primary shadow-sm"
+                                            : "text-muted-foreground hover:text-foreground hover:bg-accent/50",
                                         (isCollapsed && !isMobileOpen) && "justify-center px-2"
                                     )}
                                 >
@@ -97,7 +97,7 @@ const Sidebar = ({ isCollapsed, setIsCollapsed }: SidebarProps) => {
 
                                     {/* Tooltip for collapsed state */}
                                     {(isCollapsed && !isMobileOpen) && (
-                                        <div className="absolute left-full ml-4 px-2 py-1 bg-popover text-popover-foreground text-xs rounded opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity whitespace-nowrap z-50 border border-border">
+                                        <div className="absolute left-full ml-4 px-2 py-1 bg-popover text-popover-foreground text-xs rounded opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity whitespace-nowrap z-50 border border-border shadow-md">
                                             {item.label}
                                         </div>
                                     )}

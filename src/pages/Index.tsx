@@ -45,7 +45,7 @@ const Index = () => {
       {/* Welcome Section */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
-          <h1 className="text-4xl font-bold text-white mb-2">
+          <h1 className="text-4xl font-bold text-foreground mb-2">
             Panel de Control
           </h1>
           <p className="text-muted-foreground">
@@ -70,7 +70,7 @@ const Index = () => {
           >
             <div>
               <p className="text-sm text-muted-foreground mb-1">{stat.label}</p>
-              <h3 className="text-2xl font-bold text-white">{stat.value}</h3>
+              <h3 className="text-2xl font-bold text-foreground">{stat.value}</h3>
             </div>
             <div className={cn("p-3 rounded-xl bg-white/5", stat.color)}>
               <stat.icon className="w-6 h-6" />
@@ -81,7 +81,7 @@ const Index = () => {
 
       {/* Quick Actions / Features */}
       <div>
-        <h2 className="text-xl font-semibold text-white mb-4 flex items-center gap-2">
+        <h2 className="text-xl font-semibold text-foreground mb-4 flex items-center gap-2">
           <Activity className="w-5 h-5 text-primary" />
           Accesos Rápidos
         </h2>
@@ -97,11 +97,11 @@ const Index = () => {
                   )}
                 >
                   <div className="flex flex-col gap-4">
-                    <div className={cn("w-12 h-12 rounded-xl flex items-center justify-center bg-black/20 backdrop-blur-sm", feature.iconColor)}>
+                    <div className={cn("w-12 h-12 rounded-xl flex items-center justify-center bg-background/50 backdrop-blur-sm border border-border/50", feature.iconColor)}>
                       <Icon className="w-6 h-6" />
                     </div>
                     <div>
-                      <h3 className="text-lg font-semibold text-white mb-2 group-hover:text-primary transition-colors">
+                      <h3 className="text-lg font-semibold text-foreground mb-2 group-hover:text-primary transition-colors">
                         {feature.title}
                       </h3>
                       <p className="text-sm text-muted-foreground leading-relaxed">
