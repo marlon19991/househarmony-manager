@@ -1,11 +1,9 @@
 import { useState } from "react";
-import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import TaskList from "./TaskList";
 import AssigneeSelector from "./AssigneeSelector";
 import ProgressDisplay from "./components/ProgressDisplay";
 import { useGeneralCleaning } from "./hooks/useGeneralCleaning";
-import { useCleaningProgress } from "./hooks/useCleaningProgress";
 
 export const GeneralCleaningSection = () => {
   const {
@@ -48,22 +46,22 @@ export const GeneralCleaningSection = () => {
 
   if (isLoading || currentAssignee === null) {
     return (
-      <Card className="p-6 space-y-6">
+      <div className="glass-card p-6 space-y-6 rounded-xl">
         <div className="space-y-4">
-          <Skeleton className="h-6 w-40" />
-          <Skeleton className="h-4 w-64" />
+          <Skeleton className="h-6 w-40 bg-white/10" />
+          <Skeleton className="h-4 w-64 bg-white/10" />
         </div>
         <div className="space-y-3">
           {[...Array(3)].map((_, index) => (
-            <Skeleton key={index} className="h-16 w-full" />
+            <Skeleton key={index} className="h-16 w-full bg-white/10" />
           ))}
         </div>
-      </Card>
+      </div>
     );
   }
 
   return (
-    <Card className="p-4 sm:p-6 space-y-6">
+    <div className="glass-card p-4 sm:p-6 space-y-6 rounded-xl animate-fade-in">
       <div className="flex flex-col gap-6">
         <div className="flex flex-col gap-6">
           <ProgressDisplay completionPercentage={completionPercentage} />
@@ -87,7 +85,7 @@ export const GeneralCleaningSection = () => {
           isDisabled={false}
         />
       </div>
-    </Card>
+    </div>
   );
 };
 

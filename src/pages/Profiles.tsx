@@ -1,11 +1,11 @@
 import { useState } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { User, UserPlus, UserX, Pencil } from "lucide-react";
+import { cn } from "@/lib/utils";
 import {
   Sheet,
   SheetContent,
@@ -82,18 +82,19 @@ const Profiles = () => {
   ];
 
   return (
-    <div className="container max-w-4xl mx-auto p-4 space-y-6">
+    <div className="container max-w-4xl mx-auto p-4 space-y-6 animate-fade-in">
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold">Perfiles</h1>
+        <h1 className="text-2xl font-bold text-white">Perfiles</h1>
         <Sheet>
           <SheetTrigger asChild>
-            <Button variant="outline" size="icon">
-              <UserPlus className="h-5 w-5" />
+            <Button className="glass-button">
+              <UserPlus className="h-5 w-5 mr-2" />
+              Nuevo Perfil
             </Button>
           </SheetTrigger>
-          <SheetContent>
+          <SheetContent className="glass-panel border-l border-white/10">
             <SheetHeader>
-              <SheetTitle>Crear Nuevo Perfil</SheetTitle>
+              <SheetTitle className="text-white">Crear Nuevo Perfil</SheetTitle>
               <SheetDescription>
                 Agrega un nuevo perfil para gestionar tareas y responsabilidades.
               </SheetDescription>
@@ -106,6 +107,7 @@ const Profiles = () => {
                   value={newProfile.name}
                   onChange={(e) => setNewProfile({ ...newProfile, name: e.target.value })}
                   placeholder="Nombre del perfil"
+                  className="bg-white/5 border-white/10"
                 />
               </div>
               <div>
@@ -115,9 +117,10 @@ const Profiles = () => {
                     <button
                       key={icon.src}
                       onClick={() => setNewProfile({ ...newProfile, icon: icon.src })}
-                      className={`p-1 rounded-full ${
-                        newProfile.icon === icon.src ? "ring-2 ring-primary" : ""
-                      }`}
+                      className={cn(
+                        "p-1 rounded-full transition-all",
+                        newProfile.icon === icon.src ? "ring-2 ring-primary scale-110" : "opacity-70 hover:opacity-100"
+                      )}
                     >
                       <Avatar>
                         <AvatarImage src={icon.src} alt={icon.label} />
@@ -127,7 +130,7 @@ const Profiles = () => {
                   ))}
                 </div>
               </div>
-              <Button onClick={handleAddProfile} className="w-full">
+              <Button onClick={handleAddProfile} className="w-full glass-button">
                 Crear Perfil
               </Button>
             </div>
@@ -137,60 +140,60 @@ const Profiles = () => {
 
       <div className="grid gap-4 md:grid-cols-2">
         {profiles.map((profile) => (
-          <Card key={profile.id} className="p-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <Avatar>
-                  <AvatarImage src={profile.icon} alt={profile.name} />
-                  <AvatarFallback><User /></AvatarFallback>
-                </Avatar>
-                {editingProfile?.id === profile.id ? (
-                  <Input
-                    value={editingProfile.name}
-                    onChange={(e) =>
-                      setEditingProfile({ ...editingProfile, name: e.target.value })
-                    }
-                  />
-                ) : (
-                  <span className="font-medium">{profile.name}</span>
-                )}
-              </div>
-              <div className="flex gap-2">
-                {editingProfile?.id === profile.id ? (
-                  <Button onClick={handleUpdateProfile}>Guardar</Button>
-                ) : (
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => setEditingProfile(profile)}
-                  >
-                    <Pencil className="w-4 h-4" />
-                  </Button>
-                )}
-                <AlertDialog>
-                  <AlertDialogTrigger asChild>
-                    <Button variant="ghost" size="icon">
-                      <UserX className="w-4 h-4 text-destructive" />
-                    </Button>
-                  </AlertDialogTrigger>
-                  <AlertDialogContent>
-                    <AlertDialogHeader>
-                      <AlertDialogTitle>¿Estás seguro?</AlertDialogTitle>
-                      <AlertDialogDescription>
-                        Esta acción no se puede deshacer. Se eliminará permanentemente este perfil.
-                      </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                      <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                      <AlertDialogAction onClick={() => handleDeleteProfile(profile.id)}>
-                        Eliminar
-                      </AlertDialogAction>
-                    </AlertDialogFooter>
-                  </AlertDialogContent>
-                </AlertDialog>
-              </div>
+          <div key={profile.id} className="glass-card p-4 rounded-xl flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <Avatar className="border-2 border-primary/20">
+                <AvatarImage src={profile.icon} alt={profile.name} />
+                <AvatarFallback><User /></AvatarFallback>
+              </Avatar>
+              {editingProfile?.id === profile.id ? (
+                <Input
+                  value={editingProfile.name}
+                  onChange={(e) =>
+                    setEditingProfile({ ...editingProfile, name: e.target.value })
+                  }
+                  className="bg-white/5 border-white/10"
+                />
+              ) : (
+                <span className="font-medium text-white">{profile.name}</span>
+              )}
             </div>
-          </Card>
+            <div className="flex gap-2">
+              {editingProfile?.id === profile.id ? (
+                <Button onClick={handleUpdateProfile} size="sm">Guardar</Button>
+              ) : (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setEditingProfile(profile)}
+                  className="hover:bg-white/10 text-muted-foreground hover:text-white"
+                >
+                  <Pencil className="w-4 h-4" />
+                </Button>
+              )}
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button variant="ghost" size="icon" className="hover:bg-destructive/10 text-destructive hover:text-destructive">
+                    <UserX className="w-4 h-4" />
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent className="glass-panel border border-white/10">
+                  <AlertDialogHeader>
+                    <AlertDialogTitle className="text-white">¿Estás seguro?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      Esta acción no se puede deshacer. Se eliminará permanentemente este perfil.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel className="bg-transparent border-white/10 hover:bg-white/5 text-white">Cancelar</AlertDialogCancel>
+                    <AlertDialogAction onClick={() => handleDeleteProfile(profile.id)} className="bg-destructive hover:bg-destructive/90">
+                      Eliminar
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            </div>
+          </div>
         ))}
       </div>
     </div>

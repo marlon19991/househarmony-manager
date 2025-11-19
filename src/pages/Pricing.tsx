@@ -1,10 +1,10 @@
 import { useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
-import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Check } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { cn } from "@/lib/utils";
 
 type Plan = {
   id: string;
@@ -93,19 +93,19 @@ const Pricing = () => {
   };
 
   return (
-    <div className="mx-auto flex max-w-5xl flex-col gap-8 px-4 py-10">
+    <div className="mx-auto flex max-w-5xl flex-col gap-8 px-4 py-10 animate-fade-in">
       <div className="text-center space-y-3">
         <p className="text-primary/80 text-sm font-semibold tracking-wide uppercase">
           Planes & Suscripciones
         </p>
-        <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">
+        <h1 className="text-3xl font-bold tracking-tight sm:text-4xl text-white">
           Escala la organización de tu casa
         </h1>
         <p className="text-muted-foreground text-base max-w-2xl mx-auto">
           Automatiza recordatorios, comparte gastos y mantén a todos alineados en tus tareas recurrentes.
         </p>
         {successMessage && (
-          <div className="text-sm rounded-md bg-emerald-50 px-4 py-2 text-emerald-700">
+          <div className="text-sm rounded-md bg-emerald-500/10 border border-emerald-500/20 px-4 py-2 text-emerald-500">
             {successMessage}
           </div>
         )}
@@ -113,36 +113,46 @@ const Pricing = () => {
 
       <div className="grid gap-6 sm:grid-cols-2">
         {plans.map((plan) => (
-          <Card
+          <div
             key={plan.id}
-            className={`flex flex-col justify-between p-6 ${plan.highlighted ? "border-primary shadow-lg" : ""}`}
+            className={cn(
+              "flex flex-col justify-between p-8 rounded-2xl transition-all duration-300",
+              plan.highlighted
+                ? "glass-panel border-primary/50 shadow-[0_0_30px_rgba(124,58,237,0.15)] scale-105 z-10"
+                : "glass-card border-white/5 hover:border-white/10"
+            )}
           >
-            <div className="space-y-4">
+            <div className="space-y-6">
               <div>
-                <p className="text-sm font-semibold text-primary uppercase tracking-wide">
+                <p className="text-sm font-semibold text-primary uppercase tracking-wide mb-2">
                   {plan.highlighted ? "Más popular" : "Plan"}
                 </p>
-                <h2 className="text-2xl font-bold">{plan.name}</h2>
-                <p className="text-muted-foreground">{plan.description}</p>
+                <h2 className="text-2xl font-bold text-white">{plan.name}</h2>
+                <p className="text-muted-foreground mt-2">{plan.description}</p>
               </div>
-              <div className="text-3xl font-bold">{plan.priceLabel}</div>
-              <ul className="space-y-2">
+              <div className="text-4xl font-bold text-white">{plan.priceLabel}</div>
+              <ul className="space-y-3">
                 {plan.features.map((feature) => (
-                  <li key={feature} className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <Check className="h-4 w-4 text-primary" />
+                  <li key={feature} className="flex items-center gap-3 text-sm text-muted-foreground">
+                    <div className="p-1 rounded-full bg-primary/10 text-primary">
+                      <Check className="h-3 w-3" />
+                    </div>
                     {feature}
                   </li>
                 ))}
               </ul>
             </div>
             <Button
-              className="mt-6"
+              className={cn(
+                "mt-8 w-full",
+                plan.highlighted ? "glass-button" : "bg-white/5 hover:bg-white/10 text-white"
+              )}
               disabled={loadingPlan === plan.id}
               onClick={() => handleSubscribe(plan)}
             >
               {loadingPlan === plan.id ? "Redirigiendo..." : "Suscribirme"}
             </Button>
-          </Card>
+          </div>
         ))}
       </div>
     </div>
