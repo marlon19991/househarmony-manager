@@ -20,6 +20,7 @@ interface TaskListProps {
   onAddTask: (e: React.FormEvent) => Promise<void>;
   onUpdateTask: (taskId: number, description: string, comment: string) => Promise<void>;
   onDeleteTask: (taskId: number) => Promise<void>;
+  onUploadEvidence?: (taskId: number, file: File) => Promise<boolean>;
   newTask: { title: string; comment: string };
   setNewTask: React.Dispatch<React.SetStateAction<{ title: string; comment: string }>>;
   isDisabled: boolean;
@@ -32,6 +33,7 @@ const TaskList = ({
   onAddTask,
   onUpdateTask,
   onDeleteTask,
+  onUploadEvidence,
   newTask,
   setNewTask,
   isDisabled
@@ -85,6 +87,7 @@ const TaskList = ({
             onCancelEditing={handleCancelEditing}
             onDelete={() => onDeleteTask(task.id)}
             onUpdate={handleUpdateTask}
+            onUploadEvidence={onUploadEvidence}
             isDisabled={isDisabled}
           />
         ))}

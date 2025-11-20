@@ -1,6 +1,6 @@
 import { InventoryItem } from "./useInventory";
 import { Button } from "@/components/ui/button";
-import { Minus, Plus, Trash2, AlertTriangle, Calendar, Pencil } from "lucide-react";
+import { Minus, Plus, Trash2, AlertTriangle, Calendar, Pencil, AlertCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
@@ -28,8 +28,13 @@ export const InventoryList = ({ items, onDelete, onUpdate, onEdit }: InventoryLi
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {items.map((item) => {
                 const isLowStock = item.quantity <= (item.min_quantity || 0);
-                const isExpiring = item.expiry_date &&
-                    Math.ceil((new Date(item.expiry_date).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)) <= 7;
+
+                const daysUntilExpiry = item.expiry_date
+                    ? Math.ceil((new Date(item.expiry_date).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24))
+                    : null;
+
+                const isExpired = daysUntilExpiry !== null && daysUntilExpiry < 0;
+                const isExpiring = daysUntilExpiry !== null && daysUntilExpiry >= 0 && daysUntilExpiry <= 7;
 
                 return (
                     <div
@@ -37,7 +42,8 @@ export const InventoryList = ({ items, onDelete, onUpdate, onEdit }: InventoryLi
                         className={cn(
                             "glass-card p-4 rounded-xl relative group transition-all duration-300 hover:-translate-y-1",
                             isLowStock && "border-amber-500/30 bg-amber-500/5",
-                            isExpiring && "border-red-500/30 bg-red-500/5"
+                            isExpiring && "border-orange-500/30 bg-orange-500/5",
+                            isExpired && "border-red-500/50 bg-red-500/10"
                         )}
                     >
                         <div className="flex justify-between items-start mb-3">
@@ -121,10 +127,14 @@ export const InventoryList = ({ items, onDelete, onUpdate, onEdit }: InventoryLi
                                 {item.expiry_date && (
                                     <div className={cn(
                                         "flex items-center px-2 py-1 rounded-full",
-                                        isExpiring ? "text-red-500 bg-red-500/10" : "text-muted-foreground bg-secondary"
+                                        isExpired
+                                            ? "text-red-500 bg-red-500/10 font-medium"
+                                            : isExpiring
+                                                ? "text-orange-500 bg-orange-500/10"
+                                                : "text-muted-foreground bg-secondary"
                                     )}>
-                                        <Calendar className="w-3 h-3 mr-1" />
-                                        {format(new Date(item.expiry_date), "d MMM", { locale: es })}
+                                        {isExpired ? <AlertCircle className="w-3 h-3 mr-1" /> : <Calendar className="w-3 h-3 mr-1" />}
+                                        {isExpired ? "Vencido: " : ""}{format(new Date(item.expiry_date), "d MMM", { locale: es })}
                                     </div>
                                 )}
                             </div>

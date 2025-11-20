@@ -14,6 +14,7 @@ export const RecurringTasksSection = () => {
     createTaskMutation,
     updateTaskMutation,
     deleteTaskMutation,
+    completeTaskMutation,
   } = useRecurringTasks();
 
   const tasks = tasksQuery.data ?? [];
@@ -33,6 +34,11 @@ export const RecurringTasksSection = () => {
   const handleDeleteTask = (taskId: number) => {
     deleteTaskMutation.mutate(taskId);
   };
+
+  const handleCompleteTask = (taskId: number, evidenceUrl?: string) => {
+    completeTaskMutation.mutate({ task_id: taskId, evidence_url: evidenceUrl });
+  };
+
 
   return (
     <div className="max-w-4xl mx-auto animate-fade-in">
@@ -95,6 +101,7 @@ export const RecurringTasksSection = () => {
                 task={task}
                 onDelete={handleDeleteTask}
                 onUpdate={handleUpdateTask}
+                onComplete={handleCompleteTask}
               />
             ))
           )}

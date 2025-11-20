@@ -8,16 +8,20 @@ import { useInventory, InventoryItem } from "./useInventory";
 export const InventorySection = () => {
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [editingItem, setEditingItem] = useState<InventoryItem | null>(null);
-    const [filter, setFilter] = useState<"all" | "low_stock" | "expiring">("all");
+    const [filter, setFilter] = useState<"all" | "low_stock" | "expiring" | "expired">("all");
     const { items, isLoading, deleteItem, updateItem } = useInventory();
 
     const filteredItems = items.filter(item => {
         if (filter === "low_stock") return item.quantity <= (item.min_quantity || 0);
-        if (filter === "expiring") {
+
+        if (filter === "expiring" || filter === "expired") {
             if (!item.expiry_date) return false;
             const daysUntilExpiry = Math.ceil((new Date(item.expiry_date).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24));
-            return daysUntilExpiry <= 7; // Expiring in 7 days
+
+            if (filter === "expired") return daysUntilExpiry < 0;
+            if (filter === "expiring") return daysUntilExpiry >= 0 && daysUntilExpiry <= 7;
         }
+
         return true;
     });
 
@@ -35,31 +39,38 @@ export const InventorySection = () => {
         <div className="space-y-6">
             {/* Actions Bar */}
             <div className="flex flex-col sm:flex-row gap-4 justify-between items-center glass-panel p-4 rounded-xl">
-                <div className="flex gap-2 w-full sm:w-auto">
+                <div className="flex gap-2 w-full sm:w-auto overflow-x-auto pb-2 sm:pb-0">
                     <Button
                         variant={filter === "all" ? "default" : "ghost"}
                         onClick={() => setFilter("all")}
-                        className="flex-1 sm:flex-none"
+                        className="whitespace-nowrap"
                     >
                         Todos
                     </Button>
                     <Button
                         variant={filter === "low_stock" ? "default" : "ghost"}
                         onClick={() => setFilter("low_stock")}
-                        className="flex-1 sm:flex-none"
+                        className="whitespace-nowrap"
                     >
                         Por Agotarse
                     </Button>
                     <Button
                         variant={filter === "expiring" ? "default" : "ghost"}
                         onClick={() => setFilter("expiring")}
-                        className="flex-1 sm:flex-none"
+                        className="whitespace-nowrap"
                     >
                         Por Vencer
                     </Button>
+                    <Button
+                        variant={filter === "expired" ? "default" : "ghost"}
+                        onClick={() => setFilter("expired")}
+                        className="whitespace-nowrap text-destructive hover:text-destructive"
+                    >
+                        Vencidos
+                    </Button>
                 </div>
 
-                <Button onClick={() => setIsDialogOpen(true)} className="w-full sm:w-auto glass-button">
+                <Button onClick={() => setIsDialogOpen(true)} className="w-full sm:w-auto glass-button whitespace-nowrap">
                     <Plus className="w-4 h-4 mr-2" />
                     Agregar Producto
                 </Button>

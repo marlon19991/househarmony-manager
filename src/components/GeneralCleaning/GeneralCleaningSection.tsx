@@ -15,7 +15,8 @@ export const GeneralCleaningSection = () => {
     changeAssignee,
     addTask,
     updateTask,
-    deleteTask
+    deleteTask,
+    uploadEvidence
   } = useGeneralCleaning();
 
   const [newTask, setNewTask] = useState({ title: "", comment: "" });
@@ -80,6 +81,7 @@ export const GeneralCleaningSection = () => {
           onAddTask={handleAddTask}
           onUpdateTask={handleUpdateTask}
           onDeleteTask={handleDeleteTask}
+          onUploadEvidence={uploadEvidence}
           newTask={newTask}
           setNewTask={setNewTask}
           isDisabled={false}

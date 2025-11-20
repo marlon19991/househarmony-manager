@@ -3,4 +3,5 @@ export interface Task {
   description: string;
   completed: boolean;
   comment?: string;
+  evidence_url?: string;
 }

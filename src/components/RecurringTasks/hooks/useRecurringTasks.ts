@@ -18,6 +18,11 @@ export interface RecurringTask {
   recurrence_type: RecurrenceType;
   notification_time?: string | null;
   created_at?: string;
+  last_completion?: {
+    id: number;
+    completed_at: string;
+    evidence_url?: string | null;
+  };
 }
 
 export type RecurringTaskPayload = {
@@ -32,24 +37,47 @@ export type RecurringTaskPayload = {
   icon?: string;
 };
 
-const mapTaskRecord = (task: any): RecurringTask => ({
-  id: task.id,
-  title: task.title,
-  description: task.description,
-  weekdays: task.weekdays,
-  start_date: task.start_date,
-  end_date: task.end_date,
-  assignees: task.assignees || [],
-  icon: task.icon,
-  recurrence_type: task.recurrence_type,
-  notification_time: task.notification_time,
-  created_at: task.created_at,
-});
+const mapTaskRecord = (task: any): RecurringTask => {
+  // Find the latest completion (assuming the query returns them, or we sort them here)
+  // We filter for completions from "today" to determine current status, 
+  // or just take the absolute latest if that's the logic.
+  // For now, let's attach the latest completion.
+  const completions = task.recurring_task_completions || [];
+  const lastCompletion = completions.length > 0
+    ? completions.sort((a: any, b: any) => new Date(b.completed_at).getTime() - new Date(a.completed_at).getTime())[0]
+    : null;
+
+  return {
+    id: task.id,
+    title: task.title,
+    description: task.description,
+    weekdays: task.weekdays,
+    start_date: task.start_date,
+    end_date: task.end_date,
+    assignees: task.assignees || [],
+    icon: task.icon,
+    recurrence_type: task.recurrence_type,
+    notification_time: task.notification_time,
+    created_at: task.created_at,
+    last_completion: lastCompletion ? {
+      id: lastCompletion.id,
+      completed_at: lastCompletion.completed_at,
+      evidence_url: lastCompletion.evidence_url
+    } : undefined
+  };
+};
 
 const fetchRecurringTasks = async (): Promise<RecurringTask[]> => {
   const { data, error } = await supabase
     .from("recurring_tasks")
-    .select("*")
+    .select(`
+      *,
+      recurring_task_completions (
+        id,
+        completed_at,
+        evidence_url
+      )
+    `)
     .order("created_at", { ascending: false });
 
   if (error) throw error;
@@ -102,10 +130,23 @@ export const useRecurringTasks = () => {
     },
   });
 
+  const completeTaskMutation = useSupabaseCrud<
+    { task_id: number; evidence_url?: string },
+    any,
+    any
+  >({
+    table: "recurring_task_completions",
+    queryKey: RECURRING_TASKS_QUERY_KEY,
+    toastMessages: {
+      createSuccess: "Tarea marcada como completada",
+    },
+  }).createMutation;
+
   return {
     tasksQuery,
     createTaskMutation,
     updateTaskMutation,
     deleteTaskMutation,
+    completeTaskMutation,
   };
 };

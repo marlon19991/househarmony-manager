@@ -55,6 +55,7 @@ const fetchGeneralCleaningState = async (
     completed:
       taskStates?.find((state: any) => state.task_id === task.id)?.completed ||
       false,
+    evidence_url: taskStates?.find((state: any) => state.task_id === task.id)?.evidence_url,
   }));
 
   const completedTasks = combinedTasks.filter((task) => task.completed).length;
@@ -206,7 +207,7 @@ export const useGeneralCleaning = () => {
       } else {
         // Si no hay responsable, solo actualizar el estado local
         const completedTasks = updatedTasks.filter(task => task.completed).length;
-        const newPercentage = updatedTasks.length > 0 
+        const newPercentage = updatedTasks.length > 0
           ? Math.round((completedTasks / updatedTasks.length) * 100)
           : 0;
         setCompletionPercentage(newPercentage);
@@ -217,6 +218,52 @@ export const useGeneralCleaning = () => {
     } catch (error) {
       logger.error("Error al actualizar el estado de la tarea", { error });
       toast.error("Error al actualizar el estado de la tarea");
+      return false;
+    }
+  };
+
+  // Subir evidencia fotográfica
+  const uploadEvidence = async (taskId: number, file: File) => {
+    try {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${taskId}-${Date.now()}.${fileExt}`;
+      const filePath = `general-cleaning/${fileName}`;
+
+      // 1. Subir archivo al bucket
+      const { error: uploadError } = await supabase.storage
+        .from('task-evidence')
+        .upload(filePath, file);
+
+      if (uploadError) throw uploadError;
+
+      // 2. Obtener URL pública
+      const { data: { publicUrl } } = supabase.storage
+        .from('task-evidence')
+        .getPublicUrl(filePath);
+
+      // 3. Actualizar estado de la tarea con la URL de la evidencia
+      const { error: updateError } = await supabase
+        .from('cleaning_task_states')
+        .update({
+          evidence_url: publicUrl,
+          updated_at: new Date().toISOString()
+        })
+        .eq('task_id', taskId);
+
+      if (updateError) throw updateError;
+
+      // 4. Actualizar estado local
+      setTasks(tasks.map(task =>
+        task.id === taskId
+          ? { ...task, evidence_url: publicUrl }
+          : task
+      ));
+
+      toast.success("Evidencia subida exitosamente");
+      return true;
+    } catch (error) {
+      logger.error("Error al subir evidencia", { error });
+      toast.error("Error al subir la evidencia");
       return false;
     }
   };
@@ -256,10 +303,10 @@ export const useGeneralCleaning = () => {
         try {
           // Detectar si estamos en desarrollo local
           const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || '';
-          const isLocal = supabaseUrl.includes('localhost') || 
-                         supabaseUrl.includes('127.0.0.1') ||
-                         supabaseUrl.includes('local');
-          
+          const isLocal = supabaseUrl.includes('localhost') ||
+            supabaseUrl.includes('127.0.0.1') ||
+            supabaseUrl.includes('local');
+
           if (isLocal) {
             logger.info("📧 [Desarrollo Local] Notificación de tarea omitida (normal en desarrollo)");
           } else {
@@ -279,9 +326,9 @@ export const useGeneralCleaning = () => {
         } catch (emailError: any) {
           // En desarrollo local, estos errores son esperados y no deben interrumpir el flujo
           const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || '';
-          const isLocal = supabaseUrl.includes('localhost') || 
-                         supabaseUrl.includes('127.0.0.1');
-          
+          const isLocal = supabaseUrl.includes('localhost') ||
+            supabaseUrl.includes('127.0.0.1');
+
           if (isLocal) {
             logger.info('📧 [Desarrollo Local] Función de notificación no disponible (normal en desarrollo)');
           } else {
@@ -430,7 +477,7 @@ export const useGeneralCleaning = () => {
 
       // 4. Recalcular el progreso
       const completedTasks = updatedTasks.filter(task => task.completed).length;
-      const newPercentage = updatedTasks.length > 0 
+      const newPercentage = updatedTasks.length > 0
         ? Math.round((completedTasks / updatedTasks.length) * 100)
         : 0;
       setCompletionPercentage(newPercentage);
@@ -459,6 +506,7 @@ export const useGeneralCleaning = () => {
     changeAssignee,
     addTask,
     updateTask,
-    deleteTask
+    deleteTask,
+    uploadEvidence
   };
 };
