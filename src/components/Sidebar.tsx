@@ -1,4 +1,4 @@
-import { Home, DollarSign, Brush, CalendarCheck, Settings, Menu, X } from "lucide-react";
+import { Home, DollarSign, Brush, CalendarCheck, Settings, Menu, X, Package } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { useState, useEffect } from "react";
@@ -22,6 +22,7 @@ const Sidebar = ({ isCollapsed, setIsCollapsed }: SidebarProps) => {
         { path: "/", icon: Home, label: "Dashboard" },
         { path: "/general-cleaning", icon: Brush, label: "Cleaning" },
         { path: "/recurring-tasks", icon: CalendarCheck, label: "Recurring" },
+        { path: "/inventory", icon: Package, label: "Inventario" },
         { path: "/bills", icon: DollarSign, label: "Bills" },
         { path: "/settings", icon: Settings, label: "Settings" },
     ];

@@ -11,6 +11,7 @@ import Settings from "./pages/Settings";
 import GeneralCleaning from "./pages/GeneralCleaning";
 import Bills from "./pages/Bills";
 import RecurringTasks from "./pages/RecurringTasks";
+import Inventory from "./pages/Inventory";
 import Pricing from "./pages/Pricing";
 import { useInitializeProfiles } from "./hooks/useProfiles";
 import ErrorBoundary from "./components/ErrorBoundary";
@@ -47,6 +48,7 @@ const AppRoutes = () => {
         <Route path="/general-cleaning" element={<GeneralCleaning />} />
         <Route path="/recurring-tasks" element={<RecurringTasks />} />
         <Route path="/bills" element={<Bills />} />
+        <Route path="/inventory" element={<Inventory />} />
         <Route path="/pricing" element={<Pricing />} />
       </Routes>
     </Layout>
